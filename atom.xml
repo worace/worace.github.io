@@ -4,7 +4,7 @@
  <title>Worace's Workshop</title>
  <link href="http://worace.workshttps://worace.github.io/blog/atom.xml" rel="self"/>
  <link href="http://worace.workshttps://worace.github.io/blog/"/>
- <updated>2016-05-23T21:28:53-06:00</updated>
+ <updated>2016-05-23T21:32:15-06:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -13,11 +13,12 @@
 
  
  <entry>
-   <title>Posting In Org Mode</title>
+   <title>Posting and Publishing In Org Mode</title>
    <link href="http://worace.workshttps://worace.github.io/blog/2016/05/23/test-org-mode/"/>
    <updated>2016-05-23T00:00:00-06:00</updated>
    <id>http://worace.works/2016/05/23/test-org-mode</id>
    <content type="html">&lt;p&gt;Still need to work on configuring this but it is pretty neat so far&lt;/p&gt;
+&lt;p&gt;Even can edit it and deploy with&lt;a href=&quot;https://github.com/yegor256/jekyll-github-deploy&quot;&gt; jgd.&lt;/a&gt;&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Pizza&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;initialize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;arg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
     &lt;span class=&quot;nb&quot;&gt;puts&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;LOL RUBY CODE&amp;quot;&lt;/span&gt;
