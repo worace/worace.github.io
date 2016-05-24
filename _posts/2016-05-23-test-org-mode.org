@@ -1,9 +1,11 @@
 ---
-title: "Posting In Org Mode"
+title: "Posting and Publishing In Org Mode"
 layout: post
 ---
 
 Still need to work on configuring this but it is pretty neat so far
+
+Even can edit it and deploy with[[https://github.com/yegor256/jekyll-github-deploy][ jgd.]]
 
 #+BEGIN_SRC ruby
   class Pizza
