@@ -1,0 +1,9 @@
+---
+title: about
+layout: default
+---
+
+* About
+I'm Horace, a Software Developer and Teacher currently working at the [[https://www.turing.io/][Turing School of Software and Design]] in Denver, CO. Previously worked at LivingSocial and participated in Hungry Academy (aka Turing cohort 1203). Before programming, I studied Architecture, Arabic, and Near Eastern History in college. I've lived in Alabama, New Haven, Oakland, DC, Denver, and (shortly) Los Angeles. Eager and sometimes successful fly fisherman and rock climber. Currently devoting much of my time to getting better at Clojure and understanding cryptocurrencies through my [[https://github.com/worace/clarke-coin][Clarke Coin]] project.
+
+Trying to be more good at programming.
