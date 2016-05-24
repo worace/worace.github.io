@@ -2,11 +2,11 @@
 permalink:           pretty
 
 # Setup
-title:               "Worace's Workshop"
+title:               "Horace Williams"
 tagline:             kunderwammer
 url:                 http://worace.works
-paginate:            1
-baseurl:             "https://worace.github.io/blog"
+paginate:            8
+baseurl:             ""
 
 # Assets
 #

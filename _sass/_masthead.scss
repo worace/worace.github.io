@@ -5,10 +5,11 @@
 .masthead {
   padding-top:    1rem;
   padding-bottom: 1rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
 }
 
 .masthead-title {
+  display: inline-block;
   margin-top: 0;
   margin-bottom: 0;
   color: $gray-4;
@@ -21,5 +22,13 @@
     font-size: 75%;
     font-weight: 400;
     opacity: .5;
+  }
+}
+
+.nav-links {
+  padding: 0 0 0 10px;
+  display: inline-block;
+  li {
+    display: inline-block;
   }
 }

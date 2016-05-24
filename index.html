@@ -3,31 +3,42 @@ layout: default
 title: Home
 ---
 
+<h3>Posts</h3>
 <div class="posts">
+  <ul>
   {% for post in paginator.posts %}
-  <article class="post">
-    <h1 class="post-title">
-      <a href="{{ site.baseurl }}{{ post.url }}">
-        {{ post.title }}
-      </a>
-    </h1>
-
-    <time datetime="{{ post.date | date_to_xmlschema }}" class="post-date">{{ post.date | date_to_string }}</time>
-
-    {{ post.content }}
-  </article>
+    <li>
+      <a href="{{ site.baseurl }}{{ post.url }}"> {{ post.title }} </a>
+    </li>
   {% endfor %}
+  </ul>
 </div>
+
+<h3>Projects</h3>
+<div class="posts">
+  <ul>
+    <li>
+      <a href="https://github.com/worace/clarke-coin">ClarkeCoin</a>
+    </li>
+    <li>
+      <a href="https://github.com/turingschool/data_structures_and_algorithms">Turing DSA Curriculum</a>
+    </li>
+    <li>
+      <a href="https://github.com/worace/dotfiles">dotfiles</a>
+    </li>
+    <li>
+      <a href="/archi">Archi-Follies</a>
+    </li>
+  </ul>
+</div>
+
+<h3><a href="/headcanon">sik reads</a></h3>
 
 <div class="pagination">
   {% if paginator.next_page %}
     <a class="pagination-item older" href="{{ paginator.next_page_path | prepend: site.baseurl }}">Older</a>
-  {% else %}
-    <span class="pagination-item older">Older</span>
   {% endif %}
   {% if paginator.previous_page %}
     <a class="pagination-item newer" href="{{ paginator.previous_page_path | prepend: site.baseurl }}">Newer</a>
-  {% else %}
-    <span class="pagination-item newer">Newer</span>
   {% endif %}
 </div>
