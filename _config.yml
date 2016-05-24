@@ -6,7 +6,7 @@ title:               "Worace's Workshop"
 tagline:             kunderwammer
 url:                 http://worace.works
 paginate:            1
-baseurl:             ""
+baseurl:             "https://worace.github.io/blog"
 
 # Assets
 #
