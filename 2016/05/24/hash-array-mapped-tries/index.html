@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Hash Array Mapped Tries &middot; Horace Williams
+    
+  </title>
+  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a href="https://github.com/worace">github</a></li>
+          <li><a href="http://twitter.com/worace">twitter</a></li>
+        </ul>
+      </header>
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Hash Array Mapped Tries</h1>
+  <time datetime="2016-05-24T00:00:00-06:00" class="post-date">24 May 2016</time>
+  <p>A Hash Array Mapped Trie (HAMT) is a structure for organizing arbitrary data in a broadly-branching tree. HAMTs are commonly used to build immutable Hash Maps in functional programming languages. By using a value&#8217;s hash code to represent a unique &#8220;path&#8221; into the tree, we can build a Hash Map on top of a tree, rather than on an Array-based table as is more commonly seen. The structure is more complex than a simple Hash Table, but provides a few key benefits, including:</p>
+<ul>
+  <li>Ability to grow the map indefinitely without re-sizing or chaining (no re-hashing penalties)</li>
+  <li>Ability to share repeated structure between similar trees</li>
+</ul>
+<p>This last point is very powerful from the perspective of copying or modifying &#8211; we can represent a modified copy of a Hash Trie by duplicating any changed values but sharing the remaining (unchanged) structure with the previous tree. We get the conceptual benefits of an immutable structure but the efficiency of a traditional mutable collection.</p>
+<p>Hash Tries have been getting a lot of attention over the last several years as a means of implementing efficient immutable data structures, especially for functional programming languages. I learned about them through exploring Clojure, which uses HAMTs as the basis for its <a href="https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/PersistentHashMap.java">immutable hash-maps</a>. They also make an appearance in <a href="https://github.com/scala/scala/blob/808f3d071e97aa23b797f2c0616c207ff1f20229/src/library/scala/collection/immutable/HashMap.scala">Scala</a>, <a href="https://hackage.haskell.org/package/unordered-containers-0.2.7.0/docs/Data-HashMap-Strict.html">Haskell</a>, and Elixir.</p>
+<h2>HAMT Structure</h2>
+<p>To implement this data structure, we&#8217;ll rely on a few key tools:</p>
+<ol>
+  <li>A Hashing Algorithm for uniquely differentiating pieces of data. Many
+    languages already provide this &#8211; in Ruby you can access an object&#8217;s
+    hashcode by calling <code>#hash</code> on it, or you can use a hashing function
+    like the <code>SHA1</code> implementation including in the <code>digest</code> library.</li>
+  <li>A trie with very high branching factor &#8211; this lets us store lots of
+    data in a very shallow (and speedy) structure.</li>
+  <li>Bitwise operations to &#8220;consume&#8221; the data&#8217;s hash code in small chunks,
+    turning a hash code into a &#8220;path&#8221; to the data&#8217;s location in the trie.</li>
+</ol>
+<p>So what does all this look like in practice? Let&#8217;s look at an example
+  creating a HAMT of order 32.</p>
+<p>Within the trie, each level can store 3 things:</p>
+<ol>
+  <li>A key</li>
+  <li>An associated value</li>
+  <li>Connections to up to 32 nested child trees</li>
+</ol>
+<p>When we want to insert a key-value pair, we&#8217;ll use the key&#8217;s hash code
+  to choose a path through the trie until we find an empty position to
+  insert it.</p>
+<p>For retrieval, we simply do the same thing in reverse &#8211; hash the key,
+  find the pathway through the trie represented by this hashcode, and
+  check tree nodes until we either find the desired key or &#8220;bottom out&#8221; at
+  the end of the tree.</p>
+<h2>Insertion Algorithm</h2>
+<p>Let&#8217;s walk through the insertion process in more detail.</p>
+<p>To insert a piece of data, we need to find an appropriate path in the
+  trie in which to place it. As we&#8217;ll see, this path is ultimately
+  determined by the key&#8217;s hash value.</p>
+<p>As we walk down the trie, we&#8217;ll be looking for 3 possible cases:</p>
+<ol>
+  <li>The current trie node is empty, so we can insert our new key and
+    value here</li>
+  <li>The current trie node is not empty, but its key is equal to the one
+    we are trying to insert, so we can overwrite its value</li>
+  <li>The current trie node is not empty, and its key value is not equal to
+    ours, so we need to go deeper in the trie.</li>
+</ol>
+<h4>Insertion Case 1</h4>
+<p>Consider inserting a new K/V pair into an empty trie. We&#8217;ll insert the
+  key &#8220;pizza&#8221; with the value &#8220;yum&#8221;. Our trie is empty so far, so the root
+  tree node has no key and value, so we can insert our pair there.</p>
+<p>Pretty easy so far.</p>
+<h4>Insertion Case 2</h4>
+<p>Let&#8217;s get the second easy case out of the way &#8211; overwriting that K/V
+  pair. We can insert the key &#8220;pizza&#8221; again, this time with the value of
+  &#8220;real yum&#8221;.</p>
+<p>We find that the root node is not empty, but its key is equal to the one
+  we&#8217;re trying to insert, so we simply change the value.</p>
+<p>Also pretty easy.</p>
+<h4>Insertion Case 3</h4>
+<p>Here is where things start to get more interesting.</p>
+<p>Let&#8217;s insert the key &#8220;calzone&#8221; with the value &#8220;aw yiss&#8221;.</p>
+<p>We first check the current (root) node &#8211; it does have a key and value,
+  and the key is <i>not</i> the one we&#8217;re trying to insert. We need to go
+  deeper into the trie to find a place for our new pair.</p>
+<p>To insert a key, we first need to generate its hash value. Again, in
+  Ruby, we can use one of the hashing functions included in the Digest
+  library. This gives us a (large) numeric value representing a unique
+  digest of that piece of data.</p>
+<p>For example:</p>
+<div class="highlight"><pre><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="nb">require</span> <span class="s2">&quot;digest&quot;</span>
+<span class="o">=&gt;</span> <span class="kp">true</span>
+<span class="o">[</span><span class="mi">2</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Digest</span><span class="o">::</span><span class="no">SHA1</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(</span><span class="s2">&quot;calzone&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="mi">334703588949583183218034173573122019749278332384</span>
+</pre></div>
+<p>To walk the trie and an appropriate location for this element, we&#8217;ll
+  &#8220;consume&#8221; this hash-code in 5-bit chunks.</p>
+<p>Why 5 bits at a time?</p>
+<p>This is determined by the branching factor of the tree &#8211; with an
+  order-32 trie, we have 32 possible children from each node in the tree.
+  A 5-bit hash-code chunk allows us to concisely represent all 32 possible
+  child branches using a single bitmap. <code>(=2 ** 5 == 32)</code></p>
+<p>To get the numeric value of the first 5 bits of our hashcode, we can
+  bitwise <code>AND</code> it with a 5-bit number containing all &#8220;on&#8221; bits:</p>
+<div class="highlight"><pre><span class="o">[</span><span class="mi">13</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="mi">31</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">&quot;11111&quot;</span>
+<span class="o">[</span><span class="mi">14</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Digest</span><span class="o">::</span><span class="no">SHA1</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(</span><span class="s2">&quot;calzone&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">31</span>
+<span class="o">=&gt;</span> <span class="mi">0</span>
+</pre></div>
+<p>This tells us that the &#8220;right-most&#8221; 5 bits of the number
+  <code>334703588949583183218034173573122019749278332384</code> (&#8220;calzone&#8220;&#8216;s hash code)
+  are <code>00000</code>, or 0.</p>
+<p>This tells us the position in the current node&#8217;s children array to
+  insert this element.</p>
+<p>Thus we can move to the <code>0</code> th subtree under our current one and retry
+  our insertion algorithm. In our case, &#8220;calzone&#8221; is only the second
+  element to be inserted in the trie, so the =0=th child of the &#8220;pizza&#8221;
+  node will be empty, and we can insert our data there.</p>
+<h4>Consuming the hash code</h4>
+<p>We mentioned that we would &#8220;consume&#8221; the key&#8217;s hash code in 5-bit
+  chunks. This helps us fully exploit the wide branching factor of the
+  trie to insert a lot of elements in a fairly shallow data structure.</p>
+<p>If we simply re-use the same 5 (rightmost) bits that we used in the
+  previous example, we effectively turn our trie into a collection of 32
+  linked lists, since all elements that share an initial 5-bit value will
+  stack up on one another in a chain.</p>
+<p>We would prefer to get more of a &#8220;zig-zag&#8221; effect, and we can achieve
+  this by making sure we use a different 5-bit chunk at each layer in the
+  trie.</p>
+<p>To do this, we&#8217;ll use another bit-wise operator, the <b>right shift</b>.</p>
+<p>A bitwise shift simply takes the bits that make a number and slides them in one direction or another.</p>
+<p>In the case of a left shift, we move the existing bits to the left, usually padding them with 0&#8217;s on the righthand side.</p>
+<p>For example:</p>
+<div class="highlight"><pre><span class="o">[</span><span class="mi">20</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="mi">15</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">&quot;1111&quot;</span>
+<span class="o">[</span><span class="mi">21</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="p">(</span><span class="mi">15</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="s2">&quot;11110000&quot;</span>
+</pre></div>
+<p>In our case, we just want to consume the next 5 bits of our hash code value, so we can use a right shift of 5 bits.</p>
+<p>Consider our &#8220;calzone&#8221; example from before:</p>
+<div class="highlight"><pre><span class="o">[</span><span class="mi">24</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="p">(</span><span class="no">Digest</span><span class="o">::</span><span class="no">SHA1</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(</span><span class="s2">&quot;calzone&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">31</span>
+<span class="o">=&gt;</span> <span class="mi">15</span>
+</pre></div>
+<p>We now get a completely different subtrie index, helping us avoid the &#8220;stacking&#8221; behavior we would get if we just re-used the existing one. As we walk down the trie, we want to use this technique to shift off 5 bits at each layer.</p>
+<h2>Retrieval Algorithm</h2>
+<p>The retrieval process is effectively the same. We&#8217;ll simply retrieve the
+  located value rather than inserting one. Consider the same 3 cases:</p>
+<ol>
+  <li>The current tree node is empty &#8211; this means we have &#8220;bottomed out&#8221;,
+    so our key must not exist in the trie</li>
+  <li>The current tree node contains the key you&#8217;re searching for, so
+    retrieve its value.</li>
+  <li>The current tree node is not empty, but doesn&#8217;t contain the key we&#8217;re
+    looking for. Use another 5-bit slice of the hash code to identify the
+    next step to take into the trie.</li>
+</ol>
+<h1>HAMT Performance</h1>
+<p>The strength of the HAMT is its wide branching factor. The 32-bit factor is common because it can be manipulated efficiently on 32-bit processors, but you could in theory use an even larger factor if needed.</p>
+<p>This branching factor allows us to store a large amount of keys and values in a relatively shallow tree which will still be very quick to traverse.</p>
+<p>For example in just 6 layers, we could store <code>33,554,432</code> (<code>32 ** 5</code>, assuming the root only stores 1 pair) keys and values.</p>
+<p>Technically, the retrieval performance of our Tree will be logarithmic, as opposed to the Constant-time performance offered by traditional Hash Map implementations. However since the log base is so large, the growth flattens out very quickly and in practice isn&#8217;t much worse off than a traditional hash table.</p>
+<h1>Other Considerations &#8211; Structural Sharing</h1>
+<p>We mentioned the ability of our tries to potentially share duplicated
+  structure with other tries. This is a common approach to creating
+  immutable or &#8220;persistent&#8221; hash maps and is used in several functional
+  languages like Clojure, Scala, and Frege.</p>
+<p>The goal for this technique is to preserve every intermediate state of
+  the Map (i.e. they &#8220;persist&#8221;). Thus each operation on the map should
+  generate a new map value rather than modifying an existing one in place.</p>
+<p>This would be problematic if we had to completely copy every node in the
+  trie each time we changed anything. But because of the trie&#8217;s nested
+  structure, we have a better option.</p>
+<p>Whenever we need to change the trie, we duplicate the node in question
+  as well as all the nodes within its path to the root.</p>
+<p>Thus we get a new root node (this represents the &#8220;new&#8221; Map produced by
+  our operation), and a new path to the internal node that was actually
+  changed.</p>
+<p>The nodes that we copy can continue referring to the other existing
+  nodes so that those don&#8217;t have to be copied. In practice this allows us
+  to produce a &#8220;copy&#8221; of the entire trie by actually copying only a
+  handful of nodes.</p>
+<h1>Further Reading</h1>
+<ul>
+  <li>The data structure was invented by Phil Bagwell, and you can find the original paper on it <a href="http://lampwww.epfl.ch/papers/idealhashtrees.pdf">here</a>.</li>
+  <li><a href="https://www.youtube.com/watch?v%3DwASCH_gPnDw">Rich Hickey discussing HAMTs and other Clojure internals</a></li>
+  <li><a href="https://www.youtube.com/watch?v%3DGibNOQVelFY">ClojureWest Talk about Optimizing Clojure&#8217;s Persistent Data Structures</a></li>
+</ul>
+
+</article>
+
+      </main>
+
+    </div>
+
+    
+  </body>
+</html>
