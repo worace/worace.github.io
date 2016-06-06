@@ -176,6 +176,56 @@ Sometimes Ruby code appears in other kinds of files that don't end with the stan
 
 #+END_SRC
 
+** Ruby Version Manager
 
+Most Ruby developers these days are using some kind of Version Manager to simplify the process of installing and jumping around between various ruby versions. This is a great feature to have, but it unfortunately adds another layer of indirection between emacs and the Ruby installation living on our machine. And to further complicate things, the community hasn't really standardized on any of the particular options, which means you're likely using one of Rbenv, RVM, or Chruby. Depending on which of these you're using, you'll want to pull in the appropriate config below:
 
+*** RVM (Using [[https://github.com/senny/rvm.el][rvm.el]])
 
+Add the =rvm= package and invoke it using =(rvm-use-default)=
+
+#+BEGIN_SRC emacs-lisp
+(setq package-list '(better-defaults
+                     solarized-theme
+                     helm-projectile
+                     helm-ag
+                     ruby-electric
+                     rvm))
+;...
+
+(rvm-use-default)
+#+END_SRC
+
+*** RBENV (using [[https://github.com/senny/rbenv.el][rbenv.el]] )
+
+#+BEGIN_SRC emacs-lisp
+(setq package-list '(better-defaults
+                     solarized-theme
+                     helm-projectile
+                     helm-ag
+                     ruby-electric
+                     rbenv))
+;...
+
+(global-rbenv-mode)
+(rbenv-use-global)
+
+;; Optional -- if your RBENV installation is located somewhere besides
+;; ~/.rbenv, you will need to configure this:
+;;(setq rbenv-installation-dir "/usr/local/rbenv")
+
+#+END_SRC
+
+*** Chruby (using [[https://github.com/plexus/chruby.el][chruby.el]])
+
+#+BEGIN_SRC emacs-lisp
+(setq package-list '(better-defaults
+                     solarized-theme
+                     helm-projectile
+                     helm-ag
+                     ruby-electric
+                     chruby))
+;...
+
+(chruby "2.2.2") ;;  or whichever version you want to use
+#+END_SRC
