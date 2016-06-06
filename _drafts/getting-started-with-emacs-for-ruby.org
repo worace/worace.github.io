@@ -6,6 +6,7 @@ layout: post
 Lately I've been slowly bringing a few of my students at Turing into the Emacs fold. Along the way I've been thinking about what a sufficient but minimal beginner's Emacs setup for working with Ruby code would look like. In this post I'll try to document some of the tools and configuration we've found useful. I'm also hoping to re-use much of this material for a "Beginner's Intro to Emacs" session we're offering at Turing in a few weeks, so this material is targeted at emacs newcomers.
 
 ** Emacs Configuration 101
+
 The Emacs configuration journey starts with a special directory on your machine located at =~/.emacs.d=. When Emacs starts up, it will by default look for a file called =init.el= in this directory and use that to load any user-specific configuration you want to provide. (This is similar to how your shell loads any user configuration files at =~/.profile= or =~/.bashrc=, etc)
 
 To follow along, go ahead and create this directory and file:
@@ -17,7 +18,73 @@ If your machine already has an emacs install in this directory and you want to s
 
 : mv ~/.emacs.d ~/.emacs.d.old
 
+Your original config will be safely waiting for you should you decide to return to it.
+
+*** Baby's First Emacs Lisp
+
+A suspicious reader may have noticed the file extension on the init file we just created: =.el=. This stands for Emacs Lisp, the language in which Emacs is written and scripted. It turns out Emacs is basically a big old Lisp interpreter with a bunch of neat features for manipulating text buffers thrown in for kicks. So are we about to be writing... /Lisp/? You bet your Auntie's parentheses we are!
+
+When Emacs boots, it will process our =init.el= as Emacs Lisp, so within this file we'll be writing Elisp expressions to customize how the editor behaves.
+
 ** Emacs: Out of the 1990's
+
+Despite its endearing homeliness, a fresh Emacs installation makes a somewhat dated first impression:
+
+[[/public/images/emacs_splash_screen.png]]
+
+The default Emacs configuration includes some clunky things like menu bars and a loud "splash" screen. [[https://github.com/technomancy/better-defaults][BetterDefaults]] is a popular Emacs package for this purpose -- it provides more reasonable defaults for some of Emacs' more idiosyncratic built-in features.
+
+It also gives us a good opportunity to talk about...
+
+*** Emacs Packages
+
+The standard unit of distributing some Emacs code is a "package." There are several free online package repositories out there, the most popular being [[https://elpa.gnu.org/][GNU ELPA]], [[https://www.emacswiki.org/emacs/ELPA][ELPA]], [[https://marmalade-repo.org/][Marmalade]], and [[https://melpa.org/][Melpa]].
+
+Unfortunately, Emacs doesn't come with a built-in solution for defining what packages we want to use in a "manifest" format (like we might encounter with a Gemfile or package.json in a Ruby or Node project).
+
+Fortunately it's pretty easy to add this functionality, so go ahead and add this Elisp to your =init.el=:
+
+#+BEGIN_SRC emacs-lisp
+; list the repositories containing them
+(setq package-archives '(("elpa" . "http://tromey.com/elpa/")
+                         ("gnu" . "http://elpa.gnu.org/packages/")
+                         ("marmalade" . "http://marmalade-repo.org/packages/")))
+
+; activate all the packages (in particular autoloads)
+(package-initialize)
+
+; fetch the list of packages available
+(unless package-archive-contents
+  (package-refresh-contents))
+
+; list the packages you want
+(setq package-list '(better-defaults))
+
+; install the missing packages
+(dolist (package package-list)
+  (unless (package-installed-p package)
+    (package-install package)))
+
+(require 'better-defaults)
+#+END_SRC
+
+This first Elisp snippet lets us define a list of package archives, define a list of packages we want to install, and then, if any of them are missing, install them automatically. From now on, we can simply add packages to our =package-list= and they should be automatically installed when we start emacs.
+
+The =require= expression on the last line loads the better-defaults package that we just installed, so you should see it taking effect.
+
+Save this file and restart emacs if it's already running (remember: =C-x C-c= to quit), and you should see emacs pause briefly as it installs the Better Defaults package. Then you should see a slightly cleaner interface now that the toolbars are removed.
+
+** A Bit More UI:
+
+Next let's get rid of the default Emacs splash screen and have it put us into an empty buffer instead. The =initial-major-mode= setting can take any of Emacs' major modes -- a lot of people use Org or Markdown mode for their scratch buffer, but since we're targeting a solid ruby setup here, we'll use that.
+
+#+BEGIN_SRC emacs-lisp
+(setq inhibit-splash-screen t
+      initial-scratch-message nil
+      initial-major-mode 'ruby-mode)
+#+END_SRC
+
+
 ** OS X Convenience Keybindings
 gui emacs from terminal
 setting CMD as super
