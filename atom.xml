@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
- <title>Worace's Workshop</title>
- <link href="http://worace.workshttps://worace.github.io/blog/atom.xml" rel="self"/>
- <link href="http://worace.workshttps://worace.github.io/blog/"/>
- <updated>2016-05-23T21:28:53-06:00</updated>
+ <title>Horace Williams</title>
+ <link href="http://worace.works/atom.xml" rel="self"/>
+ <link href="http://worace.works/"/>
+ <updated>2016-06-05T20:36:58-06:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -13,225 +13,348 @@
 
  
  <entry>
-   <title>Posting In Org Mode</title>
-   <link href="http://worace.workshttps://worace.github.io/blog/2016/05/23/test-org-mode/"/>
-   <updated>2016-05-23T00:00:00-06:00</updated>
-   <id>http://worace.works/2016/05/23/test-org-mode</id>
-   <content type="html">&lt;p&gt;Still need to work on configuring this but it is pretty neat so far&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Pizza&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;initialize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;arg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;nb&quot;&gt;puts&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;LOL RUBY CODE&amp;quot;&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+   <title>RSA Cryptography In Clojure</title>
+   <link href="http://worace.works/2016/06/05/rsa-cryptography-in-clojure/"/>
+   <updated>2016-06-05T00:00:00-06:00</updated>
+   <id>http://worace.works/2016/06/05/rsa-cryptography-in-clojure</id>
+   <content type="html">&lt;p&gt;I recently found myself needing to do some public/private key cryptography using RSA in Clojure. Fortunately there is pretty good library support for doing this kind of thing in Java, but it still took me a while to get all of the interop working. Additionally, I needed to be able to serialize and de-serialize keys in a couple of formats (.pem and .der, specifically), so we&amp;#8217;ll look at setting this up as well.&lt;/p&gt;
+&lt;h2&gt;Generating a Keypair&lt;/h2&gt;
+&lt;p&gt;Keys are generated based on the desired length and algorithm. To generate a key we have to do a little bit of Java ceremony around requesting a &lt;code&gt;KeyPairGenerator&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;We can use this to generate a Private Key, and from that Private Key retrieve the Public Key if needed.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kp-generator&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;doto &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.KeyPairGenerator/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.initialize&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
 
-  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;cook_za&lt;/span&gt;
-    &lt;span class=&quot;s2&quot;&gt;&amp;quot;mmm&amp;quot;&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;generate-keypair&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Generate an RSA Keypair. Accepts optional length. Default key length is 2048. Minimum key length is 512.&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;assert &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;&amp;gt;= &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;512&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA Key must be at least 512 bits long.&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.generateKeyPair&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;kp-generator&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;def &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;keypair&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;generate-keypair&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;512&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;def &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;public-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getPublic&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;keypair&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;writin-some-clj&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;arg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;println &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;HI&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;h2&gt;Encrypting, Decrypting, and Encoding Messages&lt;/h2&gt;
+&lt;p&gt;The Java crypto methods we&amp;#8217;re using generally return a Byte Array of their encrypted data. For my use-case I wanted to encode these in Base64, which is easy in Java 8 thanks to the built-in Base64 module (For earlier versions, check out &lt;a href=&quot;https://docs.oracle.com/javase/7/docs/api/javax/xml/bind/DatatypeConverter.html&quot;&gt;javax.xml.bind.DatatypeConverter&lt;/a&gt;).&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;decode64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.decode&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.util.Base64/getDecoder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;encode64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;bytes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.encodeToString&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.util.Base64/getEncoder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;bytes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;h1&gt;Second Heading&lt;/h1&gt;
-&lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam fringilla feugiat est eu suscipit. Etiam convallis odio id orci bibendum, eget efficitur dui auctor. Nunc pretium nec augue nec tincidunt. Praesent eget quam rhoncus, accumsan sapien quis, interdum lacus. Vivamus vitae malesuada nibh, quis feugiat lectus. Sed eget justo ornare, tristique libero fermentum, pellentesque nisi. Sed ut tortor faucibus, fermentum purus eu, sagittis lectus. Etiam commodo diam sem, non posuere massa efficitur sit amet. Donec a egestas odio.&lt;/p&gt;
-&lt;p&gt;Pellentesque eu blandit purus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Maecenas in ultrices nisi, sit amet vulputate est. Donec gravida dui vel massa viverra, vitae gravida tortor blandit. Vivamus tempus malesuada dui, quis convallis est imperdiet at. Vivamus pharetra rhoncus dui, nec luctus neque consequat quis. Duis semper, nunc sed ultricies egestas, orci quam maximus felis, sit amet placerat enim felis at dolor. Sed tincidunt facilisis vehicula. Pellentesque enim sem, tempor a feugiat eget, cursus at nulla. Aliquam mauris nisl, scelerisque eu iaculis sit amet, aliquam sed nulla.&lt;/p&gt;
-&lt;p&gt;Nam ac ex tortor. Vivamus auctor sem a odio suscipit, tincidunt pretium lacus dictum. Vestibulum bibendum augue felis, at sodales arcu ultrices vitae. Suspendisse id lectus venenatis, rhoncus nisi ac, aliquet nulla. In quis urna aliquet, finibus diam quis, congue est. Pellentesque nec feugiat enim. Donec cursus semper maximus.&lt;/p&gt;
-&lt;h3&gt;Subheadings 3&lt;/h3&gt;
-&lt;p&gt;&lt;a href=&quot;https://clojure.org/&quot;&gt;Clojjjjjure&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Nam ac ex tortor. Vivamus auctor sem a odio suscipit, tincidunt pretium lacus dictum. Vestibulum bibendum augue felis, at sodales arcu ultrices vitae. Suspendisse id lectus venenatis, rhoncus nisi ac, aliquet nulla. In quis urna aliquet, finibus diam quis, congue est. Pellentesque nec feugiat enim. Donec cursus semper maximus.&lt;/p&gt;
-&lt;ul&gt;
-  &lt;li&gt;a list&lt;/li&gt;
-  &lt;li&gt;with bullets&lt;/li&gt;
-  &lt;li&gt;hi hi&lt;/li&gt;
-  &lt;li&gt;link in a list&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;Even Have an image under a subheading&lt;/h2&gt;
-&lt;p&gt;&lt;img src=&quot;https://upload.wikimedia.org/wikipedia/commons/b/b8/Brook_trout_1918.jpg&quot; alt=&quot;https://upload.wikimedia.org/wikipedia/commons/b/b8/Brook_trout_1918.jpg&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Now we can use the keys we generated to encrypt and decrypt a message. This being public/private key crypto, remember of course that encryption is done using the public key and decryption using the private.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;encrypt&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;public-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Perform RSA public key encryption of the given message string.&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   Returns a Base64-encoded string of the encrypted data.&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode64&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;let &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;cipher&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;doto &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;javax.crypto.Cipher/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA/ECB/PKCS1Padding&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+                  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.init&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;javax.crypto.Cipher/ENCRYPT_MODE&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;public-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))]&lt;/span&gt;
+     &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.doFinal&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;cipher&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getBytes&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;decrypt&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;private-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Use an RSA private key to decrypt a Base64-encoded string&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   of ciphertext.&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;let &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;cipher&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;doto &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;javax.crypto.Cipher/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA/ECB/PKCS1Padding&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+                 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.init&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;javax.crypto.Cipher/DECRYPT_MODE&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;private-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))]&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt;
+         &lt;span class=&quot;nv&quot;&gt;decode64&lt;/span&gt;
+         &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.doFinal&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;cipher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+         &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;map &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+         &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;apply &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h2&gt;Signing and Verifying&lt;/h2&gt;
+&lt;p&gt;The other big asymmetric crypto operation is to sign using a private key and verify using a public key. This is pretty easy with a bit of Java interop as well.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;sign&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA private key signing of a message. Takes message as string&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;private-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode64&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;let &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;msg-data&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getBytes&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+         &lt;span class=&quot;nv&quot;&gt;sig&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;doto &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.Signature/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;SHA256withRSA&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+               &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.initSign&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;private-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.SecureRandom.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+               &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.update&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;msg-data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))]&lt;/span&gt;
+     &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.sign&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;sig&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;verify&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;encoded-sig&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;public-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA public key verification of a Base64-encoded signature and an assumed source message. Returns true/false if signature is valid.&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;let &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;msg-data&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getBytes&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;signature&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;decode64&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;encoded-sig&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;sig&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;doto &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.Signature/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;SHA256withRSA&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+              &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.initVerify&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;public-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+              &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.update&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;msg-data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))]&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.verify&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;sig&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;signature&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h2&gt;Serializing and Deserializing Keys&lt;/h2&gt;
+&lt;p&gt;Finally for my use-case it was important to be able to serialize and de-serialize keys in a format that would be readable by other systems. I found this part the trickiest to get working due to relatively sparse documentation and some confusion about the various formats and key serialization algorithms, but here it is.&lt;/p&gt;
+&lt;h3&gt;DER Encoding Public Keys&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;der-string-&amp;gt;pub-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Generate an RSA public key from a DER-encoded Base64 string.&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   Some systems like to line-wrap these at 64 characters, so we&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   have to get rid of any newlines before decoding.&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;let &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;non-wrapped&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;clojure.string/replace&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;\n&amp;quot;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;key-bytes&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;decode64&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;non-wrapped&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;spec&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.spec.X509EncodedKeySpec.&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;key-bytes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;key-factory&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.KeyFactory/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)]&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.generatePublic&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;key-factory&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;spec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;public-key-&amp;gt;der-string&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Generate DER-formatted string for a public key.&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;-&amp;gt; &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;key&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;.getEncoded&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;encode64&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;clojure.string/replace&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;\n&amp;quot;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h3&gt;DER Encoding Private Keys&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;der-string-&amp;gt;private-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.generatePrivate&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.KeyFactory/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+                    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.spec.PKCS8EncodedKeySpec.&lt;/span&gt;
+                     &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;decode64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getBytes&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;private-key-&amp;gt;der-string&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;private-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;-&amp;gt; &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;private-key&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;.getEncoded&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;encode64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h2&gt;PEM-Encoding&lt;/h2&gt;
+&lt;p&gt;PEM-encoding is another common format for serializing cryptographic keys. I was able to get everything so far working using just pieces from Java&amp;#8217;s standard library, but after much experimentation could never get it to read PEM-encoded keys reliably. So I ended up reaching for &lt;a href=&quot;https://www.bouncycastle.org/java.html&quot;&gt;Bouncy Castle&lt;/a&gt;, one of the go-to crypto Java crypto libraries.&lt;/p&gt;
+&lt;p&gt;BC supports a sizeable menu of different signing, hashing, and encryption algorithms. Fortunately for me reading and writing PEM keys was tucked in among them.&lt;/p&gt;
+&lt;p&gt;To pull in BouncyCastle I used this &lt;code&gt;project.clj&lt;/code&gt; configuration for leiningen:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defproject &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;block-chain&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;0.2.0&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;ss&quot;&gt;:dependencies&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;org.clojure/clojure&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;1.8.0&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+                 &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;org.bouncycastle/bcpkix-jdk15on&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;1.53&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]])&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Then used it to decode the keys.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c1&quot;&gt;;; Have to do this bit of setup first so the keyparsers&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;;; can find BouncyCastle&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.Security/addProvider&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;org.bouncycastle.jce.provider.BouncyCastleProvider.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;keydata&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;reader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+ &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;reader&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;org.bouncycastle.openssl.PEMParser.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.readObject&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;pem-string-&amp;gt;key-pair&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Convert a PEM-formatted private key string to a public/private keypair.&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   Returns java.security.KeyPair.&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;let &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;keydata&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;io/reader&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getBytes&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))]&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getKeyPair&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;kd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;pem-string-&amp;gt;pub-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Convert a PEM-formatted public key string to an RSA public key.&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   Returns sun.security.rsa.RSAPublicKeyImpl&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;let &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;keydata&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;io/reader&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getBytes&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;kf&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.KeyFactory/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;spec&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.spec.X509EncodedKeySpec.&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getEncoded&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;kd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))]&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.generatePublic&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;kf&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;spec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;format-pem-string&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;encoded&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;key-type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Takes a Base64-encoded string of key data and formats it&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   for file-output following openssl&amp;#39;s convention of wrapping lines&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   at 64 characters and appending the appropriate header and footer for&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   the specified key type&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;let &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;chunked&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;encoded&lt;/span&gt;
+                     &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;partition&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;64&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[])&lt;/span&gt;
+                     &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;map &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;apply str &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;formatted&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;join &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;\n&amp;quot;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;chunked&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)]&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;str &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;-----BEGIN &amp;quot;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;key-type&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;-----\n&amp;quot;&lt;/span&gt;
+         &lt;span class=&quot;nv&quot;&gt;formatted&lt;/span&gt;
+         &lt;span class=&quot;s&quot;&gt;&amp;quot;\n-----END &amp;quot;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;key-type&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;-----\n&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;private-key-&amp;gt;pem-string&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Convert RSA private keypair to a formatted PEM string for saving in&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   a .pem file. By default these private keys will encode themselves as PKCS#8&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   data (e.g. when calling (.getEncoded private-key)), so we have to convert it&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   to ASN1, which PEM uses (this seems to also be referred to as PKCS#1).&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   More info here http://stackoverflow.com/questions/7611383/generating-rsa-keys-in-pkcs1-format-in-java&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;-&amp;gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getEncoded&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;org.bouncycastle.asn1.pkcs.PrivateKeyInfo/getInstance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.parsePrivateKey&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.toASN1Primitive&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getEncoded&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;format-pem-string&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA PRIVATE KEY&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;public-key-&amp;gt;pem-string&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;Generate PEM-formatted string for a public key. This is simply a base64&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   encoding of the key wrapped with the appropriate header and footer.&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;format-pem-string&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getEncoded&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+                     &lt;span class=&quot;s&quot;&gt;&amp;quot;PUBLIC KEY&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;One last note about PEM formatting and keys &amp;#8211; in some instances a PEM key is simply the same Base64-encoded DER representation of the key wrapped with the &amp;#8220;BEGIN KEY&amp;#8221; / &amp;#8220;END KEY&amp;#8221; header and footer. However the PEM format can be used slightly differently by a variety of key types, and because of this it sometimes needs to include additional metadata about what key format is being encoded.&lt;/p&gt;
+&lt;h2&gt;Further Reading&lt;/h2&gt;
+&lt;p&gt;The ins and outs of serializing cryptographic keys can get pretty complex, and there are unfortunately a lot of ways to do things using very similar encoding formats. I&amp;#8217;ve managed to cobble together enough for the use-cases I needed here, but if you&amp;#8217;d like to understand more, &lt;a href=&quot;https://tls.mbed.org/kb/cryptography/asn1-key-structures-in-der-and-pem&quot;&gt;here is a good article&lt;/a&gt; that goes into more depth.&lt;/p&gt;
 </content>
  </entry>
  
  <entry>
-   <title>Example content</title>
-   <link href="http://worace.workshttps://worace.github.io/blog/2016/01/02/example-content/"/>
-   <updated>2016-01-02T00:00:00-07:00</updated>
-   <id>http://worace.works/2016/01/02/example-content</id>
-   <content type="html">&lt;div class=&quot;message&quot;&gt;
-  Howdy! This is an example blog post that shows several types of HTML content supported in this theme.
-&lt;/div&gt;
-
-&lt;p&gt;Cum sociis natoque penatibus et magnis &lt;a href=&quot;#&quot;&gt;dis parturient montes&lt;/a&gt;, nascetur ridiculus mus. &lt;em&gt;Aenean eu leo quam.&lt;/em&gt; Pellentesque ornare sem lacinia quam venenatis vestibulum. Sed posuere consectetur est at lobortis. Cras mattis consectetur purus sit amet fermentum.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Curabitur blandit tempus porttitor. Nullam quis risus eget urna mollis ornare vel eu leo. Nullam id dolor id nibh ultricies vehicula ut id elit.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Etiam porta &lt;strong&gt;sem malesuada magna&lt;/strong&gt; mollis euismod. Cras mattis consectetur purus sit amet fermentum. Aenean lacinia bibendum nulla sed consectetur.&lt;/p&gt;
-
-&lt;h2 id=&quot;inline-html-elements&quot;&gt;Inline HTML elements&lt;/h2&gt;
-
-&lt;p&gt;HTML defines a long list of available inline tags, a complete list of which can be found on the &lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Web/HTML/Element&quot;&gt;Mozilla Developer Network&lt;/a&gt;.&lt;/p&gt;
-
+   <title>Hash Array Mapped Tries</title>
+   <link href="http://worace.works/2016/05/24/hash-array-mapped-tries/"/>
+   <updated>2016-05-24T00:00:00-06:00</updated>
+   <id>http://worace.works/2016/05/24/hash-array-mapped-tries</id>
+   <content type="html">&lt;p&gt;A Hash Array Mapped Trie (HAMT) is a structure for organizing arbitrary data in a broadly-branching tree. HAMTs are commonly used to build immutable Hash Maps in functional programming languages. By using a value&amp;#8217;s hash code to represent a unique &amp;#8220;path&amp;#8221; into the tree, we can build a Hash Map on top of a tree, rather than on an Array-based table as is more commonly seen. The structure is more complex than a simple Hash Table, but provides a few key benefits, including:&lt;/p&gt;
 &lt;ul&gt;
-  &lt;li&gt;&lt;strong&gt;To bold text&lt;/strong&gt;, use &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;strong&amp;gt;&lt;/code&gt;.&lt;/li&gt;
-  &lt;li&gt;&lt;em&gt;To italicize text&lt;/em&gt;, use &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;em&amp;gt;&lt;/code&gt;.&lt;/li&gt;
-  &lt;li&gt;Abbreviations, like &lt;abbr title=&quot;HyperText Markup Langage&quot;&gt;HTML&lt;/abbr&gt; should use &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;abbr&amp;gt;&lt;/code&gt;, with an optional &lt;code class=&quot;highlighter-rouge&quot;&gt;title&lt;/code&gt; attribute for the full phrase.&lt;/li&gt;
-  &lt;li&gt;Citations, like &lt;cite&gt;— Mark otto&lt;/cite&gt;, should use &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;cite&amp;gt;&lt;/code&gt;.&lt;/li&gt;
-  &lt;li&gt;&lt;del&gt;Deleted&lt;/del&gt; text should use &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;del&amp;gt;&lt;/code&gt; and &lt;ins&gt;inserted&lt;/ins&gt; text should use &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;ins&amp;gt;&lt;/code&gt;.&lt;/li&gt;
-  &lt;li&gt;Superscript &lt;sup&gt;text&lt;/sup&gt; uses &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;sup&amp;gt;&lt;/code&gt; and subscript &lt;sub&gt;text&lt;/sub&gt; uses &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;sub&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Ability to grow the map indefinitely without re-sizing or chaining (no re-hashing penalties)&lt;/li&gt;
+  &lt;li&gt;Ability to share repeated structure between similar trees&lt;/li&gt;
 &lt;/ul&gt;
-
-&lt;p&gt;Most of these elements are styled by browsers with few modifications on our part.&lt;/p&gt;
-
-&lt;h2 id=&quot;footnotes&quot;&gt;Footnotes&lt;/h2&gt;
-
-&lt;p&gt;Footnotes are supported as part of the Markdown syntax. Here’s one in action. Clicking this number&lt;sup id=&quot;fnref:fn-sample_footnote&quot;&gt;&lt;a href=&quot;#fn:fn-sample_footnote&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; will lead you to a footnote. The syntax looks like:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Clicking this number[^fn-sample_footnote]&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Each footnote needs the &lt;code class=&quot;highlighter-rouge&quot;&gt;^fn-&lt;/code&gt; prefix and a unique ID to be referenced for the footnoted content. The syntax for that list looks something like this:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;[^fn-sample_footnote]: Handy! Now click the return link to go back.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;You can place the footnoted content wherever you like. Markdown parsers should properly place it at the bottom of the post.&lt;/p&gt;
-
-&lt;h2 id=&quot;heading&quot;&gt;Heading&lt;/h2&gt;
-
-&lt;p&gt;Vivamus sagittis lacus vel augue rutrum faucibus dolor auctor. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.&lt;/p&gt;
-
-&lt;h3 id=&quot;code&quot;&gt;Code&lt;/h3&gt;
-
-&lt;p&gt;Inline code is available with the &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;code&amp;gt;&lt;/code&gt; element. Snippets of multiple lines of code are supported through Pygments. Longer lines will automatically scroll horizontally when needed.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-js&quot; data-lang=&quot;js&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// Example can be run directly in your JavaScript console&lt;/span&gt;
-
-&lt;span class=&quot;c1&quot;&gt;// Create a function that takes two arguments and returns the sum of those arguments&lt;/span&gt;
-&lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;a&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;b&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;return a + b&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;c1&quot;&gt;// Call the function&lt;/span&gt;
-&lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// &amp;gt; 8&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;You may also optionally show code snippets with line numbers. Add &lt;code class=&quot;highlighter-rouge&quot;&gt;linenos&lt;/code&gt; to the Pygments tags.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-js&quot; data-lang=&quot;js&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c1&quot;&gt;// Example can be run directly in your JavaScript console&lt;/span&gt;
-
-&lt;span class=&quot;c1&quot;&gt;// Create a function that takes two arguments and returns the sum of those arguments&lt;/span&gt;
-&lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;a&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;b&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;return a + b&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;c1&quot;&gt;// Call the function&lt;/span&gt;
-&lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// &amp;gt; 8&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa.&lt;/p&gt;
-
-&lt;h3 id=&quot;gists-via-github-pages&quot;&gt;Gists via GitHub Pages&lt;/h3&gt;
-
-&lt;p&gt;Vestibulum id ligula porta felis euismod semper. Nullam quis risus eget urna mollis ornare vel eu leo. Donec sed odio dui.&lt;/p&gt;
-
-&lt;noscript&gt;&lt;pre&gt;400: Invalid request
-&lt;/pre&gt;&lt;/noscript&gt;
-&lt;script src=&quot;https://gist.github.com/13f94b734a4ddb132735.js?file=gist.md&quot;&gt; &lt;/script&gt;
-
-&lt;p&gt;Aenean eu leo quam. Pellentesque ornare sem lacinia quam venenatis vestibulum. Nullam quis risus eget urna mollis ornare vel eu leo. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec sed odio dui. Vestibulum id ligula porta felis euismod semper.&lt;/p&gt;
-
-&lt;h3 id=&quot;lists&quot;&gt;Lists&lt;/h3&gt;
-
-&lt;p&gt;Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Praesent commodo cursus magna, vel scelerisque nisl consectetur et.&lt;/li&gt;
-  &lt;li&gt;Donec id elit non mi porta gravida at eget metus.&lt;/li&gt;
-  &lt;li&gt;Nulla vitae elit libero, a pharetra augue.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Donec ullamcorper nulla non metus auctor fringilla. Nulla vitae elit libero, a pharetra augue.&lt;/p&gt;
-
+&lt;p&gt;This last point is very powerful from the perspective of copying or modifying &amp;#8211; we can represent a modified copy of a Hash Trie by duplicating any changed values but sharing the remaining (unchanged) structure with the previous tree. We get the conceptual benefits of an immutable structure but the efficiency of a traditional mutable collection.&lt;/p&gt;
+&lt;p&gt;Hash Tries have been getting a lot of attention over the last several years as a means of implementing efficient immutable data structures, especially for functional programming languages. I learned about them through exploring Clojure, which uses HAMTs as the basis for its &lt;a href=&quot;https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/PersistentHashMap.java&quot;&gt;immutable hash-maps&lt;/a&gt;. They also make an appearance in &lt;a href=&quot;https://github.com/scala/scala/blob/808f3d071e97aa23b797f2c0616c207ff1f20229/src/library/scala/collection/immutable/HashMap.scala&quot;&gt;Scala&lt;/a&gt;, &lt;a href=&quot;https://hackage.haskell.org/package/unordered-containers-0.2.7.0/docs/Data-HashMap-Strict.html&quot;&gt;Haskell&lt;/a&gt;, and Elixir.&lt;/p&gt;
+&lt;h2&gt;HAMT Structure&lt;/h2&gt;
+&lt;p&gt;To implement this data structure, we&amp;#8217;ll rely on a few key tools:&lt;/p&gt;
 &lt;ol&gt;
-  &lt;li&gt;Vestibulum id ligula porta felis euismod semper.&lt;/li&gt;
-  &lt;li&gt;Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.&lt;/li&gt;
-  &lt;li&gt;Maecenas sed diam eget risus varius blandit sit amet non magna.&lt;/li&gt;
+  &lt;li&gt;A Hashing Algorithm for uniquely differentiating pieces of data. Many
+    languages already provide this &amp;#8211; in Ruby you can access an object&amp;#8217;s
+    hashcode by calling &lt;code&gt;#hash&lt;/code&gt; on it, or you can use a hashing function
+    like the &lt;code&gt;SHA1&lt;/code&gt; implementation including in the &lt;code&gt;digest&lt;/code&gt; library.&lt;/li&gt;
+  &lt;li&gt;A trie with very high branching factor &amp;#8211; this lets us store lots of
+    data in a very shallow (and speedy) structure.&lt;/li&gt;
+  &lt;li&gt;Bitwise operations to &amp;#8220;consume&amp;#8221; the data&amp;#8217;s hash code in small chunks,
+    turning a hash code into a &amp;#8220;path&amp;#8221; to the data&amp;#8217;s location in the trie.&lt;/li&gt;
 &lt;/ol&gt;
-
-&lt;p&gt;Cras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis.&lt;/p&gt;
-
-&lt;dl&gt;
-  &lt;dt&gt;HyperText Markup Language (HTML)&lt;/dt&gt;
-  &lt;dd&gt;The language used to describe and define the content of a Web page&lt;/dd&gt;
-
-  &lt;dt&gt;Cascading Style Sheets (CSS)&lt;/dt&gt;
-  &lt;dd&gt;Used to describe the appearance of Web content&lt;/dd&gt;
-
-  &lt;dt&gt;JavaScript (JS)&lt;/dt&gt;
-  &lt;dd&gt;The programming language used to build advanced Web sites and applications&lt;/dd&gt;
-&lt;/dl&gt;
-
-&lt;p&gt;Integer posuere erat a ante venenatis dapibus posuere velit aliquet. Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Nullam quis risus eget urna mollis ornare vel eu leo.&lt;/p&gt;
-
-&lt;h3 id=&quot;images&quot;&gt;Images&lt;/h3&gt;
-
-&lt;p&gt;Quisque consequat sapien eget quam rhoncus, sit amet laoreet diam tempus. Aliquam aliquam metus erat, a pulvinar turpis suscipit at.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://placehold.it/800x400&quot; alt=&quot;placeholder&quot; title=&quot;Large example image&quot; /&gt;
-&lt;img src=&quot;http://placehold.it/400x200&quot; alt=&quot;placeholder&quot; title=&quot;Medium example image&quot; /&gt;
-&lt;img src=&quot;http://placehold.it/200x200&quot; alt=&quot;placeholder&quot; title=&quot;Small example image&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;tables&quot;&gt;Tables&lt;/h3&gt;
-
-&lt;p&gt;Aenean lacinia bibendum nulla sed consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit.&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Name&lt;/th&gt;
-      &lt;th&gt;Upvotes&lt;/th&gt;
-      &lt;th&gt;Downvotes&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tfoot&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Totals&lt;/td&gt;
-      &lt;td&gt;21&lt;/td&gt;
-      &lt;td&gt;23&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tfoot&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Alice&lt;/td&gt;
-      &lt;td&gt;10&lt;/td&gt;
-      &lt;td&gt;11&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Bob&lt;/td&gt;
-      &lt;td&gt;4&lt;/td&gt;
-      &lt;td&gt;3&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Charlie&lt;/td&gt;
-      &lt;td&gt;7&lt;/td&gt;
-      &lt;td&gt;9&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Nullam id dolor id nibh ultricies vehicula ut id elit. Sed posuere consectetur est at lobortis. Nullam quis risus eget urna mollis ornare vel eu leo.&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;Want to see something else added? &lt;a href=&quot;https://github.com/poole/poole/issues/new&quot;&gt;Open an issue.&lt;/a&gt;&lt;/p&gt;
-
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:fn-sample_footnote&quot;&gt;
-      &lt;p&gt;Handy! Now click the return link to go back. &lt;a href=&quot;#fnref:fn-sample_footnote&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
+&lt;p&gt;So what does all this look like in practice? Let&amp;#8217;s look at an example
+  creating a HAMT of order 32.&lt;/p&gt;
+&lt;p&gt;Within the trie, each level can store 3 things:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;A key&lt;/li&gt;
+  &lt;li&gt;An associated value&lt;/li&gt;
+  &lt;li&gt;Connections to up to 32 nested child trees&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;When we want to insert a key-value pair, we&amp;#8217;ll use the key&amp;#8217;s hash code
+  to choose a path through the trie until we find an empty position to
+  insert it.&lt;/p&gt;
+&lt;p&gt;For retrieval, we simply do the same thing in reverse &amp;#8211; hash the key,
+  find the pathway through the trie represented by this hashcode, and
+  check tree nodes until we either find the desired key or &amp;#8220;bottom out&amp;#8221; at
+  the end of the tree.&lt;/p&gt;
+&lt;h2&gt;Insertion Algorithm&lt;/h2&gt;
+&lt;p&gt;Let&amp;#8217;s walk through the insertion process in more detail.&lt;/p&gt;
+&lt;p&gt;To insert a piece of data, we need to find an appropriate path in the
+  trie in which to place it. As we&amp;#8217;ll see, this path is ultimately
+  determined by the key&amp;#8217;s hash value.&lt;/p&gt;
+&lt;p&gt;As we walk down the trie, we&amp;#8217;ll be looking for 3 possible cases:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;The current trie node is empty, so we can insert our new key and
+    value here&lt;/li&gt;
+  &lt;li&gt;The current trie node is not empty, but its key is equal to the one
+    we are trying to insert, so we can overwrite its value&lt;/li&gt;
+  &lt;li&gt;The current trie node is not empty, and its key value is not equal to
+    ours, so we need to go deeper in the trie.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4&gt;Insertion Case 1&lt;/h4&gt;
+&lt;p&gt;Consider inserting a new K/V pair into an empty trie. We&amp;#8217;ll insert the
+  key &amp;#8220;pizza&amp;#8221; with the value &amp;#8220;yum&amp;#8221;. Our trie is empty so far, so the root
+  tree node has no key and value, so we can insert our pair there.&lt;/p&gt;
+&lt;p&gt;Pretty easy so far.&lt;/p&gt;
+&lt;h4&gt;Insertion Case 2&lt;/h4&gt;
+&lt;p&gt;Let&amp;#8217;s get the second easy case out of the way &amp;#8211; overwriting that K/V
+  pair. We can insert the key &amp;#8220;pizza&amp;#8221; again, this time with the value of
+  &amp;#8220;real yum&amp;#8221;.&lt;/p&gt;
+&lt;p&gt;We find that the root node is not empty, but its key is equal to the one
+  we&amp;#8217;re trying to insert, so we simply change the value.&lt;/p&gt;
+&lt;p&gt;Also pretty easy.&lt;/p&gt;
+&lt;h4&gt;Insertion Case 3&lt;/h4&gt;
+&lt;p&gt;Here is where things start to get more interesting.&lt;/p&gt;
+&lt;p&gt;Let&amp;#8217;s insert the key &amp;#8220;calzone&amp;#8221; with the value &amp;#8220;aw yiss&amp;#8221;.&lt;/p&gt;
+&lt;p&gt;We first check the current (root) node &amp;#8211; it does have a key and value,
+  and the key is &lt;i&gt;not&lt;/i&gt; the one we&amp;#8217;re trying to insert. We need to go
+  deeper into the trie to find a place for our new pair.&lt;/p&gt;
+&lt;p&gt;To insert a key, we first need to generate its hash value. Again, in
+  Ruby, we can use one of the hashing functions included in the Digest
+  library. This gives us a (large) numeric value representing a unique
+  digest of that piece of data.&lt;/p&gt;
+&lt;p&gt;For example:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;digest&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SHA1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;calzone&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;334703588949583183218034173573122019749278332384&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;To walk the trie and an appropriate location for this element, we&amp;#8217;ll
+  &amp;#8220;consume&amp;#8221; this hash-code in 5-bit chunks.&lt;/p&gt;
+&lt;p&gt;Why 5 bits at a time?&lt;/p&gt;
+&lt;p&gt;This is determined by the branching factor of the tree &amp;#8211; with an
+  order-32 trie, we have 32 possible children from each node in the tree.
+  A 5-bit hash-code chunk allows us to concisely represent all 32 possible
+  child branches using a single bitmap. &lt;code&gt;(=2 ** 5 == 32)&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;To get the numeric value of the first 5 bits of our hashcode, we can
+  bitwise &lt;code&gt;AND&lt;/code&gt; it with a 5-bit number containing all &amp;#8220;on&amp;#8221; bits:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;13&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;31&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;11111&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;14&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SHA1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;calzone&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;31&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This tells us that the &amp;#8220;right-most&amp;#8221; 5 bits of the number
+  &lt;code&gt;334703588949583183218034173573122019749278332384&lt;/code&gt; (&amp;#8220;calzone&amp;#8220;&amp;#8216;s hash code)
+  are &lt;code&gt;00000&lt;/code&gt;, or 0.&lt;/p&gt;
+&lt;p&gt;This tells us the position in the current node&amp;#8217;s children array to
+  insert this element.&lt;/p&gt;
+&lt;p&gt;Thus we can move to the &lt;code&gt;0&lt;/code&gt; th subtree under our current one and retry
+  our insertion algorithm. In our case, &amp;#8220;calzone&amp;#8221; is only the second
+  element to be inserted in the trie, so the =0=th child of the &amp;#8220;pizza&amp;#8221;
+  node will be empty, and we can insert our data there.&lt;/p&gt;
+&lt;h4&gt;Consuming the hash code&lt;/h4&gt;
+&lt;p&gt;We mentioned that we would &amp;#8220;consume&amp;#8221; the key&amp;#8217;s hash code in 5-bit
+  chunks. This helps us fully exploit the wide branching factor of the
+  trie to insert a lot of elements in a fairly shallow data structure.&lt;/p&gt;
+&lt;p&gt;If we simply re-use the same 5 (rightmost) bits that we used in the
+  previous example, we effectively turn our trie into a collection of 32
+  linked lists, since all elements that share an initial 5-bit value will
+  stack up on one another in a chain.&lt;/p&gt;
+&lt;p&gt;We would prefer to get more of a &amp;#8220;zig-zag&amp;#8221; effect, and we can achieve
+  this by making sure we use a different 5-bit chunk at each layer in the
+  trie.&lt;/p&gt;
+&lt;p&gt;To do this, we&amp;#8217;ll use another bit-wise operator, the &lt;b&gt;right shift&lt;/b&gt;.&lt;/p&gt;
+&lt;p&gt;A bitwise shift simply takes the bits that make a number and slides them in one direction or another.&lt;/p&gt;
+&lt;p&gt;In the case of a left shift, we move the existing bits to the left, usually padding them with 0&amp;#8217;s on the righthand side.&lt;/p&gt;
+&lt;p&gt;For example:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;1111&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;21&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;11110000&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;In our case, we just want to consume the next 5 bits of our hash code value, so we can use a right shift of 5 bits.&lt;/p&gt;
+&lt;p&gt;Consider our &amp;#8220;calzone&amp;#8221; example from before:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;24&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SHA1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;calzone&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;31&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We now get a completely different subtrie index, helping us avoid the &amp;#8220;stacking&amp;#8221; behavior we would get if we just re-used the existing one. As we walk down the trie, we want to use this technique to shift off 5 bits at each layer.&lt;/p&gt;
+&lt;h2&gt;Retrieval Algorithm&lt;/h2&gt;
+&lt;p&gt;The retrieval process is effectively the same. We&amp;#8217;ll simply retrieve the
+  located value rather than inserting one. Consider the same 3 cases:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;The current tree node is empty &amp;#8211; this means we have &amp;#8220;bottomed out&amp;#8221;,
+    so our key must not exist in the trie&lt;/li&gt;
+  &lt;li&gt;The current tree node contains the key you&amp;#8217;re searching for, so
+    retrieve its value.&lt;/li&gt;
+  &lt;li&gt;The current tree node is not empty, but doesn&amp;#8217;t contain the key we&amp;#8217;re
+    looking for. Use another 5-bit slice of the hash code to identify the
+    next step to take into the trie.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1&gt;HAMT Performance&lt;/h1&gt;
+&lt;p&gt;The strength of the HAMT is its wide branching factor. The 32-bit factor is common because it can be manipulated efficiently on 32-bit processors, but you could in theory use an even larger factor if needed.&lt;/p&gt;
+&lt;p&gt;This branching factor allows us to store a large amount of keys and values in a relatively shallow tree which will still be very quick to traverse.&lt;/p&gt;
+&lt;p&gt;For example in just 6 layers, we could store &lt;code&gt;33,554,432&lt;/code&gt; (&lt;code&gt;32 ** 5&lt;/code&gt;, assuming the root only stores 1 pair) keys and values.&lt;/p&gt;
+&lt;p&gt;Technically, the retrieval performance of our Tree will be logarithmic, as opposed to the Constant-time performance offered by traditional Hash Map implementations. However since the log base is so large, the growth flattens out very quickly and in practice isn&amp;#8217;t much worse off than a traditional hash table.&lt;/p&gt;
+&lt;h1&gt;Other Considerations &amp;#8211; Structural Sharing&lt;/h1&gt;
+&lt;p&gt;We mentioned the ability of our tries to potentially share duplicated
+  structure with other tries. This is a common approach to creating
+  immutable or &amp;#8220;persistent&amp;#8221; hash maps and is used in several functional
+  languages like Clojure, Scala, and Frege.&lt;/p&gt;
+&lt;p&gt;The goal for this technique is to preserve every intermediate state of
+  the Map (i.e. they &amp;#8220;persist&amp;#8221;). Thus each operation on the map should
+  generate a new map value rather than modifying an existing one in place.&lt;/p&gt;
+&lt;p&gt;This would be problematic if we had to completely copy every node in the
+  trie each time we changed anything. But because of the trie&amp;#8217;s nested
+  structure, we have a better option.&lt;/p&gt;
+&lt;p&gt;Whenever we need to change the trie, we duplicate the node in question
+  as well as all the nodes within its path to the root.&lt;/p&gt;
+&lt;p&gt;Thus we get a new root node (this represents the &amp;#8220;new&amp;#8221; Map produced by
+  our operation), and a new path to the internal node that was actually
+  changed.&lt;/p&gt;
+&lt;p&gt;The nodes that we copy can continue referring to the other existing
+  nodes so that those don&amp;#8217;t have to be copied. In practice this allows us
+  to produce a &amp;#8220;copy&amp;#8221; of the entire trie by actually copying only a
+  handful of nodes.&lt;/p&gt;
+&lt;h1&gt;Further Reading&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;The data structure was invented by Phil Bagwell, and you can find the original paper on it &lt;a href=&quot;http://lampwww.epfl.ch/papers/idealhashtrees.pdf&quot;&gt;here&lt;/a&gt;.&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.youtube.com/watch?v%3DwASCH_gPnDw&quot;&gt;Rich Hickey discussing HAMTs and other Clojure internals&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.youtube.com/watch?v%3DGibNOQVelFY&quot;&gt;ClojureWest Talk about Optimizing Clojure&amp;#8217;s Persistent Data Structures&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
 </content>
  </entry>
  

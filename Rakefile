@@ -187,24 +187,6 @@ task :preview do
   Rake::Task[:watch].invoke
 end
 
-# rake deploy["Commit message"]
-desc "Deploy the site to a remote git repo"
-task :deploy, :message do |t, args|
-  message = args[:message]
-  branch = CONFIG["git"]["branch"]
-  if message.nil? or message.empty?
-    raise "Please add a commit message."
-  end
-  if branch.nil? or branch.empty?
-    raise "Please add a branch."
-  else
-    Rake::Task[:build].invoke
-    execute("git add .")
-    execute("git commit -m \"#{message}\"")
-    execute("git push origin #{branch}")
-  end
-end
-
 # rake transfer
 desc "Transfer the site (remote server or a local git repo)"
 task :transfer do
@@ -225,4 +207,10 @@ task :transfer do
   else
     raise "#{command} isn't a valid file transfer command."
   end
+end
+
+
+desc "Deploy to worace.github.io master branch"
+task :deploy do
+  execute("jgd --branch master --branch-from source")
 end
