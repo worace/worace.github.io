@@ -17,7 +17,6 @@ We can use this to generate a Private Key, and from that Private Key retrieve th
     (.initialize length)))
 
 (defn generate-keypair [length]
-  "Generate an RSA Keypair. Accepts optional length. Default key length is 2048. Minimum key length is 512."
   (assert (>= length 512) "RSA Key must be at least 512 bits long.")
   (.generateKeyPair (kp-generator length)))
 
@@ -78,7 +77,8 @@ The other big asymmetric crypto operation is to sign using a private key and ver
      (.sign sig))))
 
 (defn verify [encoded-sig message public-key]
-  "RSA public key verification of a Base64-encoded signature and an assumed source message. Returns true/false if signature is valid."
+  "RSA public key verification of a Base64-encoded signature and an
+   assumed source message. Returns true/false if signature is valid."
   (let [msg-data (.getBytes message)
         signature (decode64 encoded-sig)
         sig (doto (java.security.Signature/getInstance "SHA256withRSA")
