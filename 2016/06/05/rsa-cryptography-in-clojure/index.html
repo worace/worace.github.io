@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      RSA Cryptography In Clojure &middot; Horace Williams
+    
+  </title>
+  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a href="https://github.com/worace">github</a></li>
+          <li><a href="http://twitter.com/worace">twitter</a></li>
+        </ul>
+      </header>
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">RSA Cryptography In Clojure</h1>
+  <time datetime="2016-06-05T00:00:00-06:00" class="post-date">05 Jun 2016</time>
+  <p>I recently found myself needing to do some public/private key cryptography using RSA in Clojure. Fortunately there is pretty good library support for doing this kind of thing in Java, but it still took me a while to get all of the interop working. Additionally, I needed to be able to serialize and de-serialize keys in a couple of formats (.pem and .der, specifically), so we&#8217;ll look at setting this up as well.</p>
+<h2>Generating a Keypair</h2>
+<p>Keys are generated based on the desired length and algorithm. To generate a key we have to do a little bit of Java ceremony around requesting a <code>KeyPairGenerator</code>.</p>
+<p>We can use this to generate a Private Key, and from that Private Key retrieve the Public Key if needed.</p>
+<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">kp-generator</span> <span class="p">[</span><span class="nv">length</span><span class="p">]</span>
+  <span class="p">(</span><span class="nb">doto </span><span class="p">(</span><span class="nf">java.security.KeyPairGenerator/getInstance</span> <span class="s">&quot;RSA&quot;</span><span class="p">)</span>
+    <span class="p">(</span><span class="nf">.initialize</span> <span class="nv">length</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">generate-keypair</span> <span class="p">[</span><span class="nv">length</span><span class="p">]</span>
+  <span class="s">&quot;Generate an RSA Keypair. Accepts optional length. Default key length is 2048. Minimum key length is 512.&quot;</span>
+  <span class="p">(</span><span class="nb">assert </span><span class="p">(</span><span class="nb">&gt;= </span><span class="nv">length</span> <span class="mi">512</span><span class="p">)</span> <span class="s">&quot;RSA Key must be at least 512 bits long.&quot;</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">.generateKeyPair</span> <span class="p">(</span><span class="nf">kp-generator</span> <span class="nv">length</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">def </span><span class="nv">keypair</span> <span class="p">(</span><span class="nf">generate-keypair</span> <span class="mi">512</span><span class="p">))</span>
+<span class="p">(</span><span class="k">def </span><span class="nv">public-key</span> <span class="p">(</span><span class="nf">.getPublic</span> <span class="nv">keypair</span><span class="p">))</span>
+</pre></div>
+<h2>Encrypting, Decrypting, and Encoding Messages</h2>
+<p>The Java crypto methods we&#8217;re using generally return a Byte Array of their encrypted data. For my use-case I wanted to encode these in Base64, which is easy in Java 8 thanks to the built-in Base64 module (For earlier versions, check out <a href="https://docs.oracle.com/javase/7/docs/api/javax/xml/bind/DatatypeConverter.html">javax.xml.bind.DatatypeConverter</a>).</p>
+<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">decode64</span> <span class="p">[</span><span class="nv">str</span><span class="p">]</span>
+  <span class="p">(</span><span class="nf">.decode</span> <span class="p">(</span><span class="nf">java.util.Base64/getDecoder</span><span class="p">)</span> <span class="nv">str</span><span class="p">))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">encode64</span> <span class="p">[</span><span class="nv">bytes</span><span class="p">]</span>
+  <span class="p">(</span><span class="nf">.encodeToString</span> <span class="p">(</span><span class="nf">java.util.Base64/getEncoder</span><span class="p">)</span> <span class="nv">bytes</span><span class="p">))</span>
+</pre></div>
+<p>Now we can use the keys we generated to encrypt and decrypt a message. This being public/private key crypto, remember of course that encryption is done using the public key and decryption using the private.</p>
+<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">encrypt</span> <span class="p">[</span><span class="nv">message</span> <span class="nv">public-key</span><span class="p">]</span>
+  <span class="s">&quot;Perform RSA public key encryption of the given message string.</span>
+<span class="s">   Returns a Base64-encoded string of the encrypted data.&quot;</span>
+  <span class="p">(</span><span class="nf">encode64</span>
+   <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">cipher</span> <span class="p">(</span><span class="nb">doto </span><span class="p">(</span><span class="nf">javax.crypto.Cipher/getInstance</span> <span class="s">&quot;RSA/ECB/PKCS1Padding&quot;</span><span class="p">)</span>
+                  <span class="p">(</span><span class="nf">.init</span> <span class="nv">javax.crypto.Cipher/ENCRYPT_MODE</span> <span class="nv">public-key</span><span class="p">))]</span>
+     <span class="p">(</span><span class="nf">.doFinal</span> <span class="nv">cipher</span> <span class="p">(</span><span class="nf">.getBytes</span> <span class="nv">message</span><span class="p">)))))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">decrypt</span> <span class="p">[</span><span class="nv">message</span> <span class="nv">private-key</span><span class="p">]</span>
+  <span class="s">&quot;Use an RSA private key to decrypt a Base64-encoded string</span>
+<span class="s">   of ciphertext.&quot;</span>
+  <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">cipher</span> <span class="p">(</span><span class="nb">doto </span><span class="p">(</span><span class="nf">javax.crypto.Cipher/getInstance</span> <span class="s">&quot;RSA/ECB/PKCS1Padding&quot;</span><span class="p">)</span>
+                 <span class="p">(</span><span class="nf">.init</span> <span class="nv">javax.crypto.Cipher/DECRYPT_MODE</span> <span class="nv">private-key</span><span class="p">))]</span>
+    <span class="p">(</span><span class="nf">-&gt;&gt;</span> <span class="nv">message</span>
+         <span class="nv">decode64</span>
+         <span class="p">(</span><span class="nf">.doFinal</span> <span class="nv">cipher</span><span class="p">)</span>
+         <span class="p">(</span><span class="nb">map </span><span class="nv">char</span><span class="p">)</span>
+         <span class="p">(</span><span class="nb">apply </span><span class="nv">str</span><span class="p">))))</span>
+</pre></div>
+<h2>Signing and Verifying</h2>
+<p>The other big asymmetric crypto operation is to sign using a private key and verify using a public key. This is pretty easy with a bit of Java interop as well.</p>
+<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">sign</span>
+  <span class="s">&quot;RSA private key signing of a message. Takes message as string&quot;</span>
+  <span class="p">[</span><span class="nv">message</span> <span class="nv">private-key</span><span class="p">]</span>
+  <span class="p">(</span><span class="nf">encode64</span>
+   <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">msg-data</span> <span class="p">(</span><span class="nf">.getBytes</span> <span class="nv">message</span><span class="p">)</span>
+         <span class="nv">sig</span> <span class="p">(</span><span class="nb">doto </span><span class="p">(</span><span class="nf">java.security.Signature/getInstance</span> <span class="s">&quot;SHA256withRSA&quot;</span><span class="p">)</span>
+               <span class="p">(</span><span class="nf">.initSign</span> <span class="nv">private-key</span> <span class="p">(</span><span class="nf">java.security.SecureRandom.</span><span class="p">))</span>
+               <span class="p">(</span><span class="nf">.update</span> <span class="nv">msg-data</span><span class="p">))]</span>
+     <span class="p">(</span><span class="nf">.sign</span> <span class="nv">sig</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">verify</span> <span class="p">[</span><span class="nv">encoded-sig</span> <span class="nv">message</span> <span class="nv">public-key</span><span class="p">]</span>
+  <span class="s">&quot;RSA public key verification of a Base64-encoded signature and an assumed source message. Returns true/false if signature is valid.&quot;</span>
+  <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">msg-data</span> <span class="p">(</span><span class="nf">.getBytes</span> <span class="nv">message</span><span class="p">)</span>
+        <span class="nv">signature</span> <span class="p">(</span><span class="nf">decode64</span> <span class="nv">encoded-sig</span><span class="p">)</span>
+        <span class="nv">sig</span> <span class="p">(</span><span class="nb">doto </span><span class="p">(</span><span class="nf">java.security.Signature/getInstance</span> <span class="s">&quot;SHA256withRSA&quot;</span><span class="p">)</span>
+              <span class="p">(</span><span class="nf">.initVerify</span> <span class="nv">public-key</span><span class="p">)</span>
+              <span class="p">(</span><span class="nf">.update</span> <span class="nv">msg-data</span><span class="p">))]</span>
+    <span class="p">(</span><span class="nf">.verify</span> <span class="nv">sig</span> <span class="nv">signature</span><span class="p">)))</span>
+</pre></div>
+<h2>Serializing and Deserializing Keys</h2>
+<p>Finally for my use-case it was important to be able to serialize and de-serialize keys in a format that would be readable by other systems. I found this part the trickiest to get working due to relatively sparse documentation and some confusion about the various formats and key serialization algorithms, but here it is.</p>
+<h3>DER Encoding Public Keys</h3>
+<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">der-string-&gt;pub-key</span> <span class="p">[</span><span class="nv">string</span><span class="p">]</span>
+  <span class="s">&quot;Generate an RSA public key from a DER-encoded Base64 string.</span>
+<span class="s">   Some systems like to line-wrap these at 64 characters, so we</span>
+<span class="s">   have to get rid of any newlines before decoding.&quot;</span>
+  <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">non-wrapped</span> <span class="p">(</span><span class="nf">clojure.string/replace</span> <span class="nv">string</span> <span class="o">#</span><span class="s">&quot;\n&quot;</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="nv">key-bytes</span> <span class="p">(</span><span class="nf">decode64</span> <span class="nv">non-wrapped</span><span class="p">)</span>
+        <span class="nv">spec</span> <span class="p">(</span><span class="nf">java.security.spec.X509EncodedKeySpec.</span> <span class="nv">key-bytes</span><span class="p">)</span>
+        <span class="nv">key-factory</span> <span class="p">(</span><span class="nf">java.security.KeyFactory/getInstance</span> <span class="s">&quot;RSA&quot;</span><span class="p">)]</span>
+    <span class="p">(</span><span class="nf">.generatePublic</span> <span class="nv">key-factory</span> <span class="nv">spec</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">public-key-&gt;der-string</span> <span class="p">[</span><span class="nv">key</span><span class="p">]</span>
+  <span class="s">&quot;Generate DER-formatted string for a public key.&quot;</span>
+  <span class="p">(</span><span class="nb">-&gt; </span><span class="nv">key</span>
+      <span class="nv">.getEncoded</span>
+      <span class="nv">encode64</span>
+      <span class="p">(</span><span class="nf">clojure.string/replace</span> <span class="o">#</span><span class="s">&quot;\n&quot;</span> <span class="s">&quot;&quot;</span><span class="p">)))</span>
+</pre></div>
+<h3>DER Encoding Private Keys</h3>
+<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">der-string-&gt;private-key</span> <span class="p">[</span><span class="nv">string</span><span class="p">]</span>
+  <span class="p">(</span><span class="nf">.generatePrivate</span> <span class="p">(</span><span class="nf">java.security.KeyFactory/getInstance</span> <span class="s">&quot;RSA&quot;</span><span class="p">)</span>
+                    <span class="p">(</span><span class="nf">java.security.spec.PKCS8EncodedKeySpec.</span>
+                     <span class="p">(</span><span class="nf">decode64</span> <span class="p">(</span><span class="nf">.getBytes</span> <span class="nv">string</span><span class="p">)))))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">private-key-&gt;der-string</span> <span class="p">[</span><span class="nv">private-key</span><span class="p">]</span>
+  <span class="p">(</span><span class="nb">-&gt; </span><span class="nv">private-key</span> <span class="nv">.getEncoded</span> <span class="nv">encode64</span><span class="p">))</span>
+</pre></div>
+<h2>PEM-Encoding</h2>
+<p>PEM-encoding is another common format for serializing cryptographic keys. I was able to get everything so far working using just pieces from Java&#8217;s standard library, but after much experimentation could never get it to read PEM-encoded keys reliably. So I ended up reaching for <a href="https://www.bouncycastle.org/java.html">Bouncy Castle</a>, one of the go-to crypto Java crypto libraries.</p>
+<p>BC supports a sizeable menu of different signing, hashing, and encryption algorithms. Fortunately for me reading and writing PEM keys was tucked in among them.</p>
+<p>To pull in BouncyCastle I used this <code>project.clj</code> configuration for leiningen:</p>
+<div class="highlight"><pre><span class="p">(</span><span class="kd">defproject </span><span class="nv">block-chain</span> <span class="s">&quot;0.2.0&quot;</span>
+  <span class="ss">:dependencies</span> <span class="p">[[</span><span class="nv">org.clojure/clojure</span> <span class="s">&quot;1.8.0&quot;</span><span class="p">]</span>
+                 <span class="p">[</span><span class="nv">org.bouncycastle/bcpkix-jdk15on</span> <span class="s">&quot;1.53&quot;</span><span class="p">]])</span>
+</pre></div>
+<p>Then used it to decode the keys.</p>
+<div class="highlight"><pre><span class="c1">;; Have to do this bit of setup first so the keyparsers</span>
+<span class="c1">;; can find BouncyCastle</span>
+<span class="p">(</span><span class="nf">java.security.Security/addProvider</span> <span class="p">(</span><span class="nf">org.bouncycastle.jce.provider.BouncyCastleProvider.</span><span class="p">))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">keydata</span> <span class="p">[</span><span class="nv">reader</span><span class="p">]</span>
+ <span class="p">(</span><span class="nf">-&gt;&gt;</span> <span class="nv">reader</span>
+      <span class="p">(</span><span class="nf">org.bouncycastle.openssl.PEMParser.</span><span class="p">)</span>
+      <span class="p">(</span><span class="nf">.readObject</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">pem-string-&gt;key-pair</span> <span class="p">[</span><span class="nv">string</span><span class="p">]</span>
+  <span class="s">&quot;Convert a PEM-formatted private key string to a public/private keypair.</span>
+<span class="s">   Returns java.security.KeyPair.&quot;</span>
+  <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">kd</span> <span class="p">(</span><span class="nf">keydata</span> <span class="p">(</span><span class="nf">io/reader</span> <span class="p">(</span><span class="nf">.getBytes</span> <span class="nv">string</span><span class="p">)))]</span>
+    <span class="p">(</span><span class="nf">.getKeyPair</span> <span class="p">(</span><span class="nf">org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter.</span><span class="p">)</span> <span class="nv">kd</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">pem-string-&gt;pub-key</span> <span class="p">[</span><span class="nv">string</span><span class="p">]</span>
+  <span class="s">&quot;Convert a PEM-formatted public key string to an RSA public key.</span>
+<span class="s">   Returns sun.security.rsa.RSAPublicKeyImpl&quot;</span>
+  <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">kd</span> <span class="p">(</span><span class="nf">keydata</span> <span class="p">(</span><span class="nf">io/reader</span> <span class="p">(</span><span class="nf">.getBytes</span> <span class="nv">string</span><span class="p">)))</span>
+        <span class="nv">kf</span> <span class="p">(</span><span class="nf">java.security.KeyFactory/getInstance</span> <span class="s">&quot;RSA&quot;</span><span class="p">)</span>
+        <span class="nv">spec</span> <span class="p">(</span><span class="nf">java.security.spec.X509EncodedKeySpec.</span> <span class="p">(</span><span class="nf">.getEncoded</span> <span class="nv">kd</span><span class="p">))]</span>
+    <span class="p">(</span><span class="nf">.generatePublic</span> <span class="nv">kf</span> <span class="nv">spec</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">format-pem-string</span> <span class="p">[</span><span class="nv">encoded</span> <span class="nv">key-type</span><span class="p">]</span>
+  <span class="s">&quot;Takes a Base64-encoded string of key data and formats it</span>
+<span class="s">   for file-output following openssl&#39;s convention of wrapping lines</span>
+<span class="s">   at 64 characters and appending the appropriate header and footer for</span>
+<span class="s">   the specified key type&quot;</span>
+  <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">chunked</span> <span class="p">(</span><span class="nf">-&gt;&gt;</span> <span class="nv">encoded</span>
+                     <span class="p">(</span><span class="nf">partition</span> <span class="mi">64</span> <span class="mi">64</span> <span class="p">[])</span>
+                     <span class="p">(</span><span class="nb">map </span><span class="o">#</span><span class="p">(</span><span class="nb">apply str </span><span class="nv">%</span><span class="p">)))</span>
+        <span class="nv">formatted</span> <span class="p">(</span><span class="nb">join </span><span class="s">&quot;\n&quot;</span> <span class="nv">chunked</span><span class="p">)]</span>
+    <span class="p">(</span><span class="nb">str </span><span class="s">&quot;-----BEGIN &quot;</span> <span class="nv">key-type</span> <span class="s">&quot;-----\n&quot;</span>
+         <span class="nv">formatted</span>
+         <span class="s">&quot;\n-----END &quot;</span> <span class="nv">key-type</span> <span class="s">&quot;-----\n&quot;</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">private-key-&gt;pem-string</span> <span class="p">[</span><span class="nv">key</span><span class="p">]</span>
+  <span class="s">&quot;Convert RSA private keypair to a formatted PEM string for saving in</span>
+<span class="s">   a .pem file. By default these private keys will encode themselves as PKCS#8</span>
+<span class="s">   data (e.g. when calling (.getEncoded private-key)), so we have to convert it</span>
+<span class="s">   to ASN1, which PEM uses (this seems to also be referred to as PKCS#1).</span>
+<span class="s">   More info here http://stackoverflow.com/questions/7611383/generating-rsa-keys-in-pkcs1-format-in-java&quot;</span>
+  <span class="p">(</span><span class="nb">-&gt; </span><span class="p">(</span><span class="nf">.getEncoded</span> <span class="nv">key</span><span class="p">)</span>
+      <span class="p">(</span><span class="nf">org.bouncycastle.asn1.pkcs.PrivateKeyInfo/getInstance</span><span class="p">)</span>
+      <span class="p">(</span><span class="nf">.parsePrivateKey</span><span class="p">)</span>
+      <span class="p">(</span><span class="nf">.toASN1Primitive</span><span class="p">)</span>
+      <span class="p">(</span><span class="nf">.getEncoded</span><span class="p">)</span>
+      <span class="p">(</span><span class="nf">encode64</span><span class="p">)</span>
+      <span class="p">(</span><span class="nf">format-pem-string</span> <span class="s">&quot;RSA PRIVATE KEY&quot;</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">public-key-&gt;pem-string</span> <span class="p">[</span><span class="nv">key</span><span class="p">]</span>
+  <span class="s">&quot;Generate PEM-formatted string for a public key. This is simply a base64</span>
+<span class="s">   encoding of the key wrapped with the appropriate header and footer.&quot;</span>
+  <span class="p">(</span><span class="nf">format-pem-string</span> <span class="p">(</span><span class="nf">encode64</span> <span class="p">(</span><span class="nf">.getEncoded</span> <span class="nv">key</span><span class="p">))</span>
+                     <span class="s">&quot;PUBLIC KEY&quot;</span><span class="p">))</span>
+</pre></div>
+<p>One last note about PEM formatting and keys &#8211; in some instances a PEM key is simply the same Base64-encoded DER representation of the key wrapped with the &#8220;BEGIN KEY&#8221; / &#8220;END KEY&#8221; header and footer. However the PEM format can be used slightly differently by a variety of key types, and because of this it sometimes needs to include additional metadata about what key format is being encoded.</p>
+<h2>Further Reading</h2>
+<p>The ins and outs of serializing cryptographic keys can get pretty complex, and there are unfortunately a lot of ways to do things using very similar encoding formats. I&#8217;ve managed to cobble together enough for the use-cases I needed here, but if you&#8217;d like to understand more, <a href="https://tls.mbed.org/kb/cryptography/asn1-key-structures-in-der-and-pem">here is a good article</a> that goes into more depth.</p>
+
+</article>
+
+      </main>
+
+    </div>
+
+    
+  </body>
+</html>
