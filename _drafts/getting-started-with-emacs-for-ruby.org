@@ -108,8 +108,17 @@ Finally, we add a few more bits of snazz like showing line numbers and setting a
                     :width 'normal)
 #+END_SRC
 
-** OS X Convenience Keybindings
-gui emacs from terminal
-setting CMD as super
+** OS X Conveniences
+
+I generally recommend people start using Emacs using its GUI mode. Personally I still use this mode most often even a few years into using Emacs, but when starting out it's especially helpful to have some of the familiar OS X keybindings for Copying, Pasting, Cmd-Tabbing, etc. On a Mac you'll have this available if you installed using homebrew with the =--with-cocoa= flag (=brew install emacs --with-cocoa=).
+
+It's also convenient to be able to open your editor from the command line and pass it a file or directory to start with. To make this easy, you can add this function to your shell profile (=~/.bashrc=, =~/.bash_profile=, etc):
+
+#+BEGIN_SRC sh
+em () { open -a /usr/local/Cellar/emacs/24.5/Emacs.app/Contents/MacOS/Emacs $* }
+#+END_SRC
+
+Then from the command line you'll be able to do things like =em pizza.el= to open that file in an Emacs Cocoa app window.
+
 ** Editor Basics: Find-In-Project and Ctrl-P
 ** Ruby Basics: Highlighting and Completion
