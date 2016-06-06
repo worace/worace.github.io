@@ -1,0 +1,25 @@
+---
+title: "Getting Started with Emacs for Ruby"
+layout: post
+---
+
+Lately I've been slowly bringing a few of my students at Turing into the Emacs fold. Along the way I've been thinking about what a sufficient but minimal beginner's Emacs setup for working with Ruby code would look like. In this post I'll try to document some of the tools and configuration we've found useful. I'm also hoping to re-use much of this material for a "Beginner's Intro to Emacs" session we're offering at Turing in a few weeks, so this material is targeted at emacs newcomers.
+
+** Emacs Configuration 101
+The Emacs configuration journey starts with a special directory on your machine located at =~/.emacs.d=. When Emacs starts up, it will by default look for a file called =init.el= in this directory and use that to load any user-specific configuration you want to provide. (This is similar to how your shell loads any user configuration files at =~/.profile= or =~/.bashrc=, etc)
+
+To follow along, go ahead and create this directory and file:
+
+: mkdir ~/.emacs.d
+: touch ~/.emacs.d/init.el
+
+If your machine already has an emacs install in this directory and you want to start from scratch, it's safe to stash the existing directory by moving it:
+
+: mv ~/.emacs.d ~/.emacs.d.old
+
+** Emacs: Out of the 1990's
+** OS X Convenience Keybindings
+gui emacs from terminal
+setting CMD as super
+** Editor Basics: Find-In-Project and Ctrl-P
+** Ruby Basics: Highlighting and Completion
