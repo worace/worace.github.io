@@ -76,7 +76,7 @@ Save this file and restart emacs if it's already running (remember: =C-x C-c= to
 
 ** A Bit More UI:
 
-Next let's get rid of the default Emacs splash screen and have it put us into an empty buffer instead. The =initial-major-mode= setting can take any of Emacs' major modes -- a lot of people use Org or Markdown mode for their scratch buffer, but since we're targeting a solid ruby setup here, we'll use that.
+Next let's get rid of the default Emacs splash screen and have it put us into an empty buffer instead. The =initial-major-mode= setting can take any of Emacs' major modes -- a lot of people use Org or Markdown mode for their scratch buffer, but since we're targeting a Ruby setup here, we'll use that.
 
 #+BEGIN_SRC emacs-lisp
 (setq inhibit-splash-screen t
@@ -84,6 +84,29 @@ Next let's get rid of the default Emacs splash screen and have it put us into an
       initial-major-mode 'ruby-mode)
 #+END_SRC
 
+Additionally, it would be nice if it didn't look so glaringly white. Let's update our package list to pull in the ever-gentle-on-the-eyes [[https://github.com/bbatsov/solarized-emacs][Solarized Theme]] and load it in our init file:
+
+#+BEGIN_SRC emacs-lisp
+(setq package-list '(better-defaults solarized-theme))
+
+;....
+
+(load-theme 'solarized-dark t)
+#+END_SRC
+
+Finally, we add a few more bits of snazz like showing line numbers and setting a default font ([[https://github.com/adobe-fonts/source-code-pro][SourceCodePro]] is a free, open source monospaced font for editing code from Adobe.)
+
+#+BEGIN_SRC emacs-lisp
+;; Show line numbers
+(global-linum-mode)
+
+;; Typography
+(set-face-attribute 'default nil
+                    :family "Source Code Pro"
+                    :height 150
+                    :weight 'normal
+                    :width 'normal)
+#+END_SRC
 
 ** OS X Convenience Keybindings
 gui emacs from terminal
