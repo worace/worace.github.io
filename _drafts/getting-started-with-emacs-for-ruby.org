@@ -301,4 +301,5 @@ Restart Emacs then open up a Ruby file somewhere. Try out the following:
   * Use =C-x o= to switch to the inf-ruby pane and try running some random ruby snippets as you normally would from IRB or pry.
   * Go back to your Ruby buffer, select a chunk of code, and use =C-c C-r= to *push* that Ruby code into the IRB session. For example -- try defining a class in your Ruby buffer, select the whole buffer, run =C-c C-r=, then swap over to the inf-ruby buffer and instantiate an instance of your class. Pretty cool!
   * Alternatively, use =C-c M-r= to run a selected chunk of code and automatically go to the ruby buffer
-  * Finally, use =helm-M-x= (which we bound earlier to the default =M-x= keybinding) to search for "ruby send" and see what other default bindings inf-ruby gives us
+  * Finally, use =helm-M-x= (which we bound earlier to the default =M-x= keybinding) to search for "ruby send" and see what other default bindings inf-ruby gives us.
+  * If you do a lot of work in Rails or Sinatra, also check out the commands =inf-ruby-console-rails= and =inf-ruby-console-racksh= -- it can also be used to start a console session in the environment of your current project.
