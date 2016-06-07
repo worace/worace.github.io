@@ -349,3 +349,19 @@ If the current buffer is /not/ a Ruby test, it will try to do one of the followi
  #+END_SRC
 
 Now when ruby-test-mode finishes our tests, we will automatically jump to the test buffer and scroll to the bottom. Additionally, within the compliation buffer we'll use the simple keybinding =q= to close the buffer and return to whatever frame configuration we had before. I find this makes a much more seamless TDD workflow. We can run tests, quickly check out the results, and quit out to return to what you were doing before -- all without leaving Emacs.
+
+** Wrapup and Further Exploration
+
+ I've published a github repo containing the final product of this tutorial [[https://github.com/worace/emacs-for-ruby][here]]. I'll try to keep it (and this post) up to date as I uncover any problems or receive feedback. The biggest goal here was to keep things as simple and minimal as possible -- the whole thing comes in around 80 lines of Elisp using 10 or so packages.
+
+ With this setup, the main things we accomplished include:
+
+ * Drag Emacs into the modern era using some sane defaults and a bit of UI polishing
+ * Create a reasonably beginner-friendly environment that incorporates 2 of the killer convenience features of more mainstream editors like Sublime or Atom (Ctrl-P and Find-in-project)
+ * Assemble a simple toolset for interactive Ruby development -- we can evaluate code in a buffer, start an embedded IRB process, and run our tests all from within Emacs
+
+ A few things that are obviously /not/ included (and where to find them) include:
+
+ * Rails-specific workflow features (check out [[https://github.com/eschulte/rinari][rinari]] if you want to use emacs to work on Rails)
+ * Version control integration ([[https://magit.vc/][magit]] is the cadillac of in-editor VCS integrations)
+ * Other language modes or integrations -- if it runs on a computer there's probably an Emacs mode for it -- dig around and see what exists for your favorite languages
