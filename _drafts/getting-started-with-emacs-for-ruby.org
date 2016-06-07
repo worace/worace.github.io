@@ -9,7 +9,7 @@ In this post I'll try to document some of the tools and configuration I've found
 
  * Modernizing the Emacs UI using some sane defaults
  * Setting up basic Ruby syntax highlighting and syntax completion
- * Interactively evaluating Emacs Ruby buffers using Seeing Is Believing
+ * Interactively evaluating code in Ruby buffers using Seeing Is Believing
  * Running a Ruby REPL from within emacs using inf-ruby-mode
  * Running Ruby tests from within emacs using ruby-test-mode
 
@@ -133,7 +133,9 @@ I generally recommend people start out using Emacs in GUI mode (as opposed to th
 It's also convenient to be able to open your editor from the command line and pass it a file or directory to start with. To make this easy, you can add this function to your shell profile (=~/.bashrc=, =~/.bash_profile=, etc):
 
 #+BEGIN_SRC sh
-em () { open -a /usr/local/Cellar/emacs/24.5/Emacs.app/Contents/MacOS/Emacs $* }
+em () {
+  open -a /usr/local/Cellar/emacs/24.5/Emacs.app/Contents/MacOS/Emacs $*
+}
 #+END_SRC
 
 Then from the command line you'll be able to do things like =em pizza.el= to open that file in an Emacs Cocoa app window.
@@ -141,7 +143,7 @@ Then from the command line you'll be able to do things like =em pizza.el= to ope
 ** Editor Basics: Find-In-Project and Ctrl-P
 
 Next let's try to check off a couple more features from the "What would I miss if I started using Emacs from Atom/SublimeText/TextMate?" list. The 2 of these I find most essential are:
- * "Ctrl-P"-style command to fuzzily find a file in the current project
+ * "Ctrl-P" or "Cmd-T"-style command to fuzzily open a file in the current project
  * Find-in-Project text search for finding an arbitrary string in the current project
 
 We can get these features pretty easily using 3 popular packages: [[https://github.com/emacs-helm/helm][Helm]], [[https://github.com/bbatsov/helm-projectile][Helm Projectile]] and [[https://github.com/syohex/emacs-helm-ag][Helm ag]]. Helm is actually something of a "parent" package for these other 2 -- it provides a generalized framework for doing the kind of slick "fuzzily-search some text in a list of stuff" interface that we all know and love. Then other packages like Helm Projectile and Helm ag can take advantage of this interaction to build neat tools like "find a file in my project" or "find some text in my project."
@@ -250,7 +252,9 @@ Add the =rvm= package and invoke it using =(rvm-use-default)=
 
 ** Ruby Interactions: The Once and Future Workflow
 
-Now that we have the groundwork out of the way we can tackle the good stuff. In this section we'll look at several tools for working interactively with Ruby code from within Emacs. Emacs as a tool comes out of a rich history of interactive, REPL-driven Lisp development environments. Combined with being deeply programmable (thanks to Emacs Lisp), this makes it ideal for creating a smoothly interactive development environment. We want to reduce the time and effort required to get feedback from running our code as much as possible, and Emacs can help accomplish this.
+Now that we have the groundwork out of the way we can tackle the good stuff. In this section we'll look at several tools for working interactively with Ruby code from within Emacs.
+
+Emacs comes from a rich history of interactive, REPL-driven Lisp development environments. Combined with being deeply programmable (thanks to Emacs Lisp), this makes it ideal for creating a smoothly interactive development environment. We want to reduce the time and effort required to get feedback from running our code as much as possible, and Emacs can help accomplish this.
 
 In the context of Ruby code, I specifically want to be able to:
 
@@ -264,7 +268,7 @@ Let's check out some neat Emacs packages that make interactions like these possi
 
 First, install the Gem:
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   gem install seeing_is_believing --version 3.0.0.beta.7
 #+END_SRC
 
@@ -319,13 +323,15 @@ First, install and configure inf-ruby:
 Restart Emacs then open up a Ruby file somewhere. Try out the following:
   * Use =C-c C-s= to launch the inf-ruby process.
   * Use =C-x o= to switch to the inf-ruby pane and try running some random ruby snippets as you normally would from IRB or pry.
-  * Go back to your Ruby buffer, select a chunk of code, and use =C-c C-r= to *push* that Ruby code into the IRB session. For example -- try defining a class in your Ruby buffer, select the whole buffer, run =C-c C-r=, then swap over to the inf-ruby buffer and instantiate an instance of your class. Pretty cool!
+  * Go back to your Ruby buffer, select (by highlighting) a chunk of code, and use =C-c C-r= to *push* that Ruby code into the IRB session.
+  * For example, try defining a class in your Ruby buffer, select the whole buffer, run =C-c C-r=, then swap over to the inf-ruby buffer and instantiate an instance of your class. Pretty cool!
   * Alternatively, use =C-c M-r= to run a selected chunk of code and automatically go to the ruby buffer
   * Finally, use =helm-M-x= (which we bound earlier to the default =M-x= keybinding) to search for "ruby send" and see what other default bindings inf-ruby gives us.
-  * If you do a lot of work in Rails or Sinatra, also check out the commands =inf-ruby-console-rails= and =inf-ruby-console-racksh= -- it can also be used to start a console session in the environment of your current project.
+  * If you do a lot of work in Rails or Sinatra, check out the commands =inf-ruby-console-rails= and =inf-ruby-console-racksh=. Using these commands inf-ruby can start a console session in the environment of your web project.
 
 *** Ruby TDD -- [[https://github.com/r0man/ruby-test-mode][ruby-test-mode.el]]
- Finally let's deal with the last item on our interactive workflow checklist -- interactively running tests from Emacs. To do this we can use the ruby-test-mode package. First install and configure it in your init file:
+
+ Now for the last item on our interactive workflow checklist -- running tests from Emacs. At its core, TDD is about incorporating more feedback into our development workflow. To take full advantage of this, we want running tests to be as seamless as possible -- no context switching of jumping out to a terminal, etc etc. We can accomplish this in Emacs using the ruby-test-mode package. First install and configure it in your init file:
 
 #+BEGIN_SRC emacs-lisp
 (setq package-list '(better-defaults
@@ -352,7 +358,7 @@ If the current buffer is /not/ a Ruby test, it will try to do one of the followi
 
 *** Improving Ruby Test Mode Interaction
 
- This setup is coming along pretty nicely, but I find dealing with all the compilation buffers created by ruby test mode a little cumbersome. By default it pulls them up in a new window, which potentially covers up something you were working on before, or at least takes up half of your frame. Then you have to manually swap over and kill the buffer if you want to get rid of it.
+ This setup is coming along pretty nicely, but I find dealing with all the compilation buffers created by ruby-test-mode a little cumbersome. By default it pulls them up in a new window, which potentially covers up something you were working on before, or at least takes up half of your frame. Then you have to manually swap over and kill the buffer if you want to get rid of it.
 
  We can make this a little smoother by hooking into the compilation completion hook and setting up a keybinding to easily close the buffer:
 
@@ -367,7 +373,9 @@ If the current buffer is /not/ a Ruby test, it will try to do one of the followi
 
  #+END_SRC
 
-Now when ruby-test-mode finishes our tests, we will automatically jump to the test buffer and scroll to the bottom. Additionally, within the compliation buffer we'll use the simple keybinding =q= to close the buffer and return to whatever frame configuration we had before. I find this makes a much more seamless TDD workflow. We can run tests, quickly check out the results, and quit out to return to what you were doing before -- all without leaving Emacs.
+Now when ruby-test-mode finishes our tests, we will automatically jump to the test buffer and scroll to the bottom.
+
+Additionally, within the compliation buffer we'll use the simple keybinding =q= to close the buffer and return to whatever frame configuration we had before. I find this makes a much more seamless TDD workflow. We can run tests, quickly check out the results, and quit out to return to what you were doing before -- all without leaving Emacs.
 
 ** Wrapup and Further Exploration
 
