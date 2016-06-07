@@ -303,3 +303,32 @@ Restart Emacs then open up a Ruby file somewhere. Try out the following:
   * Alternatively, use =C-c M-r= to run a selected chunk of code and automatically go to the ruby buffer
   * Finally, use =helm-M-x= (which we bound earlier to the default =M-x= keybinding) to search for "ruby send" and see what other default bindings inf-ruby gives us.
   * If you do a lot of work in Rails or Sinatra, also check out the commands =inf-ruby-console-rails= and =inf-ruby-console-racksh= -- it can also be used to start a console session in the environment of your current project.
+*** Ruby TDD -- [[https://github.com/r0man/ruby-test-mode][ruby-test-mode.el]]
+ Finally let's deal with the last item on our interactive workflow checklist -- interactively running tests from Emacs. To do this we can use the ruby-test-mode package. First install and configure it in your init file:
+
+#+BEGIN_SRC emacs-lisp
+(setq package-list '(better-defaults
+                     solarized-theme
+                     helm-projectile
+                     helm-ag
+                     ruby-electric
+                     seeing-is-believing
+                     chruby
+                     inf-ruby
+                     ruby-test-mode))
+
+;;...
+
+(require 'ruby-test-mode)
+(add-hook 'ruby-mode-hook 'ruby-test-mode)
+#+END_SRC
+
+Restart Emacs, then open a Ruby test file. Experiment with the keybinding "C-c C-," - it should allow you to run the tests from the current file into a second buffer called a compilation buffer. Tests from directly within emacs -- pretty neat!
+
+By default, ruby-test-mode will try to evaluate tests in the current buffer. It determines whether the current buffer contains tests based on whether its filename ends in =_test.rb= or =_spec.rb= -- so if you don't follow these conventions it may behave erratically for you.
+
+If the current buffer is /not/ a Ruby test, it will try to do one of the following:
+  * If there is a visible test buffer in another window (for example, you have 2 windows open in a side-by-side split), it will run that one. This is great for putting a test and an implementation up side-by-side and being able to run the test from either window.
+  * If none of these are available, it will try to re-run whatever test was last run, if there is one
+
+*** Improving Ruby Test Mode Interaction
