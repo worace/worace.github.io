@@ -61,10 +61,8 @@ Fortunately it's pretty easy to add this functionality, so go ahead and add this
 
 #+BEGIN_SRC emacs-lisp
 ; list the repositories containing them
-(setq package-archives '(("elpa" . "http://tromey.com/elpa/")
-                         ("gnu" . "http://elpa.gnu.org/packages/")
-                         ("melpa" . "https://melpa.org/packages/")
-                         ("marmalade" . "http://marmalade-repo.org/packages/")))
+(setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
+                         ("melpa" . "https://melpa.org/packages/")))
 
 ; activate all the packages (in particular autoloads)
 (package-initialize)
