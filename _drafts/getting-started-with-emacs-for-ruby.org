@@ -229,3 +229,45 @@ Add the =rvm= package and invoke it using =(rvm-use-default)=
 
 (chruby "2.2.2") ;;  or whichever version you want to use
 #+END_SRC
+** Ruby Interactions: The Once and Future Workflow
+
+Now that we've diligently gotten our groundwork out of the way, we can at last get into the good stuff. In this section we'll look at several tools for working interactively with Ruby code from within Emacs. Features like this are ultimately one of the biggest reasons for using Emacs in the first place. As we set up these features we'll take a few key code interaction patterns and focus on making them as smooth as possible. Specifically, when I'm working with Ruby code I want to be able to:
+  * Arbitrarily evaluate Ruby code from the current buffer
+  * Run tests from within Emacs
+  * Open an interactive ruby session (i.e. REPL -- IRB or Pry) within Emacs
+
+Let's check out some neat Emacs packages that make interactions like these possible.
+
+*** Ruby Buffer Interaction -- Seeing truly is believing
+
+First, install the Gem:
+
+#+BEGIN_EXAMPLE
+  gem install seeing_is_believing --version 3.0.0.beta.7
+#+END_SRC
+
+Then, add and configure the corresponding Emacs package:
+
+#+BEGIN_SRC emacs-lisp
+(setq package-list '(better-defaults
+                     solarized-theme
+                     helm-projectile
+                     helm-ag
+                     ruby-electric
+                     seeing-is-believing
+                     chruby))
+
+(setq seeing-is-believing-prefix "C-.")
+(add-hook 'ruby-mode-hook 'seeing-is-believing)
+(require 'seeing-is-believing)
+#+END_SRC
+
+Restart Emacs and open up a sample Ruby file. Try experimenting with the following keybindings to see what Seeing Is Believing gives us:
+  * =C-. s= - Run Seeing is Believing for the entire file
+  * =C-. c= - Clear the Seeing is Believing output
+  * =C-. t= - Tag a line to be "targeted" for evaluation by SiB
+  * =C-. x= - Run only the "tagged" lines (those with trailing "# => " markers)
+
+Hopefully you're seeing some output show up at the end of your Ruby source lines. Seeing is Believing is a Gem that runs a chunk of Ruby code and prints out (in an existing text buffer) the result of evaluating each line. For our purposes, this gives us a very powerful way to quickly interact with a chunk of code -- directly from our Emacs buffer!
+
+To learn more, check out the docs for the [[https://github.com/JoshCheek/seeing_is_believing][Seeing Is Believing Gem]] and [[https://github.com/jcinnamond/seeing-is-believing][seeing-is-believing.el]].
