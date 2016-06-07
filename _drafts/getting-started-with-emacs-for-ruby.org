@@ -3,7 +3,7 @@ title: "Getting Started with Emacs for Ruby"
 layout: post
 ---
 
-Lately I've been gradually tempting a few students at Turing into the Emacs fold. Along the way I've been thinking about what is needed for a minimal but sufficient Emacs setup for working with Ruby code.
+Lately I've been gradually drawing a few students at Turing into the Emacs fold. Along the way I've been thinking about what is needed for a minimal but sufficient Emacs setup for working with Ruby code.
 
 In this post I'll try to document some of the tools and configuration I've found useful, with an aim toward keeping things accessible for a newcomer to Emacs. The key features I'll focus on include:
 
@@ -27,13 +27,13 @@ To follow along, go ahead and create this directory and file:
   touch ~/.emacs.d/init.el
 #+END_SRC
 
-If your machine already has an emacs install in this directory and you want to start from scratch, it's safe to stash the existing directory by moving it:
+If your machine already has an Emacs configuration in this directory and you want to start from scratch, it's safe to stash the existing directory by moving it:
 
 #+BEGIN_SRC sh
   mv ~/.emacs.d ~/.emacs.d.old
 #+END_SRC
 
-Your original config will be safely waiting for you should you decide to return to it.
+Your original config will be waiting for you should you decide to return to it.
 
 *** Baby's First Emacs Lisp
 
