@@ -332,3 +332,20 @@ If the current buffer is /not/ a Ruby test, it will try to do one of the followi
   * If none of these are available, it will try to re-run whatever test was last run, if there is one
 
 *** Improving Ruby Test Mode Interaction
+
+ This setup is coming along pretty nicely, but I find dealing with all the compilation buffers created by ruby test mode a little cumbersome. By default it pulls them up in a new window, which potentially covers up something you were working on before, or at least takes up half of your frame. Then you have to manually swap over and kill the buffer if you want to get rid of it.
+
+ We can make this a little smoother by hooking into the compilation completion hook and setting up a keybinding to easily close the buffer:
+
+ #+BEGIN_SRC emacs-lisp
+ (add-hook 'compilation-finish-functions
+           (lambda (buf strg)
+             (switch-to-buffer-other-window "*compilation*")
+             (read-only-mode)
+             (goto-char (point-max))
+             (local-set-key (kbd "q")
+                            (lambda () (interactive) (quit-restore-window)))))
+
+ #+END_SRC
+
+Now when ruby-test-mode finishes our tests, we will automatically jump to the test buffer and scroll to the bottom. Additionally, within the compliation buffer we'll use the simple keybinding =q= to close the buffer and return to whatever frame configuration we had before. I find this makes a much more seamless TDD workflow. We can run tests, quickly check out the results, and quit out to return to what you were doing before -- all without leaving Emacs.
