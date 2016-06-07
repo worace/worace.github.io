@@ -21,36 +21,41 @@ The Emacs configuration journey starts with a special directory on your machine 
 
 To follow along, go ahead and create this directory and file:
 
-: mkdir ~/.emacs.d
-: touch ~/.emacs.d/init.el
+
+#+BEGIN_SRC sh
+  mkdir ~/.emacs.d
+  touch ~/.emacs.d/init.el
+#+END_SRC
 
 If your machine already has an emacs install in this directory and you want to start from scratch, it's safe to stash the existing directory by moving it:
 
-: mv ~/.emacs.d ~/.emacs.d.old
+#+BEGIN_SRC sh
+  mv ~/.emacs.d ~/.emacs.d.old
+#+END_SRC
 
 Your original config will be safely waiting for you should you decide to return to it.
 
 *** Baby's First Emacs Lisp
 
-A suspicious reader may have noticed the file extension on the init file we just created: =.el=. This stands for Emacs Lisp, the language in which Emacs is written and scripted. It turns out Emacs is basically a big old Lisp interpreter with a bunch of neat features for manipulating text buffers thrown in for kicks. So are we about to be writing... /Lisp/? You bet your Auntie's parentheses we are!
+An astute reader will have noticed the extension of the init file we just created: =.el=. This stands for Emacs Lisp, the language in which Emacs is written and scripted. It turns out Emacs is really a big old Lisp interpreter that happens to have some neat features for manipulating text buffers tucked away in the corners. So are you saying we'll be writing... /Lisp/? You bet your Free Software Foundation commemorative mousepad we are!
 
 When Emacs boots, it will process our =init.el= as Emacs Lisp, so within this file we'll be writing Elisp expressions to customize how the editor behaves.
 
 ** Emacs: Out of the 1990's
 
-Despite its endearing homeliness, a fresh Emacs installation makes a somewhat dated first impression:
+While there's a certain endearing homeliness to it, the first impression of a fresh Emacs install is fairly dated:
 
 [[/public/images/emacs_splash_screen.png]]
 
-The default Emacs configuration includes some clunky things like menu bars and a loud "splash" screen. [[https://github.com/technomancy/better-defaults][BetterDefaults]] is a popular Emacs package for this purpose -- it provides more reasonable defaults for some of Emacs' more idiosyncratic built-in features.
+The default Emacs configuration includes some clunky things like menu bars and a loud "splash" screen. [[https://github.com/technomancy/better-defaults][BetterDefaults]] is a popular Emacs package for improving this situation without getting too overboard with magical customizations.
 
-It also gives us a good opportunity to talk about...
+Let's start by pulling BetterDefaults into our new config. This will also give us a good opportunity to talk about...
 
 *** Emacs Packages
 
-The standard unit of distributing some Emacs code is a "package." There are several free online package repositories out there, the most popular being [[https://elpa.gnu.org/][GNU ELPA]], [[https://www.emacswiki.org/emacs/ELPA][ELPA]], [[https://marmalade-repo.org/][Marmalade]], and [[https://melpa.org/][Melpa]].
+A "package" is the standard unit for distributing a chunk of Emacs code. There are several free online package repositories out there, the most popular being [[https://elpa.gnu.org/][GNU ELPA]], [[https://www.emacswiki.org/emacs/ELPA][ELPA]], [[https://marmalade-repo.org/][Marmalade]], and [[https://melpa.org/][Melpa]].
 
-Unfortunately, Emacs doesn't come with a built-in solution for defining what packages we want to use in a "manifest" format (like we might encounter with a Gemfile or package.json in a Ruby or Node project).
+Unfortunately, Emacs doesn't come with a built-in "manifest"-driven solution for defining what packages to use (like we might encounter with a Gemfile or package.json in a Ruby or Node project).
 
 Fortunately it's pretty easy to add this functionality, so go ahead and add this Elisp to your =init.el=:
 
@@ -79,11 +84,13 @@ Fortunately it's pretty easy to add this functionality, so go ahead and add this
 (require 'better-defaults)
 #+END_SRC
 
-This first Elisp snippet lets us define a list of package archives, define a list of packages we want to install, and then, if any of them are missing, install them automatically. From now on, we can simply add packages to our =package-list= and they should be automatically installed when we start emacs.
+This first Elisp snippet defines a list of archives to use when searching for packages and then initializes the package system.
+
+Next we define a list of packages we want to install (so far just =better-defaults=). Then we check to see if any of them are missing and, if so, install them. From now on, we can simply add packages to our =package-list= and they should be automatically installed when we start Emacs -- similar to adding a new gem to your =Gemfile= and running =bundle=.
 
 The =require= expression on the last line loads the better-defaults package that we just installed, so you should see it taking effect.
 
-Save this file and restart emacs if it's already running (remember: =C-x C-c= to quit), and you should see emacs pause briefly as it installs the Better Defaults package. Then you should see a slightly cleaner interface now that the toolbars are removed.
+Save this file and restart Emacs if it's already running (remember: =C-x C-c= to quit), and you should see emacs pause briefly as it installs the Better Defaults package. You should also see a slightly cleaner interface now that the toolbars are removed.
 
 ** A Bit More UI:
 
@@ -121,7 +128,7 @@ Finally, we add a few more bits of snazz like showing line numbers and setting a
 
 ** OS X Conveniences
 
-I generally recommend people start using Emacs using its GUI mode. Personally I still use this mode most often even a few years into using Emacs, but when starting out it's especially helpful to have some of the familiar OS X keybindings for Copying, Pasting, Cmd-Tabbing, etc. On a Mac you'll have this available if you installed using homebrew with the =--with-cocoa= flag (=brew install emacs --with-cocoa=).
+I generally recommend people start out using Emacs in GUI mode (as opposed to the text-based terminal interface). Personally I still use this mode most often even a few years into using Emacs, but when starting out it's especially helpful to have some of the familiar OS X keybindings for Copying, Pasting, Cmd-Tabbing, etc. On a Mac you'll have this available if you installed using homebrew with the =--with-cocoa= flag (=brew install emacs --with-cocoa=).
 
 It's also convenient to be able to open your editor from the command line and pass it a file or directory to start with. To make this easy, you can add this function to your shell profile (=~/.bashrc=, =~/.bash_profile=, etc):
 
@@ -133,14 +140,13 @@ Then from the command line you'll be able to do things like =em pizza.el= to ope
 
 ** Editor Basics: Find-In-Project and Ctrl-P
 
-Finally let's try to tick off a couple more features from the "What would I miss if I started using Emacs from Atom/SublimeText/TextMate?" list. The 2 of these I find most essential are:
-  * "Ctrl-P"-style command to fuzzily find a file in the current project
-  * Find-in-Project text search for finding an arbitrary string in the current project
+Next let's try to check off a couple more features from the "What would I miss if I started using Emacs from Atom/SublimeText/TextMate?" list. The 2 of these I find most essential are:
+ * "Ctrl-P"-style command to fuzzily find a file in the current project
+ * Find-in-Project text search for finding an arbitrary string in the current project
 
-We can get these features pretty easily using 3 popular packages: [[https://github.com/emacs-helm/helm][Helm]], [[https://github.com/bbatsov/helm-projectile][Helm Projectile]] and [[https://github.com/syohex/emacs-helm-ag][Helm ag]]. Helm is actually something of a "parent" package for these other 2 -- Helm provides a generalized framework for doing the kind of slick "fuzzily-search some text in a list of stuff" interface that we all know and love. Then other packages like Helm Projectile and Helm ag can take advantage of this interaction to build neat tools like "find a file in my project" or "find some text in my project."
+We can get these features pretty easily using 3 popular packages: [[https://github.com/emacs-helm/helm][Helm]], [[https://github.com/bbatsov/helm-projectile][Helm Projectile]] and [[https://github.com/syohex/emacs-helm-ag][Helm ag]]. Helm is actually something of a "parent" package for these other 2 -- it provides a generalized framework for doing the kind of slick "fuzzily-search some text in a list of stuff" interface that we all know and love. Then other packages like Helm Projectile and Helm ag can take advantage of this interaction to build neat tools like "find a file in my project" or "find some text in my project."
 
-Add these to your =package-list= and give them some basic keybinds as follows:
-
+Add these to your =package-list= and give them some basic keybindings as follows:
 
 #+BEGIN_SRC emacs-lisp
 (setq package-list '(better-defaults
@@ -154,11 +160,13 @@ Add these to your =package-list= and give them some basic keybinds as follows:
 (global-set-key (kbd "s-t") #'helm-projectile-find-file-dwim)
 #+END_SRC
 
-The =s= in the keybinds here stands for the "Super" which in the OS X Cocoa app should be your =CMD= Key. So this gives us the familiar =Cmd-f= for "search for text in this project" and =Cmd-t= for "find files in my project." Finally we also over-write the default =M-x= keybinding to use helm's interface for searching for Emacs commands to run. This makes more complex Emacs commands much more discoverable.
+The =s= in the keybinds here stands for the "Super" modifier, which in the OS X Cocoa app should be your =CMD= Key. (The other modifier shortcuts we'll be seing include =C-= for Control, =M-= for Meta or Option, and =S-= for shift).
+
+These bindings give us the familiar =Cmd-f= for "search for text in this project" and =Cmd-t= for "find files in my project." Finally we also over-write the default =M-x= keybinding to use helm's interface for searching for Emacs commands to run. Now when we need to look for a less familiar Emacs interactive command, the Helm interface will help us by fuzzily searching and narrowing among the available commands.
 
 ** Ruby Basics: Highlighting and Auto-matching
 
-Now that we've tamed Emacs into a slightly more well-behaved general editing environment, we can finally dive into our Ruby setup!
+Now that we've tamed Emacs into a slightly more well-behaved general editing environment, we can dive into our Ruby setup!
 
 Let's start with a bit of basic auto-matching for paired characters (parens, quotes, def/class/if-end, etc). Add =ruby-electric= to your package list and tell emacs to require it automatically whenever we enter ruby mode like so:
 
@@ -177,18 +185,18 @@ Let's start with a bit of basic auto-matching for paired characters (parens, quo
 
 Sometimes Ruby code appears in other kinds of files that don't end with the standard =.rb= extension. We can tell emacs to treat these as ruby files using this snippet:
 
-
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'auto-mode-alist
                '("\\.\\(?:cap\\|gemspec\\|irbrc\\|gemrc\\|rake\\|rb\\|ru\\|thor\\)\\'" . ruby-mode))
   (add-to-list 'auto-mode-alist
                '("\\(?:Brewfile\\|Capfile\\|Gemfile\\(?:\\.[a-zA-Z0-9._-]+\\)?\\|[rR]akefile\\)\\'" . ruby-mode))
-
 #+END_SRC
 
 ** Ruby Version Manager
 
-Most Ruby developers these days are using some kind of Version Manager to simplify the process of installing and jumping around between various ruby versions. This is a great feature to have, but it unfortunately adds another layer of indirection between emacs and the Ruby installation living on our machine. And to further complicate things, the community hasn't really standardized on any of the particular options, which means you're likely using one of Rbenv, RVM, or Chruby. Depending on which of these you're using, you'll want to pull in the appropriate config below:
+Most Ruby developers these days are using some kind of Version Manager to simplify the process of installing and jumping around between various ruby versions. This is a great feature to have, but it unfortunately adds another layer of indirection between Emacs and the Ruby installation living on our machine.
+
+To further complicate things, the community hasn't really standardized on any of the particular options, which means you're likely using one of Rbenv, RVM, or Chruby. Depending on which of these you're using, you'll want to pull in the appropriate config below:
 
 *** RVM (Using [[https://github.com/senny/rvm.el][rvm.el]])
 
@@ -239,12 +247,16 @@ Add the =rvm= package and invoke it using =(rvm-use-default)=
 
 (chruby "2.2.2") ;;  or whichever version you want to use
 #+END_SRC
+
 ** Ruby Interactions: The Once and Future Workflow
 
-Now that we've diligently gotten our groundwork out of the way, we can at last get into the good stuff. In this section we'll look at several tools for working interactively with Ruby code from within Emacs. Features like this are ultimately one of the biggest reasons for using Emacs in the first place. As we set up these features we'll take a few key code interaction patterns and focus on making them as smooth as possible. Specifically, when I'm working with Ruby code I want to be able to:
+Now that we have the groundwork out of the way we can tackle the good stuff. In this section we'll look at several tools for working interactively with Ruby code from within Emacs. Emacs as a tool comes out of a rich history of interactive, REPL-driven Lisp development environments. Combined with being deeply programmable (thanks to Emacs Lisp), this makes it ideal for creating a smoothly interactive development environment. We want to reduce the time and effort required to get feedback from running our code as much as possible, and Emacs can help accomplish this.
+
+In the context of Ruby code, I specifically want to be able to:
+
   * Arbitrarily evaluate Ruby code from the current buffer
-  * Run tests from within Emacs
   * Open an interactive ruby session (i.e. REPL -- IRB or Pry) within Emacs
+  * Run tests from within Emacs
 
 Let's check out some neat Emacs packages that make interactions like these possible.
 
@@ -299,9 +311,7 @@ First, install and configure inf-ruby:
                      seeing-is-believing
                      chruby
                      inf-ruby))
-
 ;; ...
-
 (autoload 'inf-ruby-minor-mode "inf-ruby" "Run an inferior Ruby process" t)
 (add-hook 'ruby-mode-hook 'inf-ruby-minor-mode)
 #+END_SRC
@@ -313,6 +323,7 @@ Restart Emacs then open up a Ruby file somewhere. Try out the following:
   * Alternatively, use =C-c M-r= to run a selected chunk of code and automatically go to the ruby buffer
   * Finally, use =helm-M-x= (which we bound earlier to the default =M-x= keybinding) to search for "ruby send" and see what other default bindings inf-ruby gives us.
   * If you do a lot of work in Rails or Sinatra, also check out the commands =inf-ruby-console-rails= and =inf-ruby-console-racksh= -- it can also be used to start a console session in the environment of your current project.
+
 *** Ruby TDD -- [[https://github.com/r0man/ruby-test-mode][ruby-test-mode.el]]
  Finally let's deal with the last item on our interactive workflow checklist -- interactively running tests from Emacs. To do this we can use the ruby-test-mode package. First install and configure it in your init file:
 
@@ -326,9 +337,7 @@ Restart Emacs then open up a Ruby file somewhere. Try out the following:
                      chruby
                      inf-ruby
                      ruby-test-mode))
-
 ;;...
-
 (require 'ruby-test-mode)
 (add-hook 'ruby-mode-hook 'ruby-test-mode)
 #+END_SRC
