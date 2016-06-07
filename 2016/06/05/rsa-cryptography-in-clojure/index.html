@@ -11,6 +11,7 @@
     
   </title>
   <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="/styles.css">
   <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
   <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
@@ -46,7 +47,6 @@
     <span class="p">(</span><span class="nf">.initialize</span> <span class="nv">length</span><span class="p">)))</span>
 
 <span class="p">(</span><span class="kd">defn </span><span class="nv">generate-keypair</span> <span class="p">[</span><span class="nv">length</span><span class="p">]</span>
-  <span class="s">&quot;Generate an RSA Keypair. Accepts optional length. Default key length is 2048. Minimum key length is 512.&quot;</span>
   <span class="p">(</span><span class="nb">assert </span><span class="p">(</span><span class="nb">&gt;= </span><span class="nv">length</span> <span class="mi">512</span><span class="p">)</span> <span class="s">&quot;RSA Key must be at least 512 bits long.&quot;</span><span class="p">)</span>
   <span class="p">(</span><span class="nf">.generateKeyPair</span> <span class="p">(</span><span class="nf">kp-generator</span> <span class="nv">length</span><span class="p">)))</span>
 
@@ -94,7 +94,8 @@
      <span class="p">(</span><span class="nf">.sign</span> <span class="nv">sig</span><span class="p">))))</span>
 
 <span class="p">(</span><span class="kd">defn </span><span class="nv">verify</span> <span class="p">[</span><span class="nv">encoded-sig</span> <span class="nv">message</span> <span class="nv">public-key</span><span class="p">]</span>
-  <span class="s">&quot;RSA public key verification of a Base64-encoded signature and an assumed source message. Returns true/false if signature is valid.&quot;</span>
+  <span class="s">&quot;RSA public key verification of a Base64-encoded signature and an</span>
+<span class="s">   assumed source message. Returns true/false if signature is valid.&quot;</span>
   <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">msg-data</span> <span class="p">(</span><span class="nf">.getBytes</span> <span class="nv">message</span><span class="p">)</span>
         <span class="nv">signature</span> <span class="p">(</span><span class="nf">decode64</span> <span class="nv">encoded-sig</span><span class="p">)</span>
         <span class="nv">sig</span> <span class="p">(</span><span class="nb">doto </span><span class="p">(</span><span class="nf">java.security.Signature/getInstance</span> <span class="s">&quot;SHA256withRSA&quot;</span><span class="p">)</span>

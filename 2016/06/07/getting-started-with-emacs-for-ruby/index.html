@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Getting Started with Emacs for Ruby &middot; Horace Williams
+    
+  </title>
+  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a href="https://github.com/worace">github</a></li>
+          <li><a href="http://twitter.com/worace">twitter</a></li>
+        </ul>
+      </header>
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Getting Started with Emacs for Ruby</h1>
+  <time datetime="2016-06-07T00:00:00-06:00" class="post-date">07 Jun 2016</time>
+  <p>Lately I&#8217;ve been gradually drawing a few students at Turing into the Emacs fold. Along the way I&#8217;ve been thinking about what is needed for a minimal but sufficient Emacs setup for working with Ruby code.</p>
+<p>In this post I&#8217;ll try to document some of the tools and configuration I&#8217;ve found useful, with an aim toward keeping things accessible for a newcomer to Emacs. The key features I&#8217;ll focus on include:</p>
+<ul>
+  <li>Modernizing the Emacs UI using some sane defaults</li>
+  <li>Setting up basic Ruby syntax highlighting and syntax completion</li>
+  <li>Interactively evaluating code in Ruby buffers using Seeing Is Believing</li>
+  <li>Running a Ruby REPL from within emacs using inf-ruby-mode</li>
+  <li>Running Ruby tests from within emacs using ruby-test-mode</li>
+</ul>
+<p>For now I won&#8217;t be digging into any Rails-specific features &#8211; hopefully I can cover this in another post, but this guide is focused on plain old Ruby.</p>
+<h2>Emacs Configuration 101</h2>
+<p>The Emacs configuration journey starts with a special directory on your machine located at <code>~/.emacs.d</code>. When Emacs starts up, it will by default look for a file called <code>init.el</code> in this directory and use that to load any user-specific configuration you want to provide. (This is similar to how your shell loads any user configuration files at <code>~/.profile</code> or <code>~/.bashrc</code>, etc)</p>
+<p>To follow along, go ahead and create this directory and file:</p>
+<div class="highlight"><pre>mkdir ~/.emacs.d
+touch ~/.emacs.d/init.el
+</pre></div>
+<p>If your machine already has an Emacs configuration in this directory and you want to start from scratch, it&#8217;s safe to stash the existing directory by moving it:</p>
+<div class="highlight"><pre>mv ~/.emacs.d ~/.emacs.d.old
+</pre></div>
+<p>Your original config will be waiting for you should you decide to return to it.</p>
+<h3>Baby&#8217;s First Emacs Lisp</h3>
+<p>An astute reader will have noticed the extension of the init file we just created: <code>.el</code>. This stands for Emacs Lisp, the language in which Emacs is written and scripted. It turns out Emacs is really a big old Lisp interpreter that happens to have some neat features for manipulating text buffers tucked away in the corners. So are you saying we&#8217;ll be writing&#8230; <i>Lisp</i>? You bet your Free Software Foundation commemorative mousepad we are!</p>
+<p>When Emacs boots, it will process our <code>init.el</code> as Emacs Lisp, so within this file we&#8217;ll be writing Elisp expressions to customize how the editor behaves.</p>
+<h2>Emacs: Out of the 1990&#8217;s</h2>
+<p>While there&#8217;s a certain endearing homeliness to it, the first impression of a fresh Emacs install is fairly dated:</p>
+<p><img src="/public/images/emacs_splash_screen.png" alt="/public/images/emacs_splash_screen.png" /></p>
+<p>The default Emacs configuration includes some clunky things like menu bars and a loud &#8220;splash&#8221; screen. <a href="https://github.com/technomancy/better-defaults">BetterDefaults</a> is a popular Emacs package for improving this situation without getting too overboard with magical customizations.</p>
+<p>Let&#8217;s start by pulling BetterDefaults into our new config. This will also give us a good opportunity to talk about&#8230;</p>
+<h3>Emacs Packages</h3>
+<p>A &#8220;package&#8221; is the standard unit for distributing a chunk of Emacs code. There are several free online package repositories out there, the most popular being <a href="https://elpa.gnu.org/">GNU ELPA</a>, <a href="https://www.emacswiki.org/emacs/ELPA">ELPA</a>, <a href="https://marmalade-repo.org/">Marmalade</a>, and <a href="https://melpa.org/">Melpa</a>.</p>
+<p>Unfortunately, Emacs doesn&#8217;t come with a built-in &#8220;manifest&#8221;-driven solution for defining what packages to use (like we might encounter with a Gemfile or package.json in a Ruby or Node project).</p>
+<p>Fortunately it&#8217;s pretty easy to add this functionality, so go ahead and add this Elisp to your <code>init.el</code>:</p>
+<div class="highlight"><pre><span class="c1">; list the repositories containing them</span>
+<span class="p">(</span><span class="nf">setq</span> <span class="nv">package-archives</span> <span class="o">&#39;</span><span class="p">((</span><span class="s">&quot;elpa&quot;</span> <span class="o">.</span> <span class="s">&quot;http://tromey.com/elpa/&quot;</span><span class="p">)</span>
+                         <span class="p">(</span><span class="s">&quot;gnu&quot;</span> <span class="o">.</span> <span class="s">&quot;http://elpa.gnu.org/packages/&quot;</span><span class="p">)</span>
+                         <span class="p">(</span><span class="s">&quot;melpa&quot;</span> <span class="o">.</span> <span class="s">&quot;https://melpa.org/packages/&quot;</span><span class="p">)</span>
+                         <span class="p">(</span><span class="s">&quot;marmalade&quot;</span> <span class="o">.</span> <span class="s">&quot;http://marmalade-repo.org/packages/&quot;</span><span class="p">)))</span>
+
+<span class="c1">; activate all the packages (in particular autoloads)</span>
+<span class="p">(</span><span class="nf">package-initialize</span><span class="p">)</span>
+
+<span class="c1">; fetch the list of packages available</span>
+<span class="p">(</span><span class="nf">unless</span> <span class="nv">package-archive-contents</span>
+  <span class="p">(</span><span class="nf">package-refresh-contents</span><span class="p">))</span>
+
+<span class="c1">; list the packages you want</span>
+<span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span><span class="p">))</span>
+
+<span class="c1">; install the missing packages</span>
+<span class="p">(</span><span class="nf">dolist</span> <span class="p">(</span><span class="nf">package</span> <span class="nv">package-list</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">unless</span> <span class="p">(</span><span class="nf">package-installed-p</span> <span class="nv">package</span><span class="p">)</span>
+    <span class="p">(</span><span class="nf">package-install</span> <span class="nv">package</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="nf">require</span> <span class="ss">&#39;better-defaults</span><span class="p">)</span>
+</pre></div>
+<p>This first Elisp snippet defines a list of archives to use when searching for packages and then initializes the package system.</p>
+<p>Next we define a list of packages we want to install (so far just <code>better-defaults</code>). Then we check to see if any of them are missing and, if so, install them. From now on, we can simply add packages to our <code>package-list</code> and they should be automatically installed when we start Emacs &#8211; similar to adding a new gem to your <code>Gemfile</code> and running <code>bundle</code>.</p>
+<p>The <code>require</code> expression on the last line loads the better-defaults package that we just installed, so you should see it taking effect.</p>
+<p>Save this file and restart Emacs if it&#8217;s already running (remember: <code>C-x C-c</code> to quit), and you should see emacs pause briefly as it installs the Better Defaults package. You should also see a slightly cleaner interface now that the toolbars are removed.</p>
+<h2>A Bit More UI:</h2>
+<p>Next let&#8217;s get rid of the default Emacs splash screen and have it put us into an empty buffer instead. The <code>initial-major-mode</code> setting can take any of Emacs&#8217; major modes &#8211; a lot of people use Org or Markdown mode for their scratch buffer, but since we&#8217;re targeting a Ruby setup here, we&#8217;ll use that.</p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">inhibit-splash-screen</span> <span class="nv">t</span>
+      <span class="nv">initial-scratch-message</span> <span class="nv">nil</span>
+      <span class="nv">initial-major-mode</span> <span class="ss">&#39;ruby-mode</span><span class="p">)</span>
+</pre></div>
+<p>Additionally, it would be nice if it didn&#8217;t look so glaringly white. Let&#8217;s update our package list to pull in the ever-gentle-on-the-eyes <a href="https://github.com/bbatsov/solarized-emacs">Solarized Theme</a> and load it in our init file:</p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span> <span class="nv">solarized-theme</span><span class="p">))</span>
+
+<span class="c1">;....</span>
+
+<span class="p">(</span><span class="nf">load-theme</span> <span class="ss">&#39;solarized-dark</span> <span class="nv">t</span><span class="p">)</span>
+</pre></div>
+<p>Finally, we add a few more bits of snazz like showing line numbers and setting a default font (<a href="https://github.com/adobe-fonts/source-code-pro">SourceCodePro</a> is a free, open source monospaced font for editing code from Adobe.)</p>
+<div class="highlight"><pre><span class="c1">;; Show line numbers</span>
+<span class="p">(</span><span class="nf">global-linum-mode</span><span class="p">)</span>
+
+<span class="c1">;; Typography</span>
+<span class="p">(</span><span class="nf">set-face-attribute</span> <span class="ss">&#39;default</span> <span class="nv">nil</span>
+                    <span class="nv">:family</span> <span class="s">&quot;Source Code Pro&quot;</span>
+                    <span class="nv">:height</span> <span class="mi">150</span>
+                    <span class="nv">:weight</span> <span class="ss">&#39;normal</span>
+                    <span class="nv">:width</span> <span class="ss">&#39;normal</span><span class="p">)</span>
+</pre></div>
+<h2>OS X Conveniences</h2>
+<p>I generally recommend people start out using Emacs in GUI mode (as opposed to the text-based terminal interface). Personally I still use this mode most often even a few years into using Emacs, but when starting out it&#8217;s especially helpful to have some of the familiar OS X keybindings for Copying, Pasting, Cmd-Tabbing, etc. On a Mac you&#8217;ll have this available if you installed using homebrew with the <code>--with-cocoa</code> flag (<code>brew install emacs --with-cocoa</code>).</p>
+<p>It&#8217;s also convenient to be able to open your editor from the command line and pass it a file or directory to start with. To make this easy, you can add this function to your shell profile (<code>~/.bashrc</code>, <code>~/.bash_profile</code>, etc):</p>
+<div class="highlight"><pre>em <span class="o">()</span> <span class="o">{</span>
+  open -a /usr/local/Cellar/emacs/24.5/Emacs.app/Contents/MacOS/Emacs <span class="nv">$*</span>
+<span class="o">}</span>
+</pre></div>
+<p>Then from the command line you&#8217;ll be able to do things like <code>em pizza.el</code> to open that file in an Emacs Cocoa app window.</p>
+<h2>Editor Basics: Find-In-Project and Ctrl-P</h2>
+<p>Next let&#8217;s try to check off a couple more features from the &#8220;What would I miss if I started using Emacs from Atom/SublimeText/TextMate?&#8221; list. The 2 of these I find most essential are:</p>
+<ul>
+  <li>&#8220;Ctrl-P&#8221; or &#8220;Cmd-T&#8221;-style command to fuzzily open a file in the current project</li>
+  <li>Find-in-Project text search for finding an arbitrary string in the current project</li>
+</ul>
+<p>We can get these features pretty easily using 3 popular packages: <a href="https://github.com/emacs-helm/helm">Helm</a>, <a href="https://github.com/bbatsov/helm-projectile">Helm Projectile</a> and <a href="https://github.com/syohex/emacs-helm-ag">Helm ag</a>. Helm is actually something of a &#8220;parent&#8221; package for these other 2 &#8211; it provides a generalized framework for doing the kind of slick &#8220;fuzzily-search some text in a list of stuff&#8221; interface that we all know and love. Then other packages like Helm Projectile and Helm ag can take advantage of this interaction to build neat tools like &#8220;find a file in my project&#8221; or &#8220;find some text in my project.&#8221;</p>
+<p>Add these to your <code>package-list</code> and give them some basic keybindings as follows:</p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span>
+                     <span class="nv">solarized-theme</span>
+                     <span class="nv">helm</span>
+                     <span class="nv">helm-projectile</span>
+                     <span class="nv">helm-ag</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">global-set-key</span> <span class="p">(</span><span class="nf">kbd</span> <span class="s">&quot;M-x&quot;</span><span class="p">)</span> <span class="o">#</span><span class="ss">&#39;helm-M-x</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">global-set-key</span> <span class="p">(</span><span class="nf">kbd</span> <span class="s">&quot;s-f&quot;</span><span class="p">)</span> <span class="o">#</span><span class="ss">&#39;helm-projectile-ag</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">global-set-key</span> <span class="p">(</span><span class="nf">kbd</span> <span class="s">&quot;s-t&quot;</span><span class="p">)</span> <span class="o">#</span><span class="ss">&#39;helm-projectile-find-file-dwim</span><span class="p">)</span>
+</pre></div>
+<p>The <code>s</code> in the keybinds here stands for the &#8220;Super&#8221; modifier, which in the OS X Cocoa app should be your <code>CMD</code> Key. (The other modifier shortcuts we&#8217;ll be seing include <code>C-</code> for Control, <code>M-</code> for Meta or Option, and <code>S-</code> for shift).</p>
+<p>These bindings give us the familiar <code>Cmd-f</code> for &#8220;search for text in this project&#8221; and <code>Cmd-t</code> for &#8220;find files in my project.&#8221; Finally we also over-write the default <code>M-x</code> keybinding to use helm&#8217;s interface for searching for Emacs commands to run. Now when we need to look for a less familiar Emacs interactive command, the Helm interface will help us by fuzzily searching and narrowing among the available commands.</p>
+<h2>Ruby Basics: Highlighting and Auto-matching</h2>
+<p>Now that we&#8217;ve tamed Emacs into a slightly more well-behaved general editing environment, we can dive into our Ruby setup!</p>
+<p>Let&#8217;s start with a bit of basic auto-matching for paired characters (parens, quotes, def/class/if-end, etc). Add <code>ruby-electric</code> to your package list and tell emacs to require it automatically whenever we enter ruby mode like so:</p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span>
+                     <span class="nv">solarized-theme</span>
+                     <span class="nv">helm-projectile</span>
+                     <span class="nv">helm-ag</span>
+                     <span class="nv">ruby-electric</span><span class="p">))</span>
+
+<span class="c1">;...</span>
+
+<span class="c1">;; Autoclose paired syntax elements like parens, quotes, etc</span>
+<span class="p">(</span><span class="nf">add-hook</span> <span class="ss">&#39;ruby-mode-hook</span> <span class="nv">ruby-electric-mode</span><span class="p">)</span>
+</pre></div>
+<p>Sometimes Ruby code appears in other kinds of files that don&#8217;t end with the standard <code>.rb</code> extension. We can tell emacs to treat these as ruby files using this snippet:</p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">add-to-list</span> <span class="ss">&#39;auto-mode-alist</span>
+             <span class="o">&#39;</span><span class="p">(</span><span class="s">&quot;\\.\\(?:cap\\|gemspec\\|irbrc\\|gemrc\\|rake\\|rb\\|ru\\|thor\\)\\&#39;&quot;</span> <span class="o">.</span> <span class="nv">ruby-mode</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">add-to-list</span> <span class="ss">&#39;auto-mode-alist</span>
+             <span class="o">&#39;</span><span class="p">(</span><span class="s">&quot;\\(?:Brewfile\\|Capfile\\|Gemfile\\(?:\\.[a-zA-Z0-9._-]+\\)?\\|[rR]akefile\\)\\&#39;&quot;</span> <span class="o">.</span> <span class="nv">ruby-mode</span><span class="p">))</span>
+</pre></div>
+<h2>Ruby Version Manager</h2>
+<p>Most Ruby developers these days are using some kind of Version Manager to simplify the process of installing and jumping around between various ruby versions. This is a great feature to have, but it unfortunately adds another layer of indirection between Emacs and the Ruby installation living on our machine.</p>
+<p>To further complicate things, the community hasn&#8217;t really standardized on any of the particular options, which means you&#8217;re likely using one of Rbenv, RVM, or Chruby. Depending on which of these you&#8217;re using, you&#8217;ll want to pull in the appropriate config below:</p>
+<h3>RVM (Using <a href="https://github.com/senny/rvm.el">rvm.el</a>)</h3>
+<p>Add the <code>rvm</code> package and invoke it using <code>(rvm-use-default)</code></p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span>
+                     <span class="nv">solarized-theme</span>
+                     <span class="nv">helm-projectile</span>
+                     <span class="nv">helm-ag</span>
+                     <span class="nv">ruby-electric</span>
+                     <span class="nv">rvm</span><span class="p">))</span>
+<span class="c1">;...</span>
+
+<span class="p">(</span><span class="nf">rvm-use-default</span><span class="p">)</span>
+</pre></div>
+<h3>RBENV (using <a href="https://github.com/senny/rbenv.el">rbenv.el</a> )</h3>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span>
+                     <span class="nv">solarized-theme</span>
+                     <span class="nv">helm-projectile</span>
+                     <span class="nv">helm-ag</span>
+                     <span class="nv">ruby-electric</span>
+                     <span class="nv">rbenv</span><span class="p">))</span>
+<span class="c1">;...</span>
+
+<span class="p">(</span><span class="nf">global-rbenv-mode</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">rbenv-use-global</span><span class="p">)</span>
+
+<span class="c1">;; Optional -- if your RBENV installation is located somewhere besides</span>
+<span class="c1">;; ~/.rbenv, you will need to configure this:</span>
+<span class="c1">;;(setq rbenv-installation-dir &quot;/usr/local/rbenv&quot;)</span>
+</pre></div>
+<h3>Chruby (using <a href="https://github.com/plexus/chruby.el">chruby.el</a>)</h3>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span>
+                     <span class="nv">solarized-theme</span>
+                     <span class="nv">helm-projectile</span>
+                     <span class="nv">helm-ag</span>
+                     <span class="nv">ruby-electric</span>
+                     <span class="nv">chruby</span><span class="p">))</span>
+<span class="c1">;...</span>
+
+<span class="p">(</span><span class="nf">chruby</span> <span class="s">&quot;2.2.2&quot;</span><span class="p">)</span> <span class="c1">;;  or whichever version you want to use</span>
+</pre></div>
+<h2>Ruby Interactions: The Once and Future Workflow</h2>
+<p>Now that we have the groundwork out of the way we can tackle the good stuff. In this section we&#8217;ll look at several tools for working interactively with Ruby code from within Emacs.</p>
+<p>Emacs comes from a rich history of interactive, REPL-driven Lisp development environments. Combined with being deeply programmable (thanks to Emacs Lisp), this makes it ideal for creating a smoothly interactive development environment. We want to reduce the time and effort required to get feedback from running our code as much as possible, and Emacs can help accomplish this.</p>
+<p>In the context of Ruby code, I specifically want to be able to:</p>
+<ul>
+  <li>Arbitrarily evaluate Ruby code from the current buffer</li>
+  <li>Open an interactive ruby session (i.e. REPL &#8211; IRB or Pry) within Emacs</li>
+  <li>Run tests from within Emacs</li>
+</ul>
+<p>Let&#8217;s check out some neat Emacs packages that make interactions like these possible.</p>
+<h3>Ruby Buffer Interaction &#8211; Seeing truly is believing</h3>
+<p>First, install the Gem:</p>
+<div class="highlight"><pre>gem install seeing_is_believing --version 3.0.0.beta.7
+</pre></div>
+<p>Then, add and configure the corresponding Emacs package:</p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span>
+                     <span class="nv">solarized-theme</span>
+                     <span class="nv">helm-projectile</span>
+                     <span class="nv">helm-ag</span>
+                     <span class="nv">ruby-electric</span>
+                     <span class="nv">seeing-is-believing</span>
+                     <span class="nv">chruby</span><span class="p">))</span>
+
+<span class="c1">;; ...</span>
+
+<span class="p">(</span><span class="nf">setq</span> <span class="nv">seeing-is-believing-prefix</span> <span class="s">&quot;C-.&quot;</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">add-hook</span> <span class="ss">&#39;ruby-mode-hook</span> <span class="ss">&#39;seeing-is-believing</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">require</span> <span class="ss">&#39;seeing-is-believing</span><span class="p">)</span>
+</pre></div>
+<p>Restart Emacs and open up a sample Ruby file. Try experimenting with the following keybindings to see what Seeing Is Believing gives us:</p>
+<ul>
+  <li><code>C-. s</code> - Run Seeing is Believing for the entire file</li>
+  <li><code>C-. c</code> - Clear the Seeing is Believing output</li>
+  <li><code>C-. t</code> - Tag a line to be &#8220;targeted&#8221; for evaluation by SiB</li>
+  <li><code>C-. x</code> - Run only the &#8220;tagged&#8221; lines (those with trailing &#8220;# =&gt; &#8221; markers)</li>
+</ul>
+<p>Hopefully you&#8217;re seeing some output show up at the end of your Ruby source lines. Seeing is Believing is a Gem that runs a chunk of Ruby code and prints out (in an existing text buffer) the result of evaluating each line. For our purposes, this gives us a very powerful way to quickly interact with a chunk of code &#8211; directly from our Emacs buffer!</p>
+<p>To learn more, check out the docs for the <a href="https://github.com/JoshCheek/seeing_is_believing">Seeing Is Believing Gem</a> and <a href="https://github.com/jcinnamond/seeing-is-believing">seeing-is-believing.el</a>.</p>
+<h3>inf-ruby &#8211; IRB from Emacs</h3>
+<p>Next stop is a neat package called <a href="https://github.com/nonsequitur/inf-ruby">inf-ruby</a>. In the tradition of other Emacs Inferior Language Modes, it gives us an embedded IRB process running inside of Emacs, as well as some standard keybindings to interact with the REPL by sending code snippets to it from a buffer.</p>
+<p>First, install and configure inf-ruby:</p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span>
+                     <span class="nv">solarized-theme</span>
+                     <span class="nv">helm-projectile</span>
+                     <span class="nv">helm-ag</span>
+                     <span class="nv">ruby-electric</span>
+                     <span class="nv">seeing-is-believing</span>
+                     <span class="nv">chruby</span>
+                     <span class="nv">inf-ruby</span><span class="p">))</span>
+<span class="c1">;; ...</span>
+<span class="p">(</span><span class="nf">autoload</span> <span class="ss">&#39;inf-ruby-minor-mode</span> <span class="s">&quot;inf-ruby&quot;</span> <span class="s">&quot;Run an inferior Ruby process&quot;</span> <span class="nv">t</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">add-hook</span> <span class="ss">&#39;ruby-mode-hook</span> <span class="ss">&#39;inf-ruby-minor-mode</span><span class="p">)</span>
+</pre></div>
+<p>Restart Emacs then open up a Ruby file somewhere. Try out the following:</p>
+<ul>
+  <li>Use <code>C-c C-s</code> to launch the inf-ruby process.</li>
+  <li>Use <code>C-x o</code> to switch to the inf-ruby pane and try running some random ruby snippets as you normally would from IRB or pry.</li>
+  <li>Go back to your Ruby buffer, select (by highlighting) a chunk of code, and use <code>C-c C-r</code> to <b>push</b> that Ruby code into the IRB session.</li>
+  <li>For example, try defining a class in your Ruby buffer, select the whole buffer, run <code>C-c C-r</code>, then swap over to the inf-ruby buffer and instantiate an instance of your class. Pretty cool!</li>
+  <li>Alternatively, use <code>C-c M-r</code> to run a selected chunk of code and automatically go to the ruby buffer</li>
+  <li>Finally, use <code>helm-M-x</code> (which we bound earlier to the default <code>M-x</code> keybinding) to search for &#8220;ruby send&#8221; and see what other default bindings inf-ruby gives us.</li>
+  <li>If you do a lot of work in Rails or Sinatra, check out the commands <code>inf-ruby-console-rails</code> and <code>inf-ruby-console-racksh</code>. Using these commands inf-ruby can start a console session in the environment of your web project.</li>
+</ul>
+<h3>Ruby TDD &#8211; <a href="https://github.com/r0man/ruby-test-mode">ruby-test-mode.el</a></h3>
+<p>Now for the last item on our interactive workflow checklist &#8211; running tests from Emacs. At its core, TDD is about incorporating more feedback into our development workflow. To take full advantage of this, we want running tests to be as seamless as possible &#8211; no context switching of jumping out to a terminal, etc etc. We can accomplish this in Emacs using the ruby-test-mode package. First install and configure it in your init file:</p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">setq</span> <span class="nv">package-list</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">better-defaults</span>
+                     <span class="nv">solarized-theme</span>
+                     <span class="nv">helm-projectile</span>
+                     <span class="nv">helm-ag</span>
+                     <span class="nv">ruby-electric</span>
+                     <span class="nv">seeing-is-believing</span>
+                     <span class="nv">chruby</span>
+                     <span class="nv">inf-ruby</span>
+                     <span class="nv">ruby-test-mode</span><span class="p">))</span>
+<span class="c1">;;...</span>
+<span class="p">(</span><span class="nf">require</span> <span class="ss">&#39;ruby-test-mode</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">add-hook</span> <span class="ss">&#39;ruby-mode-hook</span> <span class="ss">&#39;ruby-test-mode</span><span class="p">)</span>
+</pre></div>
+<p>Restart Emacs, then open a Ruby test file. Experiment with the keybinding &#8220;C-c C-,&#8221; - it should allow you to run the tests from the current file into a second buffer called a compilation buffer. Tests from directly within emacs &#8211; pretty neat!</p>
+<p>By default, ruby-test-mode will try to evaluate tests in the current buffer. It determines whether the current buffer contains tests based on whether its filename ends in <code>_test.rb</code> or <code>_spec.rb</code> &#8211; so if you don&#8217;t follow these conventions it may behave erratically for you.</p>
+<p>If the current buffer is <i>not</i> a Ruby test, it will try to do one of the following:</p>
+<ul>
+  <li>If there is a visible test buffer in another window (for example, you have 2 windows open in a side-by-side split), it will run that one. This is great for putting a test and an implementation up side-by-side and being able to run the test from either window.</li>
+  <li>If none of these are available, it will try to re-run whatever test was last run, if there is one</li>
+</ul>
+<h3>Improving Ruby Test Mode Interaction</h3>
+<p>This setup is coming along pretty nicely, but I find dealing with all the compilation buffers created by ruby-test-mode a little cumbersome. By default it pulls them up in a new window, which potentially covers up something you were working on before, or at least takes up half of your frame. Then you have to manually swap over and kill the buffer if you want to get rid of it.</p>
+<p>We can make this a little smoother by hooking into the compilation completion hook and setting up a keybinding to easily close the buffer:</p>
+<div class="highlight"><pre><span class="p">(</span><span class="nf">add-hook</span> <span class="ss">&#39;compilation-finish-functions</span>
+          <span class="p">(</span><span class="k">lambda </span><span class="p">(</span><span class="nf">buf</span> <span class="nv">strg</span><span class="p">)</span>
+            <span class="p">(</span><span class="nf">switch-to-buffer-other-window</span> <span class="s">&quot;*compilation*&quot;</span><span class="p">)</span>
+            <span class="p">(</span><span class="nf">read-only-mode</span><span class="p">)</span>
+            <span class="p">(</span><span class="nf">goto-char</span> <span class="p">(</span><span class="nf">point-max</span><span class="p">))</span>
+            <span class="p">(</span><span class="nf">local-set-key</span> <span class="p">(</span><span class="nf">kbd</span> <span class="s">&quot;q&quot;</span><span class="p">)</span>
+                           <span class="p">(</span><span class="k">lambda </span><span class="p">()</span> <span class="p">(</span><span class="nf">interactive</span><span class="p">)</span> <span class="p">(</span><span class="nf">quit-restore-window</span><span class="p">)))))</span>
+</pre></div>
+<p>Now when ruby-test-mode finishes our tests, we will automatically jump to the test buffer and scroll to the bottom.</p>
+<p>Additionally, within the compliation buffer we&#8217;ll use the simple keybinding <code>q</code> to close the buffer and return to whatever frame configuration we had before. I find this makes a much more seamless TDD workflow. We can run tests, quickly check out the results, and quit out to return to what you were doing before &#8211; all without leaving Emacs.</p>
+<h2>Wrapup and Further Exploration</h2>
+<p>I&#8217;ve published a github repo containing the final product of this tutorial <a href="https://github.com/worace/emacs-for-ruby">here</a>. I&#8217;ll try to keep it (and this post) up to date as I uncover any problems or receive feedback. The biggest goal here was to keep things as simple and minimal as possible &#8211; the whole thing comes in around 80 lines of Elisp using 10 or so packages.</p>
+<p>With this setup, the main things we accomplished include:</p>
+<ul>
+  <li>Drag Emacs into the modern era using some sane defaults and a bit of UI polishing</li>
+  <li>Create a reasonably beginner-friendly environment that incorporates 2 of the killer convenience features of more mainstream editors like Sublime or Atom (Ctrl-P and Find-in-project)</li>
+  <li>Assemble a simple toolset for interactive Ruby development &#8211; we can evaluate code in a buffer, start an embedded IRB process, and run our tests all from within Emacs</li>
+</ul>
+<p>A few things that are obviously <i>not</i> included (and where to find them) include:</p>
+<ul>
+  <li>Rails-specific workflow features (check out <a href="https://github.com/eschulte/rinari">rinari</a> if you want to use emacs to work on Rails)</li>
+  <li>Version control integration (<a href="https://magit.vc/">magit</a> is the cadillac of in-editor VCS integrations)</li>
+  <li>Other language modes or integrations &#8211; if it runs on a computer there&#8217;s probably an Emacs mode for it &#8211; dig around and see what exists for your favorite languages</li>
+</ul>
+
+</article>
+
+      </main>
+
+    </div>
+
+    
+  </body>
+</html>
