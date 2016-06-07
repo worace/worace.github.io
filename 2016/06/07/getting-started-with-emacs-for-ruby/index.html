@@ -71,10 +71,8 @@ touch ~/.emacs.d/init.el
 <p>Unfortunately, Emacs doesn&#8217;t come with a built-in &#8220;manifest&#8221;-driven solution for defining what packages to use (like we might encounter with a Gemfile or package.json in a Ruby or Node project).</p>
 <p>Fortunately it&#8217;s pretty easy to add this functionality, so go ahead and add this Elisp to your <code>init.el</code>:</p>
 <div class="highlight"><pre><span class="c1">; list the repositories containing them</span>
-<span class="p">(</span><span class="nf">setq</span> <span class="nv">package-archives</span> <span class="o">&#39;</span><span class="p">((</span><span class="s">&quot;elpa&quot;</span> <span class="o">.</span> <span class="s">&quot;http://tromey.com/elpa/&quot;</span><span class="p">)</span>
-                         <span class="p">(</span><span class="s">&quot;gnu&quot;</span> <span class="o">.</span> <span class="s">&quot;http://elpa.gnu.org/packages/&quot;</span><span class="p">)</span>
-                         <span class="p">(</span><span class="s">&quot;melpa&quot;</span> <span class="o">.</span> <span class="s">&quot;https://melpa.org/packages/&quot;</span><span class="p">)</span>
-                         <span class="p">(</span><span class="s">&quot;marmalade&quot;</span> <span class="o">.</span> <span class="s">&quot;http://marmalade-repo.org/packages/&quot;</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">setq</span> <span class="nv">package-archives</span> <span class="o">&#39;</span><span class="p">((</span><span class="s">&quot;gnu&quot;</span> <span class="o">.</span> <span class="s">&quot;http://elpa.gnu.org/packages/&quot;</span><span class="p">)</span>
+                         <span class="p">(</span><span class="s">&quot;melpa&quot;</span> <span class="o">.</span> <span class="s">&quot;https://melpa.org/packages/&quot;</span><span class="p">)))</span>
 
 <span class="c1">; activate all the packages (in particular autoloads)</span>
 <span class="p">(</span><span class="nf">package-initialize</span><span class="p">)</span>
