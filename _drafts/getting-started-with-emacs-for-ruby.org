@@ -3,7 +3,17 @@ title: "Getting Started with Emacs for Ruby"
 layout: post
 ---
 
-Lately I've been slowly bringing a few of my students at Turing into the Emacs fold. Along the way I've been thinking about what a sufficient but minimal beginner's Emacs setup for working with Ruby code would look like. In this post I'll try to document some of the tools and configuration we've found useful. I'm also hoping to re-use much of this material for a "Beginner's Intro to Emacs" session we're offering at Turing in a few weeks, so this material is targeted at emacs newcomers.
+Lately I've been gradually tempting a few students at Turing into the Emacs fold. Along the way I've been thinking about what is needed for a minimal but sufficient Emacs setup for working with Ruby code.
+
+In this post I'll try to document some of the tools and configuration I've found useful, with an aim toward keeping things accessible for a newcomer to Emacs. The key features I'll focus on include:
+
+ * Modernizing the Emacs UI using some sane defaults
+ * Setting up basic Ruby syntax highlighting and syntax completion
+ * Interactively evaluating Emacs Ruby buffers using Seeing Is Believing
+ * Running a Ruby REPL from within emacs using inf-ruby-mode
+ * Running Ruby tests from within emacs using ruby-test-mode
+
+For now I won't be digging into any Rails-specific features -- hopefully I can cover this in another post, but this guide is focused on plain old Ruby.
 
 ** Emacs Configuration 101
 
