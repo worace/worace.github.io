@@ -257,6 +257,8 @@ Then, add and configure the corresponding Emacs package:
                      seeing-is-believing
                      chruby))
 
+;; ...
+
 (setq seeing-is-believing-prefix "C-.")
 (add-hook 'ruby-mode-hook 'seeing-is-believing)
 (require 'seeing-is-believing)
@@ -271,3 +273,32 @@ Restart Emacs and open up a sample Ruby file. Try experimenting with the followi
 Hopefully you're seeing some output show up at the end of your Ruby source lines. Seeing is Believing is a Gem that runs a chunk of Ruby code and prints out (in an existing text buffer) the result of evaluating each line. For our purposes, this gives us a very powerful way to quickly interact with a chunk of code -- directly from our Emacs buffer!
 
 To learn more, check out the docs for the [[https://github.com/JoshCheek/seeing_is_believing][Seeing Is Believing Gem]] and [[https://github.com/jcinnamond/seeing-is-believing][seeing-is-believing.el]].
+
+*** inf-ruby -- IRB from Emacs
+
+Next stop is a neat package called [[https://github.com/nonsequitur/inf-ruby][inf-ruby]]. In the tradition of other Emacs Inferior Language Modes, it gives us an embedded IRB process running inside of Emacs, as well as some standard keybindings to interact with the REPL by sending code snippets to it from a buffer.
+
+First, install and configure inf-ruby:
+
+#+BEGIN_SRC emacs-lisp
+(setq package-list '(better-defaults
+                     solarized-theme
+                     helm-projectile
+                     helm-ag
+                     ruby-electric
+                     seeing-is-believing
+                     chruby
+                     inf-ruby))
+
+;; ...
+
+(autoload 'inf-ruby-minor-mode "inf-ruby" "Run an inferior Ruby process" t)
+(add-hook 'ruby-mode-hook 'inf-ruby-minor-mode)
+#+END_SRC
+
+Restart Emacs then open up a Ruby file somewhere. Try out the following:
+  * Use =C-c C-s= to launch the inf-ruby process.
+  * Use =C-x o= to switch to the inf-ruby pane and try running some random ruby snippets as you normally would from IRB or pry.
+  * Go back to your Ruby buffer, select a chunk of code, and use =C-c C-r= to *push* that Ruby code into the IRB session. For example -- try defining a class in your Ruby buffer, select the whole buffer, run =C-c C-r=, then swap over to the inf-ruby buffer and instantiate an instance of your class. Pretty cool!
+  * Alternatively, use =C-c M-r= to run a selected chunk of code and automatically go to the ruby buffer
+  * Finally, use =helm-M-x= (which we bound earlier to the default =M-x= keybinding) to search for "ruby send" and see what other default bindings inf-ruby gives us
