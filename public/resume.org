@@ -1,0 +1,38 @@
+* Horace Williams - Software Engineer
+** About
+Software Engineer and teacher working at Turing School in Denver, CO. Previously helped LivingSocial move fast while overcoming scaling difficulties and paying down technical debt. Lately interested in functional programming and cryptocurrencies, but eager to keep learning above all else. Hoping to join a small team where I can grow technically while applying my skills to an impactful domain.
+** Experience
+*** Turing School of Software and Design: Instructor (Oct 2014 – Present)
+ * Taught daily full-group class sessions focusing on CS fundamentals, Object Oriented Programming and Design, and Web Development
+ * Developed new curriculum including lesson plans and student projects
+ * Evaluated student progress to offer individual academic direction and targeted areas of improvement
+*** Denver ClojureBridge: Volunteer Instructor (Oct 2015)
+*** LivingSocial: Software Engineer (Aug 2012 – Oct 2014)
+ * Full stack developer responsible for maintaining reliability and performance on LivingSocial’s main consumer site
+ * Whittled 50-kloc Rails app with 30+ minute test suite down to 25-kloc with 5-minute test suite through extraction of business responsibilities into separate services
+ * Maintained 100-200 ms mean response time SLA while serving 500+ requests/second on an unwieldy Rails application
+ * Developed library solutions for sharing common Routing logic and Assets/Layouts across various consumer-facing applications
+ * Performed code reviews and deployments for during monthly on-call rotations
+ * Interviewed potential engineering candidates
+*** Hungry Academy (at LivingSocial) (March 2012 – Aug 2012)
+5 month intensive programming and web development training, focusing on Ruby and Rails fundamentals for modern web applications.
+*** Wong Logan Architects, Berkeley, CA: Junior Architect (July 2011 – March 2012)
+*** Yale Daily News - Production & Design EditoR (2007 – 2009)
+*** Yale Sustainable Food Project - Farm Manager and Webmaster (2007 – 2009)
+** Recent Projects
+ * Clarke Coin: Minimalist Peer-to-peer Cryptocurrency
+ * Slack-Slurper: Slack Bot for logging slack activity to an Elasticsearch index
+ * OpenAir: Make daily Rdio playlists out of Colorado Public Radio’s OpenAir Playlist
+ * Hickey48: Lisp-themed 2048 clone in clojurescript
+** Education
+*** Yale University, New Haven, CT: B.A. in Architecture (May 2011)
+GPA 3.76, Graduated with Distinction in the Architecture Major
+*** Bates Research Fellowship, Finland and Scandinavia (Summer 2010)
+*** Arabic Language Institute in Fez, Fez, Morocco (Summer 2008)
+** Skills
+Clojure, Ruby, Rails, JavaScript. Redis, SQL, Memcached, Varnish, Kafka, Resque, Graphite, LevelDB, Elasticsearch.
+** Contact
+ * horace@worace.works
+ * [[http://worace.works][worace.works]]
+ * [[https://github.com/worace/emacs-for-ruby][github.com/worace]]
+ * [[https://twitter.com/worace][@worace]]

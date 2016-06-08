@@ -4,13 +4,304 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2016-06-05T20:36:58-06:00</updated>
+ <updated>2016-06-07T22:17:28-06:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
    <email>horacedwilliams@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Getting Started with Emacs for Ruby</title>
+   <link href="http://worace.works/2016/06/07/getting-started-with-emacs-for-ruby/"/>
+   <updated>2016-06-07T00:00:00-06:00</updated>
+   <id>http://worace.works/2016/06/07/getting-started-with-emacs-for-ruby</id>
+   <content type="html">&lt;p&gt;Lately I&amp;#8217;ve been gradually drawing a few students at Turing into the Emacs fold. Along the way I&amp;#8217;ve been thinking about what is needed for a minimal but sufficient Emacs setup for working with Ruby code.&lt;/p&gt;
+&lt;p&gt;In this post I&amp;#8217;ll try to document some of the tools and configuration I&amp;#8217;ve found useful, with an aim toward keeping things accessible for a newcomer to Emacs. The key features I&amp;#8217;ll focus on include:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Modernizing the Emacs UI using some sane defaults&lt;/li&gt;
+  &lt;li&gt;Setting up basic Ruby syntax highlighting and syntax completion&lt;/li&gt;
+  &lt;li&gt;Interactively evaluating code in Ruby buffers using Seeing Is Believing&lt;/li&gt;
+  &lt;li&gt;Running a Ruby REPL from within emacs using inf-ruby-mode&lt;/li&gt;
+  &lt;li&gt;Running Ruby tests from within emacs using ruby-test-mode&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For now I won&amp;#8217;t be digging into any Rails-specific features &amp;#8211; hopefully I can cover this in another post, but this guide is focused on plain old Ruby.&lt;/p&gt;
+&lt;h2&gt;Emacs Configuration 101&lt;/h2&gt;
+&lt;p&gt;The Emacs configuration journey starts with a special directory on your machine located at &lt;code&gt;~/.emacs.d&lt;/code&gt;. When Emacs starts up, it will by default look for a file called &lt;code&gt;init.el&lt;/code&gt; in this directory and use that to load any user-specific configuration you want to provide. (This is similar to how your shell loads any user configuration files at &lt;code&gt;~/.profile&lt;/code&gt; or &lt;code&gt;~/.bashrc&lt;/code&gt;, etc)&lt;/p&gt;
+&lt;p&gt;To follow along, go ahead and create this directory and file:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;mkdir ~/.emacs.d
+touch ~/.emacs.d/init.el
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;If your machine already has an Emacs configuration in this directory and you want to start from scratch, it&amp;#8217;s safe to stash the existing directory by moving it:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;mv ~/.emacs.d ~/.emacs.d.old
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Your original config will be waiting for you should you decide to return to it.&lt;/p&gt;
+&lt;h3&gt;Baby&amp;#8217;s First Emacs Lisp&lt;/h3&gt;
+&lt;p&gt;An astute reader will have noticed the extension of the init file we just created: &lt;code&gt;.el&lt;/code&gt;. This stands for Emacs Lisp, the language in which Emacs is written and scripted. It turns out Emacs is really a big old Lisp interpreter that happens to have some neat features for manipulating text buffers tucked away in the corners. So are you saying we&amp;#8217;ll be writing&amp;#8230; &lt;i&gt;Lisp&lt;/i&gt;? You bet your Free Software Foundation commemorative mousepad we are!&lt;/p&gt;
+&lt;p&gt;When Emacs boots, it will process our &lt;code&gt;init.el&lt;/code&gt; as Emacs Lisp, so within this file we&amp;#8217;ll be writing Elisp expressions to customize how the editor behaves.&lt;/p&gt;
+&lt;h2&gt;Emacs: Out of the 1990&amp;#8217;s&lt;/h2&gt;
+&lt;p&gt;While there&amp;#8217;s a certain endearing homeliness to it, the first impression of a fresh Emacs install is fairly dated:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/public/images/emacs_splash_screen.png&quot; alt=&quot;/public/images/emacs_splash_screen.png&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;The default Emacs configuration includes some clunky things like menu bars and a loud &amp;#8220;splash&amp;#8221; screen. &lt;a href=&quot;https://github.com/technomancy/better-defaults&quot;&gt;BetterDefaults&lt;/a&gt; is a popular Emacs package for improving this situation without getting too overboard with magical customizations.&lt;/p&gt;
+&lt;p&gt;Let&amp;#8217;s start by pulling BetterDefaults into our new config. This will also give us a good opportunity to talk about&amp;#8230;&lt;/p&gt;
+&lt;h3&gt;Emacs Packages&lt;/h3&gt;
+&lt;p&gt;A &amp;#8220;package&amp;#8221; is the standard unit for distributing a chunk of Emacs code. There are several free online package repositories out there, the most popular being &lt;a href=&quot;https://elpa.gnu.org/&quot;&gt;GNU ELPA&lt;/a&gt;, &lt;a href=&quot;https://www.emacswiki.org/emacs/ELPA&quot;&gt;ELPA&lt;/a&gt;, &lt;a href=&quot;https://marmalade-repo.org/&quot;&gt;Marmalade&lt;/a&gt;, and &lt;a href=&quot;https://melpa.org/&quot;&gt;Melpa&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Unfortunately, Emacs doesn&amp;#8217;t come with a built-in &amp;#8220;manifest&amp;#8221;-driven solution for defining what packages to use (like we might encounter with a Gemfile or package.json in a Ruby or Node project).&lt;/p&gt;
+&lt;p&gt;Fortunately it&amp;#8217;s pretty easy to add this functionality, so go ahead and add this Elisp to your &lt;code&gt;init.el&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c1&quot;&gt;; list the repositories containing them&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-archives&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;gnu&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;http://elpa.gnu.org/packages/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+                         &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;melpa&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;https://melpa.org/packages/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;; activate all the packages (in particular autoloads)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;package-initialize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;; fetch the list of packages available&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;unless&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-archive-contents&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;package-refresh-contents&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;; list the packages you want&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;; install the missing packages&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;dolist&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;package&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;unless&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;package-installed-p&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;package-install&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;better-defaults&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This first Elisp snippet defines a list of archives to use when searching for packages and then initializes the package system.&lt;/p&gt;
+&lt;p&gt;Next we define a list of packages we want to install (so far just &lt;code&gt;better-defaults&lt;/code&gt;). Then we check to see if any of them are missing and, if so, install them. From now on, we can simply add packages to our &lt;code&gt;package-list&lt;/code&gt; and they should be automatically installed when we start Emacs &amp;#8211; similar to adding a new gem to your &lt;code&gt;Gemfile&lt;/code&gt; and running &lt;code&gt;bundle&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;require&lt;/code&gt; expression on the last line loads the better-defaults package that we just installed, so you should see it taking effect.&lt;/p&gt;
+&lt;p&gt;Save this file and restart Emacs if it&amp;#8217;s already running (remember: &lt;code&gt;C-x C-c&lt;/code&gt; to quit), and you should see emacs pause briefly as it installs the Better Defaults package. You should also see a slightly cleaner interface now that the toolbars are removed.&lt;/p&gt;
+&lt;h2&gt;A Bit More UI:&lt;/h2&gt;
+&lt;p&gt;Next let&amp;#8217;s get rid of the default Emacs splash screen and have it put us into an empty buffer instead. The &lt;code&gt;initial-major-mode&lt;/code&gt; setting can take any of Emacs&amp;#8217; major modes &amp;#8211; a lot of people use Org or Markdown mode for their scratch buffer, but since we&amp;#8217;re targeting a Ruby setup here, we&amp;#8217;ll use that.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;inhibit-splash-screen&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;t&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;initial-scratch-message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;nil&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;initial-major-mode&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Additionally, it would be nice if it didn&amp;#8217;t look so glaringly white. Let&amp;#8217;s update our package list to pull in the ever-gentle-on-the-eyes &lt;a href=&quot;https://github.com/bbatsov/solarized-emacs&quot;&gt;Solarized Theme&lt;/a&gt; and load it in our init file:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;;....&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;load-theme&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;solarized-dark&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Finally, we add a few more bits of snazz like showing line numbers and setting a default font (&lt;a href=&quot;https://github.com/adobe-fonts/source-code-pro&quot;&gt;SourceCodePro&lt;/a&gt; is a free, open source monospaced font for editing code from Adobe.)&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c1&quot;&gt;;; Show line numbers&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;global-linum-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;;; Typography&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;set-face-attribute&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;default&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;nil&lt;/span&gt;
+                    &lt;span class=&quot;nv&quot;&gt;:family&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;Source Code Pro&amp;quot;&lt;/span&gt;
+                    &lt;span class=&quot;nv&quot;&gt;:height&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;150&lt;/span&gt;
+                    &lt;span class=&quot;nv&quot;&gt;:weight&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;normal&lt;/span&gt;
+                    &lt;span class=&quot;nv&quot;&gt;:width&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;normal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h2&gt;OS X Conveniences&lt;/h2&gt;
+&lt;p&gt;I generally recommend people start out using Emacs in GUI mode (as opposed to the text-based terminal interface). Personally I still use this mode most often even a few years into using Emacs, but when starting out it&amp;#8217;s especially helpful to have some of the familiar OS X keybindings for Copying, Pasting, Cmd-Tabbing, etc. On a Mac you&amp;#8217;ll have this available if you installed using homebrew with the &lt;code&gt;--with-cocoa&lt;/code&gt; flag (&lt;code&gt;brew install emacs --with-cocoa&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;It&amp;#8217;s also convenient to be able to open your editor from the command line and pass it a file or directory to start with. To make this easy, you can add this function to your shell profile (&lt;code&gt;~/.bashrc&lt;/code&gt;, &lt;code&gt;~/.bash_profile&lt;/code&gt;, etc):&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;em &lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  open -a /usr/local/Cellar/emacs/24.5/Emacs.app/Contents/MacOS/Emacs &lt;span class=&quot;nv&quot;&gt;$*&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Then from the command line you&amp;#8217;ll be able to do things like &lt;code&gt;em pizza.el&lt;/code&gt; to open that file in an Emacs Cocoa app window.&lt;/p&gt;
+&lt;h2&gt;Editor Basics: Find-In-Project and Ctrl-P&lt;/h2&gt;
+&lt;p&gt;Next let&amp;#8217;s try to check off a couple more features from the &amp;#8220;What would I miss if I started using Emacs from Atom/SublimeText/TextMate?&amp;#8221; list. The 2 of these I find most essential are:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&amp;#8220;Ctrl-P&amp;#8221; or &amp;#8220;Cmd-T&amp;#8221;-style command to fuzzily open a file in the current project&lt;/li&gt;
+  &lt;li&gt;Find-in-Project text search for finding an arbitrary string in the current project&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;We can get these features pretty easily using 3 popular packages: &lt;a href=&quot;https://github.com/emacs-helm/helm&quot;&gt;Helm&lt;/a&gt;, &lt;a href=&quot;https://github.com/bbatsov/helm-projectile&quot;&gt;Helm Projectile&lt;/a&gt; and &lt;a href=&quot;https://github.com/syohex/emacs-helm-ag&quot;&gt;Helm ag&lt;/a&gt;. Helm is actually something of a &amp;#8220;parent&amp;#8221; package for these other 2 &amp;#8211; it provides a generalized framework for doing the kind of slick &amp;#8220;fuzzily-search some text in a list of stuff&amp;#8221; interface that we all know and love. Then other packages like Helm Projectile and Helm ag can take advantage of this interaction to build neat tools like &amp;#8220;find a file in my project&amp;#8221; or &amp;#8220;find some text in my project.&amp;#8221;&lt;/p&gt;
+&lt;p&gt;Add these to your &lt;code&gt;package-list&lt;/code&gt; and give them some basic keybindings as follows:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;global-set-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;kbd&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;M-x&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;&amp;#39;helm-M-x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;global-set-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;kbd&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;s-f&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;&amp;#39;helm-projectile-ag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;global-set-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;kbd&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;s-t&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;&amp;#39;helm-projectile-find-file-dwim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The &lt;code&gt;s&lt;/code&gt; in the keybinds here stands for the &amp;#8220;Super&amp;#8221; modifier, which in the OS X Cocoa app should be your &lt;code&gt;CMD&lt;/code&gt; Key. (The other modifier shortcuts we&amp;#8217;ll be seing include &lt;code&gt;C-&lt;/code&gt; for Control, &lt;code&gt;M-&lt;/code&gt; for Meta or Option, and &lt;code&gt;S-&lt;/code&gt; for shift).&lt;/p&gt;
+&lt;p&gt;These bindings give us the familiar &lt;code&gt;Cmd-f&lt;/code&gt; for &amp;#8220;search for text in this project&amp;#8221; and &lt;code&gt;Cmd-t&lt;/code&gt; for &amp;#8220;find files in my project.&amp;#8221; Finally we also over-write the default &lt;code&gt;M-x&lt;/code&gt; keybinding to use helm&amp;#8217;s interface for searching for Emacs commands to run. Now when we need to look for a less familiar Emacs interactive command, the Helm interface will help us by fuzzily searching and narrowing among the available commands.&lt;/p&gt;
+&lt;h2&gt;Ruby Basics: Highlighting and Auto-matching&lt;/h2&gt;
+&lt;p&gt;Now that we&amp;#8217;ve tamed Emacs into a slightly more well-behaved general editing environment, we can dive into our Ruby setup!&lt;/p&gt;
+&lt;p&gt;Let&amp;#8217;s start with a bit of basic auto-matching for paired characters (parens, quotes, def/class/if-end, etc). Add &lt;code&gt;ruby-electric&lt;/code&gt; to your package list and tell emacs to require it automatically whenever we enter ruby mode like so:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;ruby-electric&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;;...&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;;; Autoclose paired syntax elements like parens, quotes, etc&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-mode-hook&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ruby-electric-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Sometimes Ruby code appears in other kinds of files that don&amp;#8217;t end with the standard &lt;code&gt;.rb&lt;/code&gt; extension. We can tell emacs to treat these as ruby files using this snippet:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-to-list&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;auto-mode-alist&lt;/span&gt;
+             &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;\\.\\(?:cap\\|gemspec\\|irbrc\\|gemrc\\|rake\\|rb\\|ru\\|thor\\)\\&amp;#39;&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ruby-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-to-list&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;auto-mode-alist&lt;/span&gt;
+             &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;\\(?:Brewfile\\|Capfile\\|Gemfile\\(?:\\.[a-zA-Z0-9._-]+\\)?\\|[rR]akefile\\)\\&amp;#39;&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ruby-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h2&gt;Ruby Version Manager&lt;/h2&gt;
+&lt;p&gt;Most Ruby developers these days are using some kind of Version Manager to simplify the process of installing and jumping around between various ruby versions. This is a great feature to have, but it unfortunately adds another layer of indirection between Emacs and the Ruby installation living on our machine.&lt;/p&gt;
+&lt;p&gt;To further complicate things, the community hasn&amp;#8217;t really standardized on any of the particular options, which means you&amp;#8217;re likely using one of Rbenv, RVM, or Chruby. Depending on which of these you&amp;#8217;re using, you&amp;#8217;ll want to pull in the appropriate config below:&lt;/p&gt;
+&lt;h3&gt;RVM (Using &lt;a href=&quot;https://github.com/senny/rvm.el&quot;&gt;rvm.el&lt;/a&gt;)&lt;/h3&gt;
+&lt;p&gt;Add the &lt;code&gt;rvm&lt;/code&gt; package and invoke it using &lt;code&gt;(rvm-use-default)&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;ruby-electric&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;rvm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;;...&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;rvm-use-default&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h3&gt;RBENV (using &lt;a href=&quot;https://github.com/senny/rbenv.el&quot;&gt;rbenv.el&lt;/a&gt; )&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;ruby-electric&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;rbenv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;;...&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;global-rbenv-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;rbenv-use-global&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;;; Optional -- if your RBENV installation is located somewhere besides&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;;; ~/.rbenv, you will need to configure this:&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;;;(setq rbenv-installation-dir &amp;quot;/usr/local/rbenv&amp;quot;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h3&gt;Chruby (using &lt;a href=&quot;https://github.com/plexus/chruby.el&quot;&gt;chruby.el&lt;/a&gt;)&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;ruby-electric&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;chruby&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;;...&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;chruby&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;2.2.2&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;;;  or whichever version you want to use&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h2&gt;Ruby Interactions: The Once and Future Workflow&lt;/h2&gt;
+&lt;p&gt;Now that we have the groundwork out of the way we can tackle the good stuff. In this section we&amp;#8217;ll look at several tools for working interactively with Ruby code from within Emacs.&lt;/p&gt;
+&lt;p&gt;Emacs comes from a rich history of interactive, REPL-driven Lisp development environments. Combined with being deeply programmable (thanks to Emacs Lisp), this makes it ideal for creating a smoothly interactive development environment. We want to reduce the time and effort required to get feedback from running our code as much as possible, and Emacs can help accomplish this.&lt;/p&gt;
+&lt;p&gt;In the context of Ruby code, I specifically want to be able to:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Arbitrarily evaluate Ruby code from the current buffer&lt;/li&gt;
+  &lt;li&gt;Open an interactive ruby session (i.e. REPL &amp;#8211; IRB or Pry) within Emacs&lt;/li&gt;
+  &lt;li&gt;Run tests from within Emacs&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Let&amp;#8217;s check out some neat Emacs packages that make interactions like these possible.&lt;/p&gt;
+&lt;h3&gt;Ruby Buffer Interaction &amp;#8211; Seeing truly is believing&lt;/h3&gt;
+&lt;p&gt;First, install the Gem:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;gem install seeing_is_believing --version 3.0.0.beta.7
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Then, add and configure the corresponding Emacs package:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;ruby-electric&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;seeing-is-believing&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;chruby&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;;; ...&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;seeing-is-believing-prefix&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;C-.&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-mode-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;seeing-is-believing&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;seeing-is-believing&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Restart Emacs and open up a sample Ruby file. Try experimenting with the following keybindings to see what Seeing Is Believing gives us:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;C-. s&lt;/code&gt; - Run Seeing is Believing for the entire file&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;C-. c&lt;/code&gt; - Clear the Seeing is Believing output&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;C-. t&lt;/code&gt; - Tag a line to be &amp;#8220;targeted&amp;#8221; for evaluation by SiB&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;C-. x&lt;/code&gt; - Run only the &amp;#8220;tagged&amp;#8221; lines (those with trailing &amp;#8220;# =&amp;gt; &amp;#8221; markers)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Hopefully you&amp;#8217;re seeing some output show up at the end of your Ruby source lines. Seeing is Believing is a Gem that runs a chunk of Ruby code and prints out (in an existing text buffer) the result of evaluating each line. For our purposes, this gives us a very powerful way to quickly interact with a chunk of code &amp;#8211; directly from our Emacs buffer!&lt;/p&gt;
+&lt;p&gt;To learn more, check out the docs for the &lt;a href=&quot;https://github.com/JoshCheek/seeing_is_believing&quot;&gt;Seeing Is Believing Gem&lt;/a&gt; and &lt;a href=&quot;https://github.com/jcinnamond/seeing-is-believing&quot;&gt;seeing-is-believing.el&lt;/a&gt;.&lt;/p&gt;
+&lt;h3&gt;inf-ruby &amp;#8211; IRB from Emacs&lt;/h3&gt;
+&lt;p&gt;Next stop is a neat package called &lt;a href=&quot;https://github.com/nonsequitur/inf-ruby&quot;&gt;inf-ruby&lt;/a&gt;. In the tradition of other Emacs Inferior Language Modes, it gives us an embedded IRB process running inside of Emacs, as well as some standard keybindings to interact with the REPL by sending code snippets to it from a buffer.&lt;/p&gt;
+&lt;p&gt;First, install and configure inf-ruby:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;ruby-electric&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;seeing-is-believing&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;chruby&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;inf-ruby&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;;; ...&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;autoload&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;inf-ruby-minor-mode&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;inf-ruby&amp;quot;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;Run an inferior Ruby process&amp;quot;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-mode-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;inf-ruby-minor-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Restart Emacs then open up a Ruby file somewhere. Try out the following:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Use &lt;code&gt;C-c C-s&lt;/code&gt; to launch the inf-ruby process.&lt;/li&gt;
+  &lt;li&gt;Use &lt;code&gt;C-x o&lt;/code&gt; to switch to the inf-ruby pane and try running some random ruby snippets as you normally would from IRB or pry.&lt;/li&gt;
+  &lt;li&gt;Go back to your Ruby buffer, select (by highlighting) a chunk of code, and use &lt;code&gt;C-c C-r&lt;/code&gt; to &lt;b&gt;push&lt;/b&gt; that Ruby code into the IRB session.&lt;/li&gt;
+  &lt;li&gt;For example, try defining a class in your Ruby buffer, select the whole buffer, run &lt;code&gt;C-c C-r&lt;/code&gt;, then swap over to the inf-ruby buffer and instantiate an instance of your class. Pretty cool!&lt;/li&gt;
+  &lt;li&gt;Alternatively, use &lt;code&gt;C-c M-r&lt;/code&gt; to run a selected chunk of code and automatically go to the ruby buffer&lt;/li&gt;
+  &lt;li&gt;Finally, use &lt;code&gt;helm-M-x&lt;/code&gt; (which we bound earlier to the default &lt;code&gt;M-x&lt;/code&gt; keybinding) to search for &amp;#8220;ruby send&amp;#8221; and see what other default bindings inf-ruby gives us.&lt;/li&gt;
+  &lt;li&gt;If you do a lot of work in Rails or Sinatra, check out the commands &lt;code&gt;inf-ruby-console-rails&lt;/code&gt; and &lt;code&gt;inf-ruby-console-racksh&lt;/code&gt;. Using these commands inf-ruby can start a console session in the environment of your web project.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Ruby TDD &amp;#8211; &lt;a href=&quot;https://github.com/r0man/ruby-test-mode&quot;&gt;ruby-test-mode.el&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Now for the last item on our interactive workflow checklist &amp;#8211; running tests from Emacs. At its core, TDD is about incorporating more feedback into our development workflow. To take full advantage of this, we want running tests to be as seamless as possible &amp;#8211; no context switching of jumping out to a terminal, etc etc. We can accomplish this in Emacs using the ruby-test-mode package. First install and configure it in your init file:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;ruby-electric&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;seeing-is-believing&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;chruby&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;inf-ruby&lt;/span&gt;
+                     &lt;span class=&quot;nv&quot;&gt;ruby-test-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;;;...&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-test-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-mode-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-test-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Restart Emacs, then open a Ruby test file. Experiment with the keybinding &amp;#8220;C-c C-,&amp;#8221; - it should allow you to run the tests from the current file into a second buffer called a compilation buffer. Tests from directly within emacs &amp;#8211; pretty neat!&lt;/p&gt;
+&lt;p&gt;By default, ruby-test-mode will try to evaluate tests in the current buffer. It determines whether the current buffer contains tests based on whether its filename ends in &lt;code&gt;_test.rb&lt;/code&gt; or &lt;code&gt;_spec.rb&lt;/code&gt; &amp;#8211; so if you don&amp;#8217;t follow these conventions it may behave erratically for you.&lt;/p&gt;
+&lt;p&gt;If the current buffer is &lt;i&gt;not&lt;/i&gt; a Ruby test, it will try to do one of the following:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;If there is a visible test buffer in another window (for example, you have 2 windows open in a side-by-side split), it will run that one. This is great for putting a test and an implementation up side-by-side and being able to run the test from either window.&lt;/li&gt;
+  &lt;li&gt;If none of these are available, it will try to re-run whatever test was last run, if there is one&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Improving Ruby Test Mode Interaction&lt;/h3&gt;
+&lt;p&gt;This setup is coming along pretty nicely, but I find dealing with all the compilation buffers created by ruby-test-mode a little cumbersome. By default it pulls them up in a new window, which potentially covers up something you were working on before, or at least takes up half of your frame. Then you have to manually swap over and kill the buffer if you want to get rid of it.&lt;/p&gt;
+&lt;p&gt;We can make this a little smoother by hooking into the compilation completion hook and setting up a keybinding to easily close the buffer:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;compilation-finish-functions&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;lambda &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;buf&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;strg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;switch-to-buffer-other-window&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;*compilation*&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;read-only-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;goto-char&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;point-max&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;local-set-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;kbd&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;q&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+                           &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;lambda &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;interactive&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;quit-restore-window&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now when ruby-test-mode finishes our tests, we will automatically jump to the test buffer and scroll to the bottom.&lt;/p&gt;
+&lt;p&gt;Additionally, within the compliation buffer we&amp;#8217;ll use the simple keybinding &lt;code&gt;q&lt;/code&gt; to close the buffer and return to whatever frame configuration we had before. I find this makes a much more seamless TDD workflow. We can run tests, quickly check out the results, and quit out to return to what you were doing before &amp;#8211; all without leaving Emacs.&lt;/p&gt;
+&lt;h2&gt;Wrapup and Further Exploration&lt;/h2&gt;
+&lt;p&gt;I&amp;#8217;ve published a github repo containing the final product of this tutorial &lt;a href=&quot;https://github.com/worace/emacs-for-ruby&quot;&gt;here&lt;/a&gt;. I&amp;#8217;ll try to keep it (and this post) up to date as I uncover any problems or receive feedback. The biggest goal here was to keep things as simple and minimal as possible &amp;#8211; the whole thing comes in around 80 lines of Elisp using 10 or so packages.&lt;/p&gt;
+&lt;p&gt;With this setup, the main things we accomplished include:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Drag Emacs into the modern era using some sane defaults and a bit of UI polishing&lt;/li&gt;
+  &lt;li&gt;Create a reasonably beginner-friendly environment that incorporates 2 of the killer convenience features of more mainstream editors like Sublime or Atom (Ctrl-P and Find-in-project)&lt;/li&gt;
+  &lt;li&gt;Assemble a simple toolset for interactive Ruby development &amp;#8211; we can evaluate code in a buffer, start an embedded IRB process, and run our tests all from within Emacs&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A few things that are obviously &lt;i&gt;not&lt;/i&gt; included (and where to find them) include:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Rails-specific workflow features (check out &lt;a href=&quot;https://github.com/eschulte/rinari&quot;&gt;rinari&lt;/a&gt; if you want to use emacs to work on Rails)&lt;/li&gt;
+  &lt;li&gt;Version control integration (&lt;a href=&quot;https://magit.vc/&quot;&gt;magit&lt;/a&gt; is the cadillac of in-editor VCS integrations)&lt;/li&gt;
+  &lt;li&gt;Other language modes or integrations &amp;#8211; if it runs on a computer there&amp;#8217;s probably an Emacs mode for it &amp;#8211; dig around and see what exists for your favorite languages&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+ </entry>
  
  <entry>
    <title>RSA Cryptography In Clojure</title>
@@ -26,7 +317,6 @@
     &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.initialize&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
 
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;generate-keypair&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
-  &lt;span class=&quot;s&quot;&gt;&amp;quot;Generate an RSA Keypair. Accepts optional length. Default key length is 2048. Minimum key length is 512.&amp;quot;&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;assert &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;&amp;gt;= &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;512&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA Key must be at least 512 bits long.&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.generateKeyPair&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;kp-generator&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
 
@@ -74,7 +364,8 @@
      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.sign&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;sig&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))))&lt;/span&gt;
 
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;verify&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;encoded-sig&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;public-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
-  &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA public key verification of a Base64-encoded signature and an assumed source message. Returns true/false if signature is valid.&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA public key verification of a Base64-encoded signature and an&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;   assumed source message. Returns true/false if signature is valid.&amp;quot;&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;let &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;msg-data&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getBytes&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
         &lt;span class=&quot;nv&quot;&gt;signature&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;decode64&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;encoded-sig&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
         &lt;span class=&quot;nv&quot;&gt;sig&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;doto &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.Signature/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;SHA256withRSA&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
