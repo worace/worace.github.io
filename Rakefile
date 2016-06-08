@@ -212,5 +212,6 @@ end
 
 desc "Deploy to worace.github.io master branch"
 task :deploy do
+  execute("git push origin source")
   execute("jgd --branch master --branch-from source")
 end
