@@ -120,8 +120,12 @@ Finally for my use-case it was important to be able to serialize and de-serializ
                     (java.security.spec.PKCS8EncodedKeySpec.
                      (decode64 (.getBytes string)))))
 
-(defn private-key->der-string [private-key]
-  (-> private-key .getEncoded encode64))
+(defn private-key->der-string [pk]
+  (-> pk
+      .getEncoded
+      java.security.spec.PKCS8EncodedKeySpec.
+      .getEncoded
+      encode64))
 #+END_SRC
 
 ** PEM-Encoding
