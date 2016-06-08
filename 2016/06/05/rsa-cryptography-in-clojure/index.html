@@ -129,8 +129,12 @@
                     <span class="p">(</span><span class="nf">java.security.spec.PKCS8EncodedKeySpec.</span>
                      <span class="p">(</span><span class="nf">decode64</span> <span class="p">(</span><span class="nf">.getBytes</span> <span class="nv">string</span><span class="p">)))))</span>
 
-<span class="p">(</span><span class="kd">defn </span><span class="nv">private-key-&gt;der-string</span> <span class="p">[</span><span class="nv">private-key</span><span class="p">]</span>
-  <span class="p">(</span><span class="nb">-&gt; </span><span class="nv">private-key</span> <span class="nv">.getEncoded</span> <span class="nv">encode64</span><span class="p">))</span>
+<span class="p">(</span><span class="kd">defn </span><span class="nv">private-key-&gt;der-string</span> <span class="p">[</span><span class="nv">pk</span><span class="p">]</span>
+  <span class="p">(</span><span class="nb">-&gt; </span><span class="nv">pk</span>
+      <span class="nv">.getEncoded</span>
+      <span class="nv">java.security.spec.PKCS8EncodedKeySpec.</span>
+      <span class="nv">.getEncoded</span>
+      <span class="nv">encode64</span><span class="p">))</span>
 </pre></div>
 <h2>PEM-Encoding</h2>
 <p>PEM-encoding is another common format for serializing cryptographic keys. I was able to get everything so far working using just pieces from Java&#8217;s standard library, but after much experimentation could never get it to read PEM-encoded keys reliably. So I ended up reaching for <a href="https://www.bouncycastle.org/java.html">Bouncy Castle</a>, one of the go-to crypto Java crypto libraries.</p>

@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2016-06-08T11:18:29-06:00</updated>
+ <updated>2016-06-08T13:29:18-06:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -399,8 +399,12 @@ touch ~/.emacs.d/init.el
                     &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.spec.PKCS8EncodedKeySpec.&lt;/span&gt;
                      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;decode64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getBytes&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))))&lt;/span&gt;
 
-&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;private-key-&amp;gt;der-string&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;private-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;-&amp;gt; &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;private-key&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;.getEncoded&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;encode64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;private-key-&amp;gt;der-string&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;pk&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;-&amp;gt; &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;pk&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;.getEncoded&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;java.security.spec.PKCS8EncodedKeySpec.&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;.getEncoded&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;encode64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;h2&gt;PEM-Encoding&lt;/h2&gt;
 &lt;p&gt;PEM-encoding is another common format for serializing cryptographic keys. I was able to get everything so far working using just pieces from Java&amp;#8217;s standard library, but after much experimentation could never get it to read PEM-encoded keys reliably. So I ended up reaching for &lt;a href=&quot;https://www.bouncycastle.org/java.html&quot;&gt;Bouncy Castle&lt;/a&gt;, one of the go-to crypto Java crypto libraries.&lt;/p&gt;
