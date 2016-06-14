@@ -4,13 +4,87 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2016-06-08T13:29:18-06:00</updated>
+ <updated>2016-06-14T10:10:20-06:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
    <email>horacedwilliams@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>A Good Enough Clojure Setup for Beginners</title>
+   <link href="http://worace.works/2016/06/14/good-enough-clojure-setup/"/>
+   <updated>2016-06-14T00:00:00-06:00</updated>
+   <id>http://worace.works/2016/06/14/good-enough-clojure-setup</id>
+   <content type="html">&lt;p&gt;This document will go over a simple but effective Clojure setup aimed at beginners, and especially those used to editing Ruby, Javascript, or other dynamic languages using Atom.&lt;/p&gt;
+&lt;h2&gt;The Basics &amp;#8211; JDK and Leiningen&lt;/h2&gt;
+&lt;p&gt;If you&amp;#8217;re brand new to Clojure you&amp;#8217;re in luck, since it&amp;#8217;s pretty easy to install. Clojure is built to run on the JVM (Clojure the language is technically just a Java library). The JVM is incredibly ubiquitous, and thanks to this it&amp;#8217;s pretty easy to get Clojure up and running on most machines. Try the following steps:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;Do you have JDK version 1.6+ installed?
+    &lt;ul&gt;
+      &lt;li&gt;Check by running &lt;code&gt;java -version&lt;/code&gt; &amp;#8211; Hope for something like &lt;code&gt;java version 1.8.0_65&lt;/code&gt;&lt;/li&gt;
+      &lt;li&gt;If not, &lt;a href=&quot;http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html&quot;&gt;install Java by following the instructions here.&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Install &lt;a href=&quot;http://leiningen.org/&quot;&gt;Leiningen, a Clojure build tool.&lt;/a&gt; Leiningen gives us some tools for managing Clojure dependencies and running projects or other tasks &amp;#8211; it&amp;#8217;s somewhat analagous to a combination of Bundler and Rake from the Ruby world. On OS X it&amp;#8217;s easy to unstall using Homebrew: &lt;code&gt;brew install leiningen&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Verify it&amp;#8217;s all working &amp;#8211; You should now be able to run the command &lt;code&gt;lein repl&lt;/code&gt; to boot a Clojure REPL.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&quot;/public/images/LeinRepl.png&quot; alt=&quot;/public/images/LeinRepl.png&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;Text Editor: Atom&lt;/h2&gt;
+&lt;p&gt;Atom may not be the first editor that comes to mind for doing Clojure development, but thanks to its rapidly growing package ecosystem, it&amp;#8217;s actually possible to put together a pretty solid Clojure dev environment on top of Atom.&lt;/p&gt;
+&lt;p&gt;More sophisticated editors like Emacs or Cursive may be more popular for developers doing full-time Clojure work in industry, but the additional features and configuration are often distracting for beginners and are overkill for what we want to do anyway.&lt;/p&gt;
+&lt;p&gt;Let&amp;#8217;s look at a few packages that make working with Clojure much nicer in Atom&lt;/p&gt;
+&lt;h3&gt;Language: Clojure&lt;/h3&gt;
+&lt;p&gt;The first stop is the &lt;a href=&quot;https://github.com/atom/language-clojure&quot;&gt;language-clojure&lt;/a&gt; package &amp;#8211; this will give us basic syntax highlighting for Clojure source files. There isn&amp;#8217;t much to this package from a usage standpoint &amp;#8211; install it via the atom package manager and it will just work.&lt;/p&gt;
+&lt;p&gt;Syntax Highlighting!
+  &lt;img src=&quot;/public/images/ClojureSyntaxHighlighting.png&quot; alt=&quot;/public/images/ClojureSyntaxHighlighting.png&quot; /&gt;&lt;/p&gt;
+&lt;h3&gt;Proto Repl&lt;/h3&gt;
+&lt;p&gt;A REPL is fairly indispensable for doing Clojure development. Clojure developers tend to emphasize a very interactive workflow &amp;#8211; boot your REPL, experiment in it, push some code to it from your editor, then apply the insights you gain from these experiments to improving your code. The REPL also gives us a convenient way to run tests, to read documentation (thanks to Clojure&amp;#8217;s built-in doc string feature) &amp;#8211; we can even use it to boot long-running processes like a webserver.&lt;/p&gt;
+&lt;p&gt;But enough REPL preaching &amp;#8211; how do we get one? For a long time this was the biggest blocker to having a productive Clojure experience in Atom &amp;#8211; there just wasn&amp;#8217;t a great option for interactive REPL-driven development.&lt;/p&gt;
+&lt;p&gt;Fortunately in October, 2015 the popular &lt;a href=&quot;https://github.com/jasongilman/proto-repl&quot;&gt;proto-repl&lt;/a&gt; package came out and brought with it a pretty darn good REPL setup for Atom. Proto-repl feels a little different at first from other REPLs you may have used in other languages, but it doesn&amp;#8217;t take long to get comfortable with it. Install the package using APM and go ahead and open the REPL either using the &amp;#8220;proto-repl&amp;#8221; entries under the Packages menu, or using the shortcut &lt;code&gt;Cmd-Option-L&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The REPL will take a second to boot, but once it does, play around with it by evaluating some Clojure code (use &lt;code&gt;Shift-Enter&lt;/code&gt; to submit code you type at the bottom of the REPL buffer).&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/public/images/ProtoReplUsage.png&quot; alt=&quot;/public/images/ProtoReplUsage.png&quot; /&gt;&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;CMD-Option-L&lt;/code&gt;: Start the REPL&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;Shift-Enter&lt;/code&gt;: Submit form in REPL&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;Up / Down Arrows&lt;/code&gt;: Navigate REPL history&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;Cmd-Option-a&lt;/code&gt;: Run all tests in current project&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;Cmd-Option s&lt;/code&gt;: (Press ctrl and comma together, release, then press s) &amp;#8211; Send a highlighted selection of code to the REPL&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;Ctrl-Shift-c&lt;/code&gt;: Interrupt (e.g. if you accidentally make an infinite loop in the REPL)&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;Cmd-Option-r&lt;/code&gt;: Refresh namespaces (reload files in the current project into the repl &amp;#8211;  great for evaluating some new functions or other expressions you have written in a file into the REPL so you can play around with them there)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Finally, if you&amp;#8217;d like to set up Proto-Repl to behave more like a traditional terminal, try adding the following keybindings to your Keymap:&lt;/p&gt;
+&lt;pre class=&quot;example&quot;&gt;
+&amp;#39;atom-pane[data-active-item-name=&amp;quot;Clojure REPL&amp;quot;] atom-text-editor:not([mini])&amp;#39;:
+  &amp;#39;enter&amp;#39;:&amp;#39;proto-repl:execute-text-entered-in-repl&amp;#39;
+  &amp;#39;cmd-k&amp;#39;:&amp;#39;proto-repl:clear-repl&amp;#39;
+&lt;/pre&gt;
+&lt;p&gt;This will let us submit code to the REPL with ENTER rather than Shift-Enter, and also let us use Cmd-K to clear the REPL screen.&lt;/p&gt;
+&lt;p&gt;This handful of keybindings above should give you enough tools to get started working interactively with Clojure code. Proto-Repl has quite a few neat features tucked into it, so once you get comfortable with the basics you should also check out &lt;a href=&quot;https://atom.io/packages/proto-repl&quot;&gt;proto-repl&amp;#8217;s documentation&lt;/a&gt;.&lt;/p&gt;
+&lt;h3&gt;Parinfer&lt;/h3&gt;
+&lt;p&gt;The last Atom tool we&amp;#8217;ll look at is aimed at making the experience of &lt;i&gt;editing&lt;/i&gt; Clojure code more pleasant. Newcomers often find working with Lisp code challenging, especially coming from more &amp;#8220;traditional&amp;#8221; Algol-inspired languages. The difficulty is that Lisp really wants to be edited &lt;i&gt;structurally&lt;/i&gt; rather than &lt;i&gt;textually&lt;/i&gt;.&lt;/p&gt;
+&lt;p&gt;A Lisp program is really just a Tree of &lt;a href=&quot;https://en.wikipedia.org/wiki/S-expression&quot;&gt;expressions&lt;/a&gt;, and when we work with Lisp code we frequently want to manipulate the structure of this tree &amp;#8211; Move this expression Up a level, combine this expression with the one next to it, remove this expression from the tree entirely, etc.&lt;/p&gt;
+&lt;p&gt;Sounds good, but this is complicated somewhat by ((((all) ((those) (((((parentheses))))))))) &amp;#8211; it&amp;#8217;s frustratingly easy when moving some Lisp code around to accidentally drop a parenthesis, add an extra one, or just leave one in the wrong spot.&lt;/p&gt;
+&lt;p&gt;Over time developers have written some powerful tools to help manage this process. &lt;a href=&quot;https://www.emacswiki.org/emacs/ParEdit&quot;&gt;ParEdit&lt;/a&gt; is perhaps the most famous of these &amp;#8211; it&amp;#8217;s a popular Emacs package for managing and manipulating parenthesis-based S-expressions in a structural way. It&amp;#8217;s a powerful tool but like many things in Emacs it comes with a learning curve.&lt;/p&gt;
+&lt;p&gt;That&amp;#8217;s why I&amp;#8217;m excited by Parinfer - a tool that attempts to give a more &amp;#8220;intuitive&amp;#8221; or &amp;#8220;Just Do What I Mean&amp;#8221; approach to structural Lisp editing. The &lt;a href=&quot;https://shaunlebron.github.io/parinfer/&quot;&gt;docs on Parinfer&amp;#8217;s homepage&lt;/a&gt; do a better job of explaining the tool than I will, but the gist of it is &lt;i&gt;inferring&lt;/i&gt; the Lisp structure a user intended based on the indentation they specified within their code.&lt;/p&gt;
+&lt;p&gt;As you edit code, Parinfer will attempt to guess the most sensible S-expression structure you intended based on the indentation and spacing you typed in the code. For example removing the indentation of a nested expression might be interpreted as &amp;#8220;move that expression UP one level.&amp;#8221; The great thing about Parinfer is there&amp;#8217;s not too much to learn &amp;#8211; just type correctly formatted code and it will (mostly) do the right thing.&lt;/p&gt;
+&lt;p&gt;Luckily for us there&amp;#8217;s a great Parinfer implementation for Atom:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Install the atom-parinfer package with APM: &lt;a href=&quot;https://github.com/oakmac/atom-parinfer&quot;&gt;https://github.com/oakmac/atom-parinfer&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Play around with editing some Clojure code in your editor (make sure the file extension is set to &lt;code&gt;.clj&lt;/code&gt;) &amp;#8211; what happens when you type parentheses, indent them, or un-indent them?&lt;/li&gt;
+  &lt;li&gt;Parinfer is pretty good at its job but every now and then you&amp;#8217;ll get into a sticky situation that needs to be sorted out manually. Don&amp;#8217;t forget you can use &lt;code&gt;Cmd-Shift-9&lt;/code&gt; to Toggle from &amp;#8220;Indent&amp;#8221; mode (what Parinfer normally does) to &amp;#8220;Paren&amp;#8221; mode (what we would do when just manipulating text in a more traditional editor)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Auto Testing: Lein Test Refresh&lt;/h2&gt;
+&lt;p&gt;The last Clojure tool that I find truly essential is a test-runner package called &lt;a href=&quot;https://github.com/jakemcc/lein-test-refresh&quot;&gt;lein-test-refresh.&lt;/a&gt; It gives us an awesome &amp;#8220;run my tests when I save a file&amp;#8221; experience for Clojure.&lt;/p&gt;
+&lt;p&gt;Test-refresh is a leiningen plugin, so the easiest way to install it is to add it to your system-wide &amp;#8220;user&amp;#8221; leiningen profile, which is defined in the configuration file at &lt;code&gt;~/.lein/profiles.clj&lt;/code&gt;. To include the plugin, add it to your leiningen configuration like so:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:user&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:plugins&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;com.jakemccrary/lein-test-refresh&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;0.15.0&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]]}}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Keep in mind that your &lt;code&gt;profiles.clj&lt;/code&gt; file just contains a Clojure (technically &lt;a href=&quot;https://github.com/edn-format/edn&quot;&gt;edn&lt;/a&gt;) data structure. If your &lt;code&gt;profiles.clj&lt;/code&gt; is empty, you can simply paste the above line into the file. If you already have the &lt;code&gt;:user&lt;/code&gt; and &lt;code&gt;:plugins&lt;/code&gt; entries defined, you&amp;#8217;ll need to add this new plugin vector (&lt;code&gt;[com.jakemccrary/lein-test-refresh &amp;quot;0.15.0&amp;quot;]&lt;/code&gt;) within the existing &lt;code&gt;:plugins&lt;/code&gt; list.&lt;/p&gt;
+&lt;p&gt;With this plugin installed, you can now run &lt;code&gt;lein test-refresh&lt;/code&gt; within any directory containing a &lt;code&gt;project.clj&lt;/code&gt; file, and leiningen will watch for your files to be edited and then run the tests in response. It&amp;#8217;s a great way to get really quick feedback from our test suite when working with code.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/public/images/LeinTestRefresh.png&quot; alt=&quot;/public/images/LeinTestRefresh.png&quot; /&gt;&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Getting Started with Emacs for Ruby</title>
