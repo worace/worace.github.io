@@ -28,11 +28,15 @@ Syntax Highlighting!
 [[/public/images/ClojureSyntaxHighlighting.png]]
 
 *** Proto Repl
-A REPL is fairly indispensable for doing Clojure development. Clojure developers tend to emphasize a very interactive workflow -- boot your REPL, experiment in it, push some code to it from your editor, then apply the insights you gain from these experiments to improving your code. The REPL also gives us a convenient way to run tests, to read documentation (thanks to Clojure's built-in doc string feature) -- we can even use it to boot long-running processes like a webserver.
+A REPL is fairly indispensable for doing Clojure development. Clojure developers tend to emphasize a very interactive workflow -- boot your REPL, experiment in it, push some code to it from your editor, then apply the insights you gain from these experiments to improving your code.
+
+The REPL also gives us a convenient way to run tests, to read documentation (thanks to Clojure's built-in doc string feature) -- we can even use it to boot long-running processes like a webserver.
 
 But enough REPL preaching -- how do we get one? For a long time this was the biggest blocker to having a productive Clojure experience in Atom -- there just wasn't a great option for interactive REPL-driven development.
 
-Fortunately in October, 2015 the popular [[https://github.com/jasongilman/proto-repl][proto-repl]] package came out and brought with it a pretty darn good REPL setup for Atom. Proto-repl feels a little different at first from other REPLs you may have used in other languages, but it doesn't take long to get comfortable with it. Install the package using APM and go ahead and open the REPL either using the "proto-repl" entries under the Packages menu, or using the shortcut ~Cmd-Option-L~.
+Fortunately in October, 2015 the popular [[https://github.com/jasongilman/proto-repl][proto-repl]] package came out and brought with it a pretty darn good REPL setup for Atom. Proto-repl feels a little different at first from other REPLs you may have used in other languages, but it doesn't take long to get comfortable with it.
+
+Install the package using APM and go ahead and open the REPL either using the "proto-repl" entries under the Packages menu, or using the shortcut ~Cmd-Option-L~.
 
 The REPL will take a second to boot, but once it does, play around with it by evaluating some Clojure code (use ~Shift-Enter~ to submit code you type at the bottom of the REPL buffer).
 
@@ -42,32 +46,32 @@ The REPL will take a second to boot, but once it does, play around with it by ev
  * ~Shift-Enter~: Submit form in REPL
  * ~Up / Down Arrows~: Navigate REPL history
  * ~Cmd-Option-a~: Run all tests in current project
- * ~Cmd-Option s~: (Press ctrl and comma together, release, then press s) -- Send a highlighted selection of code to the REPL
+ * ~Cmd-Option s~: Send a highlighted selection of code to the REPL
  * ~Ctrl-Shift-c~: Interrupt (e.g. if you accidentally make an infinite loop in the REPL)
  * ~Cmd-Option-r~: Refresh namespaces (reload files in the current project into the repl --  great for evaluating some new functions or other expressions you have written in a file into the REPL so you can play around with them there)
 
 Finally, if you'd like to set up Proto-Repl to behave more like a traditional terminal, try adding the following keybindings to your Keymap:
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC text
 'atom-pane[data-active-item-name="Clojure REPL"] atom-text-editor:not([mini])':
   'enter':'proto-repl:execute-text-entered-in-repl'
   'cmd-k':'proto-repl:clear-repl'
-#+END_Example
+#+END_SRC
 
 This will let us submit code to the REPL with ENTER rather than Shift-Enter, and also let us use Cmd-K to clear the REPL screen.
 
 This handful of keybindings above should give you enough tools to get started working interactively with Clojure code. Proto-Repl has quite a few neat features tucked into it, so once you get comfortable with the basics you should also check out [[https://atom.io/packages/proto-repl][proto-repl's documentation]].
 
 *** Parinfer
-The last Atom tool we'll look at is aimed at making the experience of /editing/ Clojure code more pleasant. Newcomers often find working with Lisp code challenging, especially coming from more "traditional" Algol-inspired languages. The difficulty is that Lisp really wants to be edited /structurally/ rather than /textually/.
+Newcomers often find working with Lisp code challenging, especially coming from more "traditional" Algol-inspired languages. The difficulty is that Lisp really wants to be edited /structurally/ rather than /textually/.
 
 A Lisp program is really just a Tree of [[https://en.wikipedia.org/wiki/S-expression][expressions]], and when we work with Lisp code we frequently want to manipulate the structure of this tree -- Move this expression Up a level, combine this expression with the one next to it, remove this expression from the tree entirely, etc.
 
-Sounds good, but this is complicated somewhat by ((((all) ((those) (((((parentheses))))))))) -- it's frustratingly easy when moving some Lisp code around to accidentally drop a parenthesis, add an extra one, or just leave one in the wrong spot.
+Sounds good, but it's complicated by ((((all) ((those) (((((parentheses))))))))) -- it's frustratingly easy when moving some Lisp code around to accidentally drop a parenthesis, add an extra one, or just leave one in the wrong spot.
 
-Over time developers have written some powerful tools to help manage this process. [[https://www.emacswiki.org/emacs/ParEdit][ParEdit]] is perhaps the most famous of these -- it's a popular Emacs package for managing and manipulating parenthesis-based S-expressions in a structural way. It's a powerful tool but like many things in Emacs it comes with a learning curve.
+Over time developers have written tools to help manage this process. [[https://www.emacswiki.org/emacs/ParEdit][ParEdit]] is perhaps the most famous -- it's a popular Emacs package for manipulating parenthesis-based S-expressions in a structural way. It's a powerful tool but like many things in Emacs it comes with a learning curve.
 
-That's why I'm excited by Parinfer - a tool that attempts to give a more "intuitive" or "Just Do What I Mean" approach to structural Lisp editing. The [[https://shaunlebron.github.io/parinfer/][docs on Parinfer's homepage]] do a better job of explaining the tool than I will, but the gist of it is /inferring/ the Lisp structure a user intended based on the indentation they specified within their code.
+That's why I'm excited by Parinfer - a tool that attempts to give a more "intuitive" or "Just Do What I Mean" approach to structural Lisp editing. The [[https://shaunlebron.github.io/parinfer/][docs on Parinfer's homepage]] do a better job of explaining the tool than I will, but the gist of it is /inferring/ Lisp structures based on the indentation of a chunk of code.
 
 As you edit code, Parinfer will attempt to guess the most sensible S-expression structure you intended based on the indentation and spacing you typed in the code. For example removing the indentation of a nested expression might be interpreted as "move that expression UP one level." The great thing about Parinfer is there's not too much to learn -- just type correctly formatted code and it will (mostly) do the right thing.
 
