@@ -159,7 +159,7 @@ touch ~/.emacs.d/init.el
 <span class="c1">;...</span>
 
 <span class="c1">;; Autoclose paired syntax elements like parens, quotes, etc</span>
-<span class="p">(</span><span class="nf">add-hook</span> <span class="ss">&#39;ruby-mode-hook</span> <span class="nv">ruby-electric-mode</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">add-hook</span> <span class="ss">&#39;ruby-mode-hook</span> <span class="ss">&#39;ruby-electric-mode</span><span class="p">)</span>
 </pre></div>
 <p>Sometimes Ruby code appears in other kinds of files that don&#8217;t end with the standard <code>.rb</code> extension. We can tell emacs to treat these as ruby files using this snippet:</p>
 <div class="highlight"><pre><span class="p">(</span><span class="nf">add-to-list</span> <span class="ss">&#39;auto-mode-alist</span>

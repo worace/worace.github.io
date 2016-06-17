@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2016-06-14T10:17:42-06:00</updated>
+ <updated>2016-06-17T15:50:46-06:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -213,7 +213,7 @@ touch ~/.emacs.d/init.el
 &lt;span class=&quot;c1&quot;&gt;;...&lt;/span&gt;
 
 &lt;span class=&quot;c1&quot;&gt;;; Autoclose paired syntax elements like parens, quotes, etc&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-mode-hook&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ruby-electric-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-mode-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-electric-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Sometimes Ruby code appears in other kinds of files that don&amp;#8217;t end with the standard &lt;code&gt;.rb&lt;/code&gt; extension. We can tell emacs to treat these as ruby files using this snippet:&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-to-list&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;auto-mode-alist&lt;/span&gt;
