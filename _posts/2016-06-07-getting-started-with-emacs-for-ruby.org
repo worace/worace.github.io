@@ -180,7 +180,7 @@ Let's start with a bit of basic auto-matching for paired characters (parens, quo
 ;...
 
 ;; Autoclose paired syntax elements like parens, quotes, etc
-(add-hook 'ruby-mode-hook ruby-electric-mode)
+(add-hook 'ruby-mode-hook 'ruby-electric-mode)
 #+END_SRC
 
 Sometimes Ruby code appears in other kinds of files that don't end with the standard =.rb= extension. We can tell emacs to treat these as ruby files using this snippet:
