@@ -115,6 +115,9 @@ Emacs is a great operating system in need of a good text editor...
 ** Use it if...
  * You care about the /feedback/ you get when editing code
  * You like tinkering with stuff
+** These are your tools
+ * You are using them all day, every day, to make your living
+ * You should have the control to customize and tweak them as you see fit
 * What is Emacs Especially Good At?
 #+BEGIN_HTML
 <img style="max-width: 80%; max-height:550px" src="images/cider_animation.gif">
