@@ -1,0 +1,246 @@
+#+TITLE: Intro to Emacs
+#+description: What's all the fuss about Emacs?
+#+AUTHOR: Horace Williams @worace
+#+DATE: June 21, 2016
+
+# C+c C+e # default
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:auto
+#+OPTIONS: html-preamble:t html-scripts:nil html-style:nil
+#+OPTIONS: html5-fancy:nil tex:t
+#+CREATOR: <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.5 (<a href="http://orgmode.org">Org</a> mode 8.2.10)
+#+HTML_CONTAINER: div
+#+HTML_DOCTYPE: <!doctype html>
+#+HTML_HEAD: <link href="https://fonts.googleapis.com/css?family=Lora" rel="stylesheet" type="text/css"><link rel="stylesheet" type="text/css" href="style.css"><script async src="bestowed.min.js"></script>
+
+* So what even is Emacs?
+[[file:images/EmacsIcon.png]]
+** A text editor!
+** A Lisp Interpreter!
+** A state of being!
+* Emacs - Text Editor
+ * Emacs provides a very flexible (and stupidly configurable) system for working with good old ASCII/Unicode Text
+ * Can mean source code (obviously popular with programmers)
+ * Also works great for markup formats (Org mode, Markdown, LaTeX)
+ * Text-based interactive interfaces (Shells, REPLs)
+ * Intermediate text-based UIs (dired, helm, etc)
+* Text - Source Code
+[[file:images/source_code.png]]
+* Text - Other Text-y Stuff
+[[file:images/org_mode.png]]
+* Text - Emacs Tools (dired)
+[[file:images/dired.png]]
+* Emacs - Lisp Interpreter
+Technically, Emacs itself is one big shambling Lisp interpreter:
+
+[[file:images/emacs_is_a_lisp_interpreter.gif]]
+* Emacs Lisp -- The Language of Emacs
+
+#+BEGIN_SRC emacs-lisp
+(defun insert-p-tag ()
+  "Insert <p></p> at cursor point."
+  (interactive)
+  (insert "<p></p>")
+  (backward-char 4))
+#+END_SRC
+
+Emacs is written and configured in Emacs Lisp, its own dialect of Lisp.
+
+ELisp itself is in some sense 2 things:
+  * A Lisp dialect with some similarities to Common Lisp or Scheme
+  * A library of functions for manipulating the content of Emacs buffers
+  * (advance the point one character, insert some text here, cut some text to the clipboard, etc etc.)
+* Did we mention stupidly programmable?
+ * IRC / Chat Clients - https://www.emacswiki.org/emacs/InternetRelayChat
+ * Games - =M-x tetris=
+ * Web Browsers - https://www.emacswiki.org/emacs/CategoryWebBrowser
+ * Its own shell... - [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]]
+ * FTP and SSH Clients - [[https://www.emacswiki.org/emacs/TrampMode][tramp-mode]]
+ * Literate Progarmming - [[http://orgmode.org/worg/org-contrib/babel/intro.html][org-babel]]
+
+#+BEGIN_QUOTE
+Emacs is a great operating system in need of a good text editor...
+#+END_QUOTE
+
+(har har har)
+
+* Emacs - Minimal History
+ * Emacs -> "Editor MACroS"
+ * Started in the early 1970's as a collection of more-or-less complex scripts for the terminal-based text editors at the MIT AI Lab
+ * 1976 - Stallman assembled these into the first version of what we would probably call Emacs now
+ * 1978 - [[https://web.archive.org/web/20110602041308/http://www.burlingtontelecom.net/~ashawley/gnu/emacs/doc/emacs-1978.html][First User Manual]]
+ * 1984 - Stallman starts working on GNU Emacs; v1 released 1985
+ * Current Version: 24.5
+ * [[https://www.jwz.org/doc/emacs-timeline.html][jwz's Emacs Timeline]]
+* Emacs - The Creator
+[[file:images/rms.jpeg]]
+ * Sometimes controversial
+ * 2015 - [[https://lists.gnu.org/archive/html/emacs-devel/2015-11/msg00118.html][New maintainer for Emacs]]
+ * Good sign for continuity and succession in the community
+* Emacs - Why would I use it?
+** Text Editors: Sophisticated, (Easily) Customizable, Standardized -- Pick 2
+** Let's look at the lay of the land in text editors...
+* Editor "Families" -- IDEs
+[[file:images/intellij.jpg]]
+
+ - Eclipse / IntelliJ / XCode / etc
+ * Focus on featureset and large codebases
+ * Wants to be your "1 tool" - VCS, Code Editing, Dependency management, Release Packaging, etc
+ * Slow and heavy but very sophisticated
+* Editor "Families" -- GUI Editors
+[[file:images/atom_editor.png]]
+
+ * Textmate / Sublime Text / Atom / VS Code / etc
+ * Popular for web tech / dynamic languages (less benefit from static analyis tools of an IDE)
+ * Lightweight, usually pretty fast (well, except for Atom...)
+ * Decent package ecosystems, especially within "mainstream" languages
+* Editor "Families" -- Dinosaurs
+[[file:images/emacs_splashscreen.png]]
+
+ * Emacs and Vim -- Somehow still kicking
+ * Open Source, community-driven
+ * Unrivaled customizeability and package ecosystems
+* Emacs can be many things...
+#+BEGIN_HTML
+<img style="max-width: 80%;" src="images/overtone.jpg">
+#+END_HTML
+* Emacs can be many things...
+[[file:images/emacs2.jpg]]
+* Emacs can be many things...
+[[file:images/emacs3.jpg]]
+* Emacs - Why would I use it?
+** What is it good at?
+ * Combining a "suite" of related tools to build a perfect environment for whatever your task at hand may be
+ * Working in a lot of different languages and environments
+ * Managing and interacting with long-running sub-processes: REPLs, IRB, Pry, Cider (Clojure REPL)
+** Use it if...
+ * You care about the /feedback/ you get when editing code
+ * You like tinkering with stuff
+* What is Emacs Especially Good At?
+#+BEGIN_HTML
+<img style="max-width: 80%; max-height:550px" src="images/cider_animation.gif">
+#+END_HTML
+* Emacs - Why would I NOT use it?
+ * You want something that works "out of the box"
+ * You want something that behaves like a normal "App" on your OS (keybindings, GUI chrome, etc)
+[[file:images/learning_curves.png]]
+* Emacs Cultural Heritage
+[[file:images/lisp-warning.jpg]]
+* Emacs Cultural Heritage
+#+BEGIN_QUOTE
+Lisp doesn't look any deader than usual to me.
+
+- David Thornley
+#+END_QUOTE
+
+ * "Quality without a name"
+ * Rooted in Hacker / Lisp cultural heritage
+ * Good things were, in fact, made before 2005
+ * Especially if you're a junior-ish developer who started in the last several years, Emacs can be a good gateway into learning about the history of open source technology and of other software tools
+* Using Emacs
+[[file:images/take_my_money.jpg]]
+** Enough of the chitchat, let's use it!
+* Using Emacs - Installation
+** OS X -- Homebrew
+#+BEGIN_EXAMPLE
+brew update && brew install emacs
+brew linkapps emacs
+#+END_EXAMPLE
+* Using Emacs - Configuration
+ * Out of the box, Emacs is functional but crude
+ * Assembling your first Emacs configuration is a right of passage in some circles
+ * Can get endlessly complex with it
+ * https://writequit.org/org/#orgheadline39
+ * Can also get a lot done pretty simply
+ * Configuring Emacs could be that nerdy hobby you've been looking for
+ * =~/.emacs.d= - Default directory where Emacs will look for your configuration
+ * =~/.emacs.d/init.el= - Default "init" file
+* Using Emacs - Keybindings
+[[file:images/space_cadet_keyboard.jpg]]
+ * Can be one of the steepest parts of the learning curve
+ * Many of the standard OS keybindings you're used to won't always work
+ * Fortunately you know some of them already
+ * shell text navigation commands (end of line, beginning of line, etc) actually come from Emacs
+ * We'll also pass out cheatsheets of the most common keybindings
+ * https://www.gnu.org/software/emacs/refcards/pdf/refcard.pdf
+* Reading Emacs Keybindings
+[[file:images/emacs_user_at_work.jpg]]
+ * =C-= Control
+ * =M-= Meta (Alt/Option)
+ * =S-= Shift
+ * =C-n= Hold control and press "n" (note there is no space between the 2)
+ * =C-x C-b= Hold control and press "x", then /release both keys/ then hold control and press "b"
+ * =C-x b= Hold control and press "x", then release both and press "b"
+* Using Emacs -- Modes
+ * A "Mode" represents a collection of related functionality in Emacs
+ * At any time you can have 1 *Major Mode* active
+ * Major modes often define features for a given file type -- Ruby mode, HTML mode, etc
+ * Can also have any number of *Minor Modes* -- these usually provide more general functionality
+ * For example "linum-mode" is a simple Minor Mode for displaying line numbers in a file
+* Getting Help in Emacs
+ * =C-h a= - "Apropos" help -- Type in a string and get a list of matching emacs commands
+ * =C-h k= - Keybinding help -- Emacs will prompt you for a key and then describe what it does
+ * =C-h m= - "Mode" help -- list all the currently active modes so you can get more info on them
+ * =C-h t= - *Emacs Tutorial* - Built-in Emacs walkthrough that introduces common keybindings and concepts -- do it!
+* Other Starting Points
+ * Prelude - https://github.com/bbatsov/prelude -- Probably most popular "starter kit"
+ * Spacemacs - http://spacemacs.org/ -- pre-configured distribution centered around evil mode
+ * Good: Look pretty and have lots of cool stuff out of the box
+ * Bad: No idea what is going on
+ * Recommendation: play around with them on your own to get ideas for different tools you might like to bring into your own configuration
+* Let's Make an Emacs Configuration!
+What are the essential things we would need to edit code productively in Emacs?
+ * Not look like garbage
+ * Basic syntax highlighting
+ * Find Files, Search text in a project
+ * Run Tests
+ * Run a REPL
+ * I got you dog: http://worace.works/2016/06/07/getting-started-with-emacs-for-ruby/
+* Workshop: Independent Emacs Config Walkthrough
+** Option A: Emacs Setup Tutorial
+If you're ready to dive into configuring your very own emacs setup, get started by working through the tutorial here: http://worace.works/2016/06/07/getting-started-with-emacs-for-ruby/
+** Option B: Emacs Built-in Help Tutorial
+If you'd like to spend some more time learning about the basic concepts and controls of Emacs, take some time to work through the guided tutorial built in to Emacs itself. Remember, you can activate the tutorial at any time with =C-h t=. Once you're in the tutorial, you can exit with =C-x k=
+* Emacs essential keybindings
+** Text Navigation
+ * forward word
+ * backward word
+ * forward line
+ * backward line
+ * end of line
+ * beginning of line
+ * end of buffer
+ * beginning of buffer
+** Working with Files and Buffers
+ * open new file
+ * save file
+ * select buffer
+ * kill buffer
+ * browse directory
+** Undo/Redo
+** Managing Panes
+ * open new horizontal split
+ * open new vertical split
+ * close current split
+ * close all other splits
+ * cycle between splits
+** Running Emacs Commands
+ * =M-x= 
+
+* Testimonials - Neal Stephenson
+#+BEGIN_QUOTE
+I use emacs, which might be thought of as a thermonuclear word processor. (...) It is colossal, and yet it only edits straight ASCII text files, which is to say, no fonts, no boldface, no underlining. In other words, the engineer-hours that, in the case of Microsoft Word, were devoted to features like mail merge, and the ability to embed feature-length motion pictures in corporate memoranda, were, in the case of emacs, focused with maniacal intensity on the deceptively simple-seeming problem of editing text.
+
+- Neal Stephenson
+#+END_QUOTE
+* Testimonials - Steve Yegge
+#+BEGIN_QUOTE
+Real engineers use Emacs. You have to be way smart to use it well, and it makes you incredibly powerful if you can master it. It's a real eye-opener for someone who's used Visual Blub .NET-like IDEs their whole career.
+
+Emacs is the 100-year editor.
+
+It's more than just a productivity boost from having great typing shortcuts and text-editing features found nowhere else on the planet. (...) Emacs has the Quality Without a Name.
+
+- Steve Yegge
+#+END_QUOTE
+
+https://sites.google.com/site/steveyegge2/tour-de-babel

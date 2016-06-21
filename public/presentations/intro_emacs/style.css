@@ -1,0 +1,39 @@
+html, body {
+    font-family: "Lora", Serif !important;
+    color: #313131 !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    text-align: left !important;
+    padding-left: 40px;
+    margin: 10px 0px !important;
+}
+
+ul {
+    margin: 10px 0px !important;
+    font-size: 24px !important;
+}
+
+img {
+    max-width: 65%;
+    max-height: 450px;
+}
+
+p {
+    font-size: 24px !important;
+    margin: 10px 0px !important;
+}
+
+div#postamble p {
+    font-size: 14px !important;
+    color: #C0C0C0 !important;
+}
+
+pre {
+    width: 800px;
+}
