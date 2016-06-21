@@ -145,6 +145,15 @@ Lisp doesn't look any deader than usual to me.
 brew update && brew install emacs
 brew linkapps emacs
 #+END_EXAMPLE
+** Linux -- Building from Source
+#+BEGIN_EXAMPLE
+cd ~/Downloads
+wget ftp://ftp.gnu.org/pub/gnu/emacs/emacs-24.5.tar.gz
+tar -zxvf emacs-24.5.tar.gz
+cd emacs-24.5
+./configure
+sudo make install
+#+END_EXAMPLE
 * Using Emacs - Configuration
  * Out of the box, Emacs is functional but crude
  * Assembling your first Emacs configuration is a right of passage in some circles
