@@ -145,7 +145,7 @@ Lisp doesn't look any deader than usual to me.
 * Using Emacs - Installation
 ** OS X -- Homebrew
 #+BEGIN_EXAMPLE
-brew update && brew install emacs
+brew update && brew install emacs --with-cocoa
 brew linkapps emacs
 #+END_EXAMPLE
 ** Linux -- Building from Source
