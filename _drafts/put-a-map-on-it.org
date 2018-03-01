@@ -1,0 +1,91 @@
+---
+title: "Put a Map On It: Visualizing GeoJSON in 2018"
+layout: post
+---
+
+Geospatial data is everywhere these days, and with it comes the need for simple ways to put things on a map. Mapping needs fit into a variety of use-cases, from quick-and-dirty visualizations of a few points or polygons to sophisticated, interactive applications that let users search, browse, and edit.
+
+In this post we'll walk through a few of the current options out there in order from simple to complex.
+
+** Data Formats
+Before diving into specific mapping tools, a note on data formats.
+
+The most popular open formats for serializing geospatial data are [[https://en.wikipedia.org/wiki/Well-known_text][WKT]], [[https://en.wikipedia.org/wiki/GeoJSON][GeoJSON]], and [[http://edndoc.esri.com/arcsde/9.1/general_topics/wkb_representation.htm][WKB]] (a binary version of WKT). Each has pros and cons, but on the web GeoJSON is gradually winning out thanks to its obvious JSON compatibility.
+
+In a nutshell GeoJSON defines standards for representing the fundamental geospatial geometry types (Points, LineStrings, Polygons, MultiPolygons, and some various Collection types) using JSON.
+
+If you're new to working with GeoJSON or would like to read about it in more detail, the best resource I know is Tom MacWright's thorough overview: [[https://macwright.org/2015/03/23/geojson-second-bite][More than you ever wanted to know about GeoJSON]].
+
+Lots of tools work GeoJSON, or at least can export to it (for example PostGIS's ~ST_AsGeoJSON~ function). For considering the tools below, we'll assume you've generated some GeoJSON data through some other process and need a simple way to visualize it.
+
+** 1. GitHub Gists
+GitHub's document hosting platform is packed with features, including the ability to render uploaded GeoJSON data on a map. This Gist feature isn't that well known, but it can be pretty handy and makes it easy to share small amounts of GeoJSON on a map.
+
+Simply upload a file within a Gist ending in ~.geojson~:
+
+[[/public/images/GeoJSONGist.png][/public/images/GeoJSONGist.png]]
+
+And Github will render it for you on a map: https://gist.github.com/worace/540d89a5dbaa0b6274cd19f6ab6d4994
+
+You can read more about mapping with Github Gists and the styling properties supported in their [[https://help.github.com/articles/mapping-geojson-files-on-github/][blog post]].
+
+**** Customizing Styling with Properties
+You can control how Gist styles your map by setting certain attributes within the ~properties~ of your GeoJSON features.
+
+For example uploading a GeoJSON Point with a ~marker-color~ property sets the color of that pin on the map:
+
+#+BEGIN_SRC json
+{
+  "type": "Feature",
+  "properties": {
+    "marker-color": "#ff0000"
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      -118.4184041619301,
+      34.05771049652868
+    ]
+  }
+}
+#+END_SRC
+
+[[/public/images/marker.png][/public/images/marker.png]]
+
+Read more about the supported styling properties [[https://help.github.com/articles/mapping-geojson-files-on-github/#styling-features][here]].
+
+**** Posting with the "gist" CLI
+
+Sometimes it can be handy to create a gist from the command line (for example if you want to avoid copying and pasting a large file, or are generating data from a shell pipeline).
+
+Gists can be created in this way using the [[https://github.com/defunkt/gist][Gist CLI]].
+
+#+BEGIN_SRC shell
+gem install gist
+cat /my/geo/data.geojson | gist -f my_file.geojson
+#+END_SRC
+
+By default gists created using the CLI are public and anonymous, so be sure to [[https://github.com/defunkt/gist#login][Log In]] if you want to create gists on your own account.
+
+** 2. geojson.io
+Next on the list is Mapbox's [[http://geojson.io][geojson.io]]. The software behind this tool is actually open source ([[https://github.com/mapbox/geojson.io][repo here]]), but Mapbox hosts an instance of it as a service to the community.
+
+At its core geojson.io is a big text box where you can paste geojson data and have it rendered on the adjacent map.
+
+[[/public/images/geojsonio.png][/public/images/geojsonio.png]]
+
+However it also includes some tools for adding and editing shapes, and can export to a variety of other geo formats or to Github Gists or b.locks.org for hosting a more permanent version of a map.
+
+It's a great tool for quickly checking things out or iterating on some geodata pipeline.
+** 3. Mapbox Studio
+Gists and geojson.io can take you pretty far for simple visualizations, but they both degrade in performance as the size of your data gets larger.
+
+GeoJSON is a convenient format because it's implemented as a subset of JSON, the web's data lingua franca. But it's not especially efficient, and copy-pasting large blobs of it back and forth between browser text boxes.
+
+I don't have any hard or measured limits on this, but in my experience anything above a couple megabytes starts to feel pretty sluggish in gist or geojson.io (and github gists seems to have trouble editing files this large, causing your data to get garbled on subsequent updates).
+
+In this size range, [[https://www.mapbox.com/mapbox-studio/][Mapbox Studio]] becomes more attractive. Studio is really a full-featured cartographic toolkit, and boasts a lot of features which are beyond the scope of this overview. But for now we're focused on the ability to create /datasets/ by uploading GeoJSON files. Internally, Mapbox will convert your GeoJSON dataset into their own, more efficient, [[https://www.mapbox.com/vector-tiles/][Vector Tile]] format. This process takes a bit more work than simply pasting some GeoJSON into a text box on another webpage, but it means you'll be able to view much larger datasets more efficiently.
+
+For detailed instructions on uploading a dataset, follow [[https://www.mapbox.com/help/add-points-pt-1/][Mapbox's detailed tutorial.]]
+
+** MapboxGL
