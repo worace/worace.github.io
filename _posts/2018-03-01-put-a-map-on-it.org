@@ -28,7 +28,7 @@ Simply upload a file within a Gist ending in ~.geojson~:
 
 [[/public/images/GeoJSONGist.png][/public/images/GeoJSONGist.png]]
 
-And Github will render it for you on a map: https://gist.github.com/worace/540d89a5dbaa0b6274cd19f6ab6d4994
+And Github will render it for you on a map: [[https://gist.github.com/worace/540d89a5dbaa0b6274cd19f6ab6d4994][https://gist.github.com/worace/540d89a5dbaa0b6274cd19f6ab6d4994]]
 
 You can read more about mapping with Github Gists and the styling properties supported in their [[https://help.github.com/articles/mapping-geojson-files-on-github/][blog post]].
 
