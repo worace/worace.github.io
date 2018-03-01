@@ -3,10 +3,11 @@ title: "Put a Map On It: Tools for Visualizing Geo Data"
 layout: post
 ---
 
-Geospatial data is everywhere these days, and with it comes the need for simple ways to put things on a map. Mapping needs fit into a variety of use-cases, from quick-and-dirty visualizations of a few points or polygons to sophisticated, interactive applications that let users search, browse, and edit.
+Geospatial data is everywhere these days, and with it comes the need for simple ways to put things on a map.
+
+Mapping needs fit into a variety of use-cases, from quick-and-dirty visualizations of a few points or polygons to sophisticated, interactive applications that let users search, browse, and edit.
 
 In this post we'll walk through a few of the current options out there in order from simple to complex.
-
 ** Data Formats
 Before diving into specific mapping tools, a note on data formats.
 
@@ -80,6 +81,8 @@ However it also includes some tools for adding and editing shapes, and can expor
 
 It's a great tool for quickly checking things out or iterating on some geodata pipeline.
 ** 3. Mapbox Studio
+[[/public/images/studio_dataset.png][/public/images/studio_dataset.png]]
+
 Gists and geojson.io can take you pretty far for simple visualizations, but they both degrade in performance as the size of your data gets larger.
 
 GeoJSON is convenient because it's implemented as a subset of JSON, the web's data lingua franca. But it's not especially efficient, and copy-pasting large blobs of it between browser text boxes or other web tools can quickly bring things to a crawl.
@@ -88,10 +91,18 @@ I don't have any hard or measured limits on this, but in my experience anything 
 
 For datasets in this size range, [[https://www.mapbox.com/mapbox-studio/][Mapbox Studio]] becomes more attractive.
 
-Studio is really a full-featured cartographic toolkit, and boasts a lot of features which are beyond the scope of this overview. But for now we're focused on the ability to create /datasets/ by uploading GeoJSON files. Internally, Mapbox will convert your GeoJSON dataset into their own, more efficient, [[https://www.mapbox.com/vector-tiles/][Vector Tile]] format. This process takes a bit more work than simply pasting some GeoJSON into a text box on another webpage, but it means you'll be able to view much larger datasets more efficiently. If you're interested, you can also use Mapbox Studio to customize the styling of layers in your map as well.
+Studio is really a full-featured cartographic toolkit, and boasts a lot of cool features which are beyond the scope of this overview. But for now we're focused on the ability to create /datasets/ by uploading GeoJSON files. 
+
+Internally, Mapbox will convert your GeoJSON dataset into their own, more efficient, [[https://www.mapbox.com/vector-tiles/][Vector Tile]] format. This process takes a bit more work than simply pasting some GeoJSON into a text box on another webpage, but it means you'll be able to view much larger datasets more efficiently. If you're interested, you can also use Mapbox Studio to customize the styling of layers in your map as well.
+
+[[/public/images/new_dataset.png][/public/images/new_dataset.png]]
 
 Creating datasets and tilesets in Mapbox Studio is not difficult, but does involve a few steps, so for detailed instructions follow [[https://www.mapbox.com/help/add-points-pt-1/][Mapbox's detailed tutorial.]]
-** MapboxGL
+
+Once you've uploaded data for a dataset and converted your dataset to a tileset, you'll be able to add it to a new Mapbox /style/, which can be used to generate a custom map using the MapboxGL SDK.
+
+[[/public/images/studio_style.png][/public/images/studio_style.png]]
+** 4. MapboxGL
 Last on the list is the heaviest hitter, [[https://www.mapbox.com/mapbox-gl-js/api/][MapboxGL]] (specifically the JS API). This is Mapbox's full-featured mapping SDK, on which most of their other visualization tools (like Mapbox Studio) are built. It exposes a detailed API for creating maps with code, giving developers the power to create heavily customized and interactive map applications.
 
 Of course, with greater power and flexibility comes a steeper learning curve, so a few things to mention:
@@ -100,14 +111,135 @@ Of course, with greater power and flexibility comes a steeper learning curve, so
 
 There are lots of great tutorials on the web about working with mapboxgl-js, so I won't attempt to provide a detailed tutorial here, but I will briefly touch on a few of the key concepts that I found helpful when I started working with mapboxgl-js.
 *** Sources & Layers
-In mapbox-gl **sources** represent collections of geodata. This can be static data that is hardcoded into your application, or something more dynamic, like collections of points or polygons fetched from an API server you control.
+A ~source~ in mapboxGL represent collections of geodata. This can be static data that is hardcoded into your application, or something more dynamic, like collections of points or polygons fetched from an API server you control.
 
-There are a few different types of sources, but I most frequently use the [[https://www.mapbox.com/mapbox-gl-js/api/#geojsonsource][GeoJSONSource]] API.
+There are a few different types of sources, but I most frequently use the [[https://www.mapbox.com/mapbox-gl-js/api/#geojsonsource][GeoJSONSource]], and that's what we'll look at in this example.
 
-Once you've added a data source to your map, you can then add **layers** which render that data in some way. For example if you've added some polygons to your map you might add a ~fill~ layer to color them in on the map.
+Once you've added a data source to your map, you can then add ~layers~ which render that data in some way. For example if you've added some polygons to your map you might add a ~fill~ layer to color them in on the map.
 
 Layers are meant to be composed fairly atomically, so if you want your polygons to be shaded as well as outlined, you will need to add 2 layers: one ~fill~ layer for the shading and another ~line~ layer for the outline stroke. This took me a little while to get used to but it gives you a lot of power and flexibility to style a map as you want.
-*** Data-Driven Styling
-
 *** Hello World Example
+Mapbox has tons of great examples on their documentation site, so you should [[https://www.mapbox.com/mapbox-gl-js/example/simple-map/][start there]] if you're looking for a specific use case. But here's a short example of a basic "hello world" map display with a source and a layer:
 
+[[https://codepen.io/worace/pen/oEVxzv][(View the example on Codepen)]]
+
+#+BEGIN_SRC html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Display a map</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+
+</body>
+</html>
+#+END_SRC
+
+
+#+BEGIN_SRC js
+// You should get your own access token by signing up for a free account at https://www.mapbox.com/
+mapboxgl.accessToken = 'pk.eyJ1Ijoid29yYWNlIiwiYSI6ImNpeWMxOW1jcjAwYWUyd294ZzQ0YnMyZ3QifQ.ZaWekMcNTGFN-TmpPkf9AA';
+
+var map = new mapboxgl.Map({
+  container: 'map', // container id
+  style: 'mapbox://styles/mapbox/streets-v9', // also try dark-v9 or light-v9
+  center: [-118.4184041619301, 34.05771049652868], // starting position [lng, lat]
+  zoom: 17 // starting zoom
+});
+
+var data = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"point_source": "user_upload"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-118.4184041619301, 34.05771049652868]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"point_source": "admin_upload"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-118.4185041619301, 34.05771249652868]
+      }
+    }
+  ]
+};
+
+// Wait for map to fully load before trying to add data
+map.on('load', function() {
+  map.addSource('some-points', {type: 'geojson', data: data});
+  map.addLayer({
+    'id': 'point-circles',
+    'type': 'circle',
+    'source': 'some-points' // Matches the ID we gave to our source above
+  });
+});
+#+END_SRC
+
+This should give you a simple map with 2 points:
+
+[[/public/images/points_raw.png][/public/images/points_raw.png]]
+*** Data-Driven Styling
+MapboxGL is meant for creating maps programmatically on top of dynamic data -- if you just have a small amount of static data to view ad-hoc, one of the other tools mentioned above is probably a better fit.
+
+To this end, it also provides ways to customize the styling of different map elements based on their metadata (~properties~ in a GeoJSON object).
+
+A GeoJSON =feature= consists of a ~geometry~ -- a point, polygon, linestring, etc -- and a JSON Object of arbitrary ~properties~:
+
+#+BEGIN_SRC json
+{
+  "type": "Feature",
+  "properties": {
+    "point_source": "user_upload"
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      -118.4184041619301,
+      34.05771049652868
+    ]
+  }
+}
+#+END_SRC
+
+GeoJSON ~properties~ are arbitrary -- you can use them to store whatever metadata is relevant to your application.
+
+A common mapping use-case, then, would be to customize the styling of this point based on an attribute of these properties. Mapbox calls this "data-driven styling." In our example above we included a property of ~point_source~ on each of our points. Here's how we would change the layer to style the circle color based on that attribute:
+
+#+BEGIN_SRC js
+map.addLayer({
+  'id': 'point-circles',
+  'type': 'circle',
+  'source': 'some-points',
+  'paint': {
+    'circle-color': [
+      'match',
+      ['get', 'point_source'],
+      'user_uploaded', '#ff0000',
+      '#0000ff'
+    ]
+  }
+});
+#+END_SRC
+
+Notice that the second point has the value ~admin_upload~, which doesn't have a color explicitly specified, so it gets the default value of ~#0000ff~.
+
+[[/public/images/points_styled.png][/public/images/points_styled.png]]
+*** Wrapup
+This brief overview only scratches the surface of all you can do with MapboxGL. It's a complex library and takes some time to master, but it's the best developer tool out there for creating complex mapping applications.
+
+As always, check out [[https://www.mapbox.com/mapbox-gl-js/api/][their documentation]] and [[https://www.mapbox.com/mapbox-gl-js/example/][examples]] for more info.
