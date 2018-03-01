@@ -80,12 +80,13 @@ It's a great tool for quickly checking things out or iterating on some geodata p
 ** 3. Mapbox Studio
 Gists and geojson.io can take you pretty far for simple visualizations, but they both degrade in performance as the size of your data gets larger.
 
-GeoJSON is a convenient format because it's implemented as a subset of JSON, the web's data lingua franca. But it's not especially efficient, and copy-pasting large blobs of it back and forth between browser text boxes.
+GeoJSON is convenient because it's implemented as a subset of JSON, the web's data lingua franca. But it's not especially efficient, and copy-pasting large blobs of it between browser text boxes or other web tools can quickly bring things to a crawl.
 
 I don't have any hard or measured limits on this, but in my experience anything above a couple megabytes starts to feel pretty sluggish in gist or geojson.io (and github gists seems to have trouble editing files this large, causing your data to get garbled on subsequent updates).
 
-In this size range, [[https://www.mapbox.com/mapbox-studio/][Mapbox Studio]] becomes more attractive. Studio is really a full-featured cartographic toolkit, and boasts a lot of features which are beyond the scope of this overview. But for now we're focused on the ability to create /datasets/ by uploading GeoJSON files. Internally, Mapbox will convert your GeoJSON dataset into their own, more efficient, [[https://www.mapbox.com/vector-tiles/][Vector Tile]] format. This process takes a bit more work than simply pasting some GeoJSON into a text box on another webpage, but it means you'll be able to view much larger datasets more efficiently.
+For datasets in this size range, [[https://www.mapbox.com/mapbox-studio/][Mapbox Studio]] becomes more attractive.
 
-For detailed instructions on uploading a dataset, follow [[https://www.mapbox.com/help/add-points-pt-1/][Mapbox's detailed tutorial.]]
+Studio is really a full-featured cartographic toolkit, and boasts a lot of features which are beyond the scope of this overview. But for now we're focused on the ability to create /datasets/ by uploading GeoJSON files. Internally, Mapbox will convert your GeoJSON dataset into their own, more efficient, [[https://www.mapbox.com/vector-tiles/][Vector Tile]] format. This process takes a bit more work than simply pasting some GeoJSON into a text box on another webpage, but it means you'll be able to view much larger datasets more efficiently. If you're interested, you can also use Mapbox Studio to customize the styling of layers in your map as well.
 
+Creating datasets and tilesets in Mapbox Studio is not difficult, but does involve a few steps, so for detailed instructions follow [[https://www.mapbox.com/help/add-points-pt-1/][Mapbox's detailed tutorial.]]
 ** MapboxGL
