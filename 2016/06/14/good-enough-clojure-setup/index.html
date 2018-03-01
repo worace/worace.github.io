@@ -37,7 +37,7 @@
       <main>
         <article class="post">
   <h1 class="post-title">A Good Enough Clojure Setup for Beginners</h1>
-  <time datetime="2016-06-14T00:00:00-06:00" class="post-date">14 Jun 2016</time>
+  <time datetime="2016-06-14T00:00:00-07:00" class="post-date">14 Jun 2016</time>
   <p>This document will go over a simple but effective Clojure setup aimed at beginners, and especially those used to editing Ruby, Javascript, or other dynamic languages using Atom.</p>
 <h2>The Basics &#8211; JDK and Leiningen</h2>
 <p>If you&#8217;re brand new to Clojure you&#8217;re in luck, since it&#8217;s pretty easy to install. Clojure is built to run on the JVM (Clojure the language is technically just a Java library). The JVM is incredibly ubiquitous, and thanks to this it&#8217;s pretty easy to get Clojure up and running on most machines. Try the following steps:</p>
@@ -78,7 +78,7 @@
   <li><code>Cmd-Option-r</code>: Refresh namespaces (reload files in the current project into the repl &#8211;  great for evaluating some new functions or other expressions you have written in a file into the REPL so you can play around with them there)</li>
 </ul>
 <p>Finally, if you&#8217;d like to set up Proto-Repl to behave more like a traditional terminal, try adding the following keybindings to your Keymap:</p>
-<div class="highlight"><pre>&#39;atom-pane[data-active-item-name=&quot;Clojure REPL&quot;] atom-text-editor:not([mini])&#39;:
+<div class="highlight"><pre><span></span>&#39;atom-pane[data-active-item-name=&quot;Clojure REPL&quot;] atom-text-editor:not([mini])&#39;:
   &#39;enter&#39;:&#39;proto-repl:execute-text-entered-in-repl&#39;
   &#39;cmd-k&#39;:&#39;proto-repl:clear-repl&#39;
 </pre></div>
@@ -100,7 +100,7 @@
 <h2>Auto Testing: Lein Test Refresh</h2>
 <p>The last Clojure tool that I find truly essential is a test-runner package called <a href="https://github.com/jakemcc/lein-test-refresh">lein-test-refresh.</a> It gives us an awesome &#8220;run my tests when I save a file&#8221; experience for Clojure.</p>
 <p>Test-refresh is a leiningen plugin, so the easiest way to install it is to add it to your system-wide &#8220;user&#8221; leiningen profile, which is defined in the configuration file at <code>~/.lein/profiles.clj</code>. To include the plugin, add it to your leiningen configuration like so:</p>
-<div class="highlight"><pre><span class="p">{</span><span class="ss">:user</span> <span class="p">{</span><span class="ss">:plugins</span> <span class="p">[[</span><span class="nv">com.jakemccrary/lein-test-refresh</span> <span class="s">&quot;0.15.0&quot;</span><span class="p">]]}}</span>
+<div class="highlight"><pre><span></span><span class="p">{</span><span class="ss">:user</span> <span class="p">{</span><span class="ss">:plugins</span> <span class="p">[[</span><span class="nv">com.jakemccrary/lein-test-refresh</span> <span class="s">&quot;0.15.0&quot;</span><span class="p">]]}}</span>
 </pre></div>
 <p>Keep in mind that your <code>profiles.clj</code> file just contains a Clojure (technically <a href="https://github.com/edn-format/edn">edn</a>) data structure. If your <code>profiles.clj</code> is empty, you can simply paste the above line into the file. If you already have the <code>:user</code> and <code>:plugins</code> entries defined, you&#8217;ll need to add this new plugin vector (<code>[com.jakemccrary/lein-test-refresh &quot;0.15.0&quot;]</code>) within the existing <code>:plugins</code> list.</p>
 <p>With this plugin installed, you can now run <code>lein test-refresh</code> within any directory containing a <code>project.clj</code> file, and leiningen will watch for your files to be edited and then run the tests in response. It&#8217;s a great way to get really quick feedback from our test suite when working with code.</p>

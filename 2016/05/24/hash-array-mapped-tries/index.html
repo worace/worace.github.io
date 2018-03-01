@@ -37,7 +37,7 @@
       <main>
         <article class="post">
   <h1 class="post-title">Hash Array Mapped Tries</h1>
-  <time datetime="2016-05-24T00:00:00-06:00" class="post-date">24 May 2016</time>
+  <time datetime="2016-05-24T00:00:00-07:00" class="post-date">24 May 2016</time>
   <p>A Hash Array Mapped Trie (HAMT) is a structure for organizing arbitrary data in a broadly-branching tree. HAMTs are commonly used to build immutable Hash Maps in functional programming languages. By using a value&#8217;s hash code to represent a unique &#8220;path&#8221; into the tree, we can build a Hash Map on top of a tree, rather than on an Array-based table as is more commonly seen. The structure is more complex than a simple Hash Table, but provides a few key benefits, including:</p>
 <ul>
   <li>Ability to grow the map indefinitely without re-sizing or chaining (no re-hashing penalties)</li>
@@ -109,7 +109,7 @@
   library. This gives us a (large) numeric value representing a unique
   digest of that piece of data.</p>
 <p>For example:</p>
-<div class="highlight"><pre><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="nb">require</span> <span class="s2">&quot;digest&quot;</span>
+<div class="highlight"><pre><span></span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="nb">require</span> <span class="s2">&quot;digest&quot;</span>
 <span class="o">=&gt;</span> <span class="kp">true</span>
 <span class="o">[</span><span class="mi">2</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Digest</span><span class="o">::</span><span class="no">SHA1</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(</span><span class="s2">&quot;calzone&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
 <span class="o">=&gt;</span> <span class="mi">334703588949583183218034173573122019749278332384</span>
@@ -123,7 +123,7 @@
   child branches using a single bitmap. <code>(=2 ** 5 == 32)</code></p>
 <p>To get the numeric value of the first 5 bits of our hashcode, we can
   bitwise <code>AND</code> it with a 5-bit number containing all &#8220;on&#8221; bits:</p>
-<div class="highlight"><pre><span class="o">[</span><span class="mi">13</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="mi">31</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="o">[</span><span class="mi">13</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="mi">31</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="o">=&gt;</span> <span class="s2">&quot;11111&quot;</span>
 <span class="o">[</span><span class="mi">14</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Digest</span><span class="o">::</span><span class="no">SHA1</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(</span><span class="s2">&quot;calzone&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">31</span>
 <span class="o">=&gt;</span> <span class="mi">0</span>
@@ -152,14 +152,14 @@
 <p>A bitwise shift simply takes the bits that make a number and slides them in one direction or another.</p>
 <p>In the case of a left shift, we move the existing bits to the left, usually padding them with 0&#8217;s on the righthand side.</p>
 <p>For example:</p>
-<div class="highlight"><pre><span class="o">[</span><span class="mi">20</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="mi">15</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="o">[</span><span class="mi">20</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="mi">15</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="o">=&gt;</span> <span class="s2">&quot;1111&quot;</span>
 <span class="o">[</span><span class="mi">21</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="p">(</span><span class="mi">15</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">to_s</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="o">=&gt;</span> <span class="s2">&quot;11110000&quot;</span>
 </pre></div>
 <p>In our case, we just want to consume the next 5 bits of our hash code value, so we can use a right shift of 5 bits.</p>
 <p>Consider our &#8220;calzone&#8221; example from before:</p>
-<div class="highlight"><pre><span class="o">[</span><span class="mi">24</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="p">(</span><span class="no">Digest</span><span class="o">::</span><span class="no">SHA1</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(</span><span class="s2">&quot;calzone&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">31</span>
+<div class="highlight"><pre><span></span><span class="o">[</span><span class="mi">24</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="p">(</span><span class="no">Digest</span><span class="o">::</span><span class="no">SHA1</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(</span><span class="s2">&quot;calzone&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">31</span>
 <span class="o">=&gt;</span> <span class="mi">15</span>
 </pre></div>
 <p>We now get a completely different subtrie index, helping us avoid the &#8220;stacking&#8221; behavior we would get if we just re-used the existing one. As we walk down the trie, we want to use this technique to shift off 5 bits at each layer.</p>

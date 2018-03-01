@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Put a Map On It: Tools for Visualizing Geo Data &middot; Horace Williams
+    
+  </title>
+  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a href="https://github.com/worace">github</a></li>
+          <li><a href="http://twitter.com/worace">twitter</a></li>
+        </ul>
+      </header>
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Put a Map On It: Tools for Visualizing Geo Data</h1>
+  <time datetime="2018-03-01T00:00:00-08:00" class="post-date">01 Mar 2018</time>
+  <p>Geospatial data is everywhere these days, and with it comes the need for simple ways to put things on a map.</p>
+<p>Mapping needs fit into a variety of use-cases, from quick-and-dirty visualizations of a few points or polygons to sophisticated, interactive applications that let users search, browse, and edit.</p>
+<p>In this post we&#8217;ll walk through a few of the current options out there in order from simple to complex.</p>
+<h2>Data Formats</h2>
+<p>Before diving into specific mapping tools, a note on data formats.</p>
+<p>The most popular open formats for serializing geospatial data are <a href="https://en.wikipedia.org/wiki/Well-known_text">WKT</a>, <a href="https://en.wikipedia.org/wiki/GeoJSON">GeoJSON</a>, and <a href="http://edndoc.esri.com/arcsde/9.1/general_topics/wkb_representation.htm">WKB</a> (a binary version of WKT). Each has pros and cons, but on the web GeoJSON is gradually winning out thanks to its obvious JSON compatibility.</p>
+<p>In a nutshell GeoJSON defines standards for representing the fundamental geospatial geometry types (Points, LineStrings, Polygons, MultiPolygons, and some various Collection types) using JSON.</p>
+<p>If you&#8217;re new to working with GeoJSON or would like to read about it in more detail, the best resource I know is Tom MacWright&#8217;s thorough overview: <a href="https://macwright.org/2015/03/23/geojson-second-bite">More than you ever wanted to know about GeoJSON</a>.</p>
+<p>Lots of tools work GeoJSON, or at least can export to it (for example PostGIS&#8217;s <code>ST_AsGeoJSON</code> function). For considering the tools below, we&#8217;ll assume you&#8217;ve generated some GeoJSON data through some other process and need a simple way to visualize it.</p>
+<p>You&#8217;ll notice that many of the tools listed below come from the fine folks at <a href="https://www.mapbox.com/help/add-points-pt-1/">Mapbox</a>. Mapbox has become a standard bearer of open mapping tools over the last several years, so big thanks to them for providing so many useful tools to the community!</p>
+<h2>1. GitHub Gists</h2>
+<p>GitHub&#8217;s document hosting platform is packed with features, including the ability to render uploaded GeoJSON data on a map. This Gist feature isn&#8217;t that well known, but it can be pretty handy and makes it easy to share small amounts of GeoJSON on a map.</p>
+<p>Simply upload a file within a Gist ending in <code>.geojson</code>:</p>
+<p><a href="/public/images/GeoJSONGist.png"><img src="/public/images/GeoJSONGist.png" alt="/public/images/GeoJSONGist.png" /></a></p>
+<p>And Github will render it for you on a map: https://gist.github.com/worace/540d89a5dbaa0b6274cd19f6ab6d4994</p>
+<p>You can read more about mapping with Github Gists and the styling properties supported in their <a href="https://help.github.com/articles/mapping-geojson-files-on-github/">blog post</a>.</p>
+<h4>Customizing Styling with Properties</h4>
+<p>You can control how Gist styles your map by setting certain attributes within the <code>properties</code> of your GeoJSON features.</p>
+<p>For example uploading a GeoJSON Point with a <code>marker-color</code> property sets the color of that pin on the map:</p>
+<div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Feature&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;marker-color&quot;</span><span class="p">:</span> <span class="s2">&quot;#ff0000&quot;</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Point&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;coordinates&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="mf">-118.4184041619301</span><span class="p">,</span>
+      <span class="mf">34.05771049652868</span>
+    <span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+<p><a href="/public/images/marker.png"><img src="/public/images/marker.png" alt="/public/images/marker.png" /></a></p>
+<p>Read more about the supported styling properties <a href="https://help.github.com/articles/mapping-geojson-files-on-github/#styling-features">here</a>.</p>
+<h4>Posting with the &#8220;gist&#8221; CLI</h4>
+<p>Sometimes it can be handy to create a gist from the command line (for example if you want to avoid copying and pasting a large file, or are generating data from a shell pipeline).</p>
+<p>Gists can be created in this way using the <a href="https://github.com/defunkt/gist">Gist CLI</a>.</p>
+<div class="highlight"><pre><span></span>gem install gist
+cat /my/geo/data.geojson <span class="p">|</span> gist -f my_file.geojson
+</pre></div>
+<p>By default gists created using the CLI are public and anonymous, so be sure to <a href="https://github.com/defunkt/gist#login">Log In</a> if you want to create gists on your own account.</p>
+<h2>2. geojson.io</h2>
+<p>Next on the list is Mapbox&#8217;s <a href="http://geojson.io">geojson.io</a>. The software behind this tool is actually open source (<a href="https://github.com/mapbox/geojson.io">repo here</a>), but Mapbox hosts an instance of it as a service to the community.</p>
+<p>At its core geojson.io is a big text box where you can paste geojson data and have it rendered on the adjacent map.</p>
+<p><a href="/public/images/geojsonio.png"><img src="/public/images/geojsonio.png" alt="/public/images/geojsonio.png" /></a></p>
+<p>However it also includes some tools for adding and editing shapes, and can export to a variety of other geo formats or to Github Gists or b.locks.org for hosting a more permanent version of a map.</p>
+<p>It&#8217;s a great tool for quickly checking things out or iterating on some geodata pipeline.</p>
+<h2>3. Mapbox Studio</h2>
+<p><a href="/public/images/studio_dataset.png"><img src="/public/images/studio_dataset.png" alt="/public/images/studio_dataset.png" /></a></p>
+<p>Gists and geojson.io can take you pretty far for simple visualizations, but they both degrade in performance as the size of your data gets larger.</p>
+<p>GeoJSON is convenient because it&#8217;s implemented as a subset of JSON, the web&#8217;s data lingua franca. But it&#8217;s not especially efficient, and copy-pasting large blobs of it between browser text boxes or other web tools can quickly bring things to a crawl.</p>
+<p>I don&#8217;t have any hard or measured limits on this, but in my experience anything above a couple megabytes starts to feel pretty sluggish in gist or geojson.io (and github gists seems to have trouble editing files this large, causing your data to get garbled on subsequent updates).</p>
+<p>For datasets in this size range, <a href="https://www.mapbox.com/mapbox-studio/">Mapbox Studio</a> becomes more attractive.</p>
+<p>Studio is really a full-featured cartographic toolkit, and boasts a lot of cool features which are beyond the scope of this overview. But for now we&#8217;re focused on the ability to create <i>datasets</i> by uploading GeoJSON files.</p>
+<p>Internally, Mapbox will convert your GeoJSON dataset into their own, more efficient, <a href="https://www.mapbox.com/vector-tiles/">Vector Tile</a> format. This process takes a bit more work than simply pasting some GeoJSON into a text box on another webpage, but it means you&#8217;ll be able to view much larger datasets more efficiently. If you&#8217;re interested, you can also use Mapbox Studio to customize the styling of layers in your map as well.</p>
+<p><a href="/public/images/new_dataset.png"><img src="/public/images/new_dataset.png" alt="/public/images/new_dataset.png" /></a></p>
+<p>Creating datasets and tilesets in Mapbox Studio is not difficult, but does involve a few steps, so for detailed instructions follow <a href="https://www.mapbox.com/help/add-points-pt-1/">Mapbox&#8217;s detailed tutorial.</a></p>
+<p>Once you&#8217;ve uploaded data for a dataset and converted your dataset to a tileset, you&#8217;ll be able to add it to a new Mapbox <i>style</i>, which can be used to generate a custom map using the MapboxGL SDK.</p>
+<p><a href="/public/images/studio_style.png"><img src="/public/images/studio_style.png" alt="/public/images/studio_style.png" /></a></p>
+<h2>4. MapboxGL</h2>
+<p>Last on the list is the heaviest hitter, <a href="https://www.mapbox.com/mapbox-gl-js/api/">MapboxGL</a> (specifically the JS API). This is Mapbox&#8217;s full-featured mapping SDK, on which most of their other visualization tools (like Mapbox Studio) are built. It exposes a detailed API for creating maps with code, giving developers the power to create heavily customized and interactive map applications.</p>
+<p>Of course, with greater power and flexibility comes a steeper learning curve, so a few things to mention:</p>
+<ul>
+  <li>Creating a map with the Mapbox SDK requires writing some code, even for simple examples</li>
+  <li>The SDK is fairly complex, and learning all its features in detail can take some time</li>
+</ul>
+<p>There are lots of great tutorials on the web about working with mapboxgl-js, so I won&#8217;t attempt to provide a detailed tutorial here, but I will briefly touch on a few of the key concepts that I found helpful when I started working with mapboxgl-js.</p>
+<h3>Sources &amp; Layers</h3>
+<p>A <code>source</code> in mapboxGL represent collections of geodata. This can be static data that is hardcoded into your application, or something more dynamic, like collections of points or polygons fetched from an API server you control.</p>
+<p>There are a few different types of sources, but I most frequently use the <a href="https://www.mapbox.com/mapbox-gl-js/api/#geojsonsource">GeoJSONSource</a>, and that&#8217;s what we&#8217;ll look at in this example.</p>
+<p>Once you&#8217;ve added a data source to your map, you can then add <code>layers</code> which render that data in some way. For example if you&#8217;ve added some polygons to your map you might add a <code>fill</code> layer to color them in on the map.</p>
+<p>Layers are meant to be composed fairly atomically, so if you want your polygons to be shaded as well as outlined, you will need to add 2 layers: one <code>fill</code> layer for the shading and another <code>line</code> layer for the outline stroke. This took me a little while to get used to but it gives you a lot of power and flexibility to style a map as you want.</p>
+<h3>Hello World Example</h3>
+<p>Mapbox has tons of great examples on their documentation site, so you should <a href="https://www.mapbox.com/mapbox-gl-js/example/simple-map/">start there</a> if you&#8217;re looking for a specific use case. But here&#8217;s a short example of a basic &#8220;hello world&#8221; map display with a source and a layer:</p>
+<p><a href="https://codepen.io/worace/pen/oEVxzv">(View the example on Codepen)</a></p>
+<div class="highlight"><pre><span></span><span class="cp">&lt;!DOCTYPE html&gt;</span>
+<span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">&#39;utf-8&#39;</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Display a map<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">name</span><span class="o">=</span><span class="s">&#39;viewport&#39;</span> <span class="na">content</span><span class="o">=</span><span class="s">&#39;initial-scale=1,maximum-scale=1,user-scalable=no&#39;</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">&#39;https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.js&#39;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">link</span> <span class="na">href</span><span class="o">=</span><span class="s">&#39;https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.css&#39;</span> <span class="na">rel</span><span class="o">=</span><span class="s">&#39;stylesheet&#39;</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;</span><span class="nt">style</span><span class="p">&gt;</span>
+        <span class="nt">body</span> <span class="p">{</span> <span class="k">margin</span><span class="p">:</span><span class="mi">0</span><span class="p">;</span> <span class="k">padding</span><span class="p">:</span><span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
+        <span class="p">#</span><span class="nn">map</span> <span class="p">{</span> <span class="k">position</span><span class="p">:</span><span class="kc">absolute</span><span class="p">;</span> <span class="k">top</span><span class="p">:</span><span class="mi">0</span><span class="p">;</span> <span class="k">bottom</span><span class="p">:</span><span class="mi">0</span><span class="p">;</span> <span class="k">width</span><span class="p">:</span><span class="mi">100</span><span class="kt">%</span><span class="p">;</span> <span class="p">}</span>
+    <span class="p">&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+
+<span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">&#39;map&#39;</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+
+<span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</pre></div>
+<div class="highlight"><pre><span></span><span class="c1">// You should get your own access token by signing up for a free account at https://www.mapbox.com/</span>
+<span class="nx">mapboxgl</span><span class="p">.</span><span class="nx">accessToken</span> <span class="o">=</span> <span class="s1">&#39;pk.eyJ1Ijoid29yYWNlIiwiYSI6ImNpeWMxOW1jcjAwYWUyd294ZzQ0YnMyZ3QifQ.ZaWekMcNTGFN-TmpPkf9AA&#39;</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">map</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">mapboxgl</span><span class="p">.</span><span class="nx">Map</span><span class="p">({</span>
+  <span class="nx">container</span><span class="o">:</span> <span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="c1">// container id</span>
+  <span class="nx">style</span><span class="o">:</span> <span class="s1">&#39;mapbox://styles/mapbox/streets-v9&#39;</span><span class="p">,</span> <span class="c1">// also try dark-v9 or light-v9</span>
+  <span class="nx">center</span><span class="o">:</span> <span class="p">[</span><span class="o">-</span><span class="mf">118.4184041619301</span><span class="p">,</span> <span class="mf">34.05771049652868</span><span class="p">],</span> <span class="c1">// starting position [lng, lat]</span>
+  <span class="nx">zoom</span><span class="o">:</span> <span class="mi">17</span> <span class="c1">// starting zoom</span>
+<span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;FeatureCollection&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;features&quot;</span><span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;Feature&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span><span class="s2">&quot;point_source&quot;</span><span class="o">:</span> <span class="s2">&quot;user_upload&quot;</span><span class="p">},</span>
+      <span class="s2">&quot;geometry&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;Point&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;coordinates&quot;</span><span class="o">:</span> <span class="p">[</span><span class="o">-</span><span class="mf">118.4184041619301</span><span class="p">,</span> <span class="mf">34.05771049652868</span><span class="p">]</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;Feature&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;properties&quot;</span><span class="o">:</span> <span class="p">{</span><span class="s2">&quot;point_source&quot;</span><span class="o">:</span> <span class="s2">&quot;admin_upload&quot;</span><span class="p">},</span>
+      <span class="s2">&quot;geometry&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;Point&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;coordinates&quot;</span><span class="o">:</span> <span class="p">[</span><span class="o">-</span><span class="mf">118.4185041619301</span><span class="p">,</span> <span class="mf">34.05771249652868</span><span class="p">]</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">};</span>
+
+<span class="c1">// Wait for map to fully load before trying to add data</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nx">map</span><span class="p">.</span><span class="nx">addSource</span><span class="p">(</span><span class="s1">&#39;some-points&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;geojson&#39;</span><span class="p">,</span> <span class="nx">data</span><span class="o">:</span> <span class="nx">data</span><span class="p">});</span>
+  <span class="nx">map</span><span class="p">.</span><span class="nx">addLayer</span><span class="p">({</span>
+    <span class="s1">&#39;id&#39;</span><span class="o">:</span> <span class="s1">&#39;point-circles&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;type&#39;</span><span class="o">:</span> <span class="s1">&#39;circle&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;source&#39;</span><span class="o">:</span> <span class="s1">&#39;some-points&#39;</span> <span class="c1">// Matches the ID we gave to our source above</span>
+  <span class="p">});</span>
+<span class="p">});</span>
+</pre></div>
+<p>This should give you a simple map with 2 points:</p>
+<p><a href="/public/images/points_raw.png"><img src="/public/images/points_raw.png" alt="/public/images/points_raw.png" /></a></p>
+<h3>Data-Driven Styling</h3>
+<p>MapboxGL is meant for creating maps programmatically on top of dynamic data &#8211; if you just have a small amount of static data to view ad-hoc, one of the other tools mentioned above is probably a better fit.</p>
+<p>To this end, it also provides ways to customize the styling of different map elements based on their metadata (<code>properties</code> in a GeoJSON object).</p>
+<p>A GeoJSON <code>feature</code> consists of a <code>geometry</code> &#8211; a point, polygon, linestring, etc &#8211; and a JSON Object of arbitrary <code>properties</code>:</p>
+<div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Feature&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;point_source&quot;</span><span class="p">:</span> <span class="s2">&quot;user_upload&quot;</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Point&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;coordinates&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="mf">-118.4184041619301</span><span class="p">,</span>
+      <span class="mf">34.05771049652868</span>
+    <span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+<p>GeoJSON <code>properties</code> are arbitrary &#8211; you can use them to store whatever metadata is relevant to your application.</p>
+<p>A common mapping use-case, then, would be to customize the styling of this point based on an attribute of these properties. Mapbox calls this &#8220;data-driven styling.&#8221; In our example above we included a property of <code>point_source</code> on each of our points. Here&#8217;s how we would change the layer to style the circle color based on that attribute:</p>
+<div class="highlight"><pre><span></span><span class="nx">map</span><span class="p">.</span><span class="nx">addLayer</span><span class="p">({</span>
+  <span class="s1">&#39;id&#39;</span><span class="o">:</span> <span class="s1">&#39;point-circles&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;type&#39;</span><span class="o">:</span> <span class="s1">&#39;circle&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;source&#39;</span><span class="o">:</span> <span class="s1">&#39;some-points&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;paint&#39;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s1">&#39;circle-color&#39;</span><span class="o">:</span> <span class="p">[</span>
+      <span class="s1">&#39;match&#39;</span><span class="p">,</span>
+      <span class="p">[</span><span class="s1">&#39;get&#39;</span><span class="p">,</span> <span class="s1">&#39;point_source&#39;</span><span class="p">],</span>
+      <span class="s1">&#39;user_uploaded&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff0000&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;#0000ff&#39;</span>
+    <span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+</pre></div>
+<p>Notice that the second point has the value <code>admin_upload</code>, which doesn&#8217;t have a color explicitly specified, so it gets the default value of <code>#0000ff</code>.</p>
+<p><a href="/public/images/points_styled.png"><img src="/public/images/points_styled.png" alt="/public/images/points_styled.png" /></a></p>
+<h3>Wrapup</h3>
+<p>This brief overview only scratches the surface of all you can do with MapboxGL. It&#8217;s a complex library and takes some time to master, but it&#8217;s the best developer tool out there for creating complex mapping applications.</p>
+<p>As always, check out <a href="https://www.mapbox.com/mapbox-gl-js/api/">their documentation</a> and <a href="https://www.mapbox.com/mapbox-gl-js/example/">examples</a> for more info.</p>
+
+</article>
+
+      </main>
+
+    </div>
+
+    
+  </body>
+</html>

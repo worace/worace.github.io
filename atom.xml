@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2016-06-21T19:17:36-06:00</updated>
+ <updated>2018-03-01T12:53:53-08:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -13,9 +13,196 @@
 
  
  <entry>
+   <title>Put a Map On It: Tools for Visualizing Geo Data</title>
+   <link href="http://worace.works/2018/03/01/put-a-map-on-it/"/>
+   <updated>2018-03-01T00:00:00-08:00</updated>
+   <id>http://worace.works/2018/03/01/put-a-map-on-it</id>
+   <content type="html">&lt;p&gt;Geospatial data is everywhere these days, and with it comes the need for simple ways to put things on a map.&lt;/p&gt;
+&lt;p&gt;Mapping needs fit into a variety of use-cases, from quick-and-dirty visualizations of a few points or polygons to sophisticated, interactive applications that let users search, browse, and edit.&lt;/p&gt;
+&lt;p&gt;In this post we&amp;#8217;ll walk through a few of the current options out there in order from simple to complex.&lt;/p&gt;
+&lt;h2&gt;Data Formats&lt;/h2&gt;
+&lt;p&gt;Before diving into specific mapping tools, a note on data formats.&lt;/p&gt;
+&lt;p&gt;The most popular open formats for serializing geospatial data are &lt;a href=&quot;https://en.wikipedia.org/wiki/Well-known_text&quot;&gt;WKT&lt;/a&gt;, &lt;a href=&quot;https://en.wikipedia.org/wiki/GeoJSON&quot;&gt;GeoJSON&lt;/a&gt;, and &lt;a href=&quot;http://edndoc.esri.com/arcsde/9.1/general_topics/wkb_representation.htm&quot;&gt;WKB&lt;/a&gt; (a binary version of WKT). Each has pros and cons, but on the web GeoJSON is gradually winning out thanks to its obvious JSON compatibility.&lt;/p&gt;
+&lt;p&gt;In a nutshell GeoJSON defines standards for representing the fundamental geospatial geometry types (Points, LineStrings, Polygons, MultiPolygons, and some various Collection types) using JSON.&lt;/p&gt;
+&lt;p&gt;If you&amp;#8217;re new to working with GeoJSON or would like to read about it in more detail, the best resource I know is Tom MacWright&amp;#8217;s thorough overview: &lt;a href=&quot;https://macwright.org/2015/03/23/geojson-second-bite&quot;&gt;More than you ever wanted to know about GeoJSON&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Lots of tools work GeoJSON, or at least can export to it (for example PostGIS&amp;#8217;s &lt;code&gt;ST_AsGeoJSON&lt;/code&gt; function). For considering the tools below, we&amp;#8217;ll assume you&amp;#8217;ve generated some GeoJSON data through some other process and need a simple way to visualize it.&lt;/p&gt;
+&lt;p&gt;You&amp;#8217;ll notice that many of the tools listed below come from the fine folks at &lt;a href=&quot;https://www.mapbox.com/help/add-points-pt-1/&quot;&gt;Mapbox&lt;/a&gt;. Mapbox has become a standard bearer of open mapping tools over the last several years, so big thanks to them for providing so many useful tools to the community!&lt;/p&gt;
+&lt;h2&gt;1. GitHub Gists&lt;/h2&gt;
+&lt;p&gt;GitHub&amp;#8217;s document hosting platform is packed with features, including the ability to render uploaded GeoJSON data on a map. This Gist feature isn&amp;#8217;t that well known, but it can be pretty handy and makes it easy to share small amounts of GeoJSON on a map.&lt;/p&gt;
+&lt;p&gt;Simply upload a file within a Gist ending in &lt;code&gt;.geojson&lt;/code&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/public/images/GeoJSONGist.png&quot;&gt;&lt;img src=&quot;/public/images/GeoJSONGist.png&quot; alt=&quot;/public/images/GeoJSONGist.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;And Github will render it for you on a map: https://gist.github.com/worace/540d89a5dbaa0b6274cd19f6ab6d4994&lt;/p&gt;
+&lt;p&gt;You can read more about mapping with Github Gists and the styling properties supported in their &lt;a href=&quot;https://help.github.com/articles/mapping-geojson-files-on-github/&quot;&gt;blog post&lt;/a&gt;.&lt;/p&gt;
+&lt;h4&gt;Customizing Styling with Properties&lt;/h4&gt;
+&lt;p&gt;You can control how Gist styles your map by setting certain attributes within the &lt;code&gt;properties&lt;/code&gt; of your GeoJSON features.&lt;/p&gt;
+&lt;p&gt;For example uploading a GeoJSON Point with a &lt;code&gt;marker-color&lt;/code&gt; property sets the color of that pin on the map:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Feature&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;properties&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;quot;marker-color&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;#ff0000&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;geometry&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Point&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;quot;coordinates&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+      &lt;span class=&quot;mf&quot;&gt;-118.4184041619301&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;mf&quot;&gt;34.05771049652868&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href=&quot;/public/images/marker.png&quot;&gt;&lt;img src=&quot;/public/images/marker.png&quot; alt=&quot;/public/images/marker.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Read more about the supported styling properties &lt;a href=&quot;https://help.github.com/articles/mapping-geojson-files-on-github/#styling-features&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;h4&gt;Posting with the &amp;#8220;gist&amp;#8221; CLI&lt;/h4&gt;
+&lt;p&gt;Sometimes it can be handy to create a gist from the command line (for example if you want to avoid copying and pasting a large file, or are generating data from a shell pipeline).&lt;/p&gt;
+&lt;p&gt;Gists can be created in this way using the &lt;a href=&quot;https://github.com/defunkt/gist&quot;&gt;Gist CLI&lt;/a&gt;.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;gem install gist
+cat /my/geo/data.geojson &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; gist -f my_file.geojson
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;By default gists created using the CLI are public and anonymous, so be sure to &lt;a href=&quot;https://github.com/defunkt/gist#login&quot;&gt;Log In&lt;/a&gt; if you want to create gists on your own account.&lt;/p&gt;
+&lt;h2&gt;2. geojson.io&lt;/h2&gt;
+&lt;p&gt;Next on the list is Mapbox&amp;#8217;s &lt;a href=&quot;http://geojson.io&quot;&gt;geojson.io&lt;/a&gt;. The software behind this tool is actually open source (&lt;a href=&quot;https://github.com/mapbox/geojson.io&quot;&gt;repo here&lt;/a&gt;), but Mapbox hosts an instance of it as a service to the community.&lt;/p&gt;
+&lt;p&gt;At its core geojson.io is a big text box where you can paste geojson data and have it rendered on the adjacent map.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/public/images/geojsonio.png&quot;&gt;&lt;img src=&quot;/public/images/geojsonio.png&quot; alt=&quot;/public/images/geojsonio.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;However it also includes some tools for adding and editing shapes, and can export to a variety of other geo formats or to Github Gists or b.locks.org for hosting a more permanent version of a map.&lt;/p&gt;
+&lt;p&gt;It&amp;#8217;s a great tool for quickly checking things out or iterating on some geodata pipeline.&lt;/p&gt;
+&lt;h2&gt;3. Mapbox Studio&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;/public/images/studio_dataset.png&quot;&gt;&lt;img src=&quot;/public/images/studio_dataset.png&quot; alt=&quot;/public/images/studio_dataset.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Gists and geojson.io can take you pretty far for simple visualizations, but they both degrade in performance as the size of your data gets larger.&lt;/p&gt;
+&lt;p&gt;GeoJSON is convenient because it&amp;#8217;s implemented as a subset of JSON, the web&amp;#8217;s data lingua franca. But it&amp;#8217;s not especially efficient, and copy-pasting large blobs of it between browser text boxes or other web tools can quickly bring things to a crawl.&lt;/p&gt;
+&lt;p&gt;I don&amp;#8217;t have any hard or measured limits on this, but in my experience anything above a couple megabytes starts to feel pretty sluggish in gist or geojson.io (and github gists seems to have trouble editing files this large, causing your data to get garbled on subsequent updates).&lt;/p&gt;
+&lt;p&gt;For datasets in this size range, &lt;a href=&quot;https://www.mapbox.com/mapbox-studio/&quot;&gt;Mapbox Studio&lt;/a&gt; becomes more attractive.&lt;/p&gt;
+&lt;p&gt;Studio is really a full-featured cartographic toolkit, and boasts a lot of cool features which are beyond the scope of this overview. But for now we&amp;#8217;re focused on the ability to create &lt;i&gt;datasets&lt;/i&gt; by uploading GeoJSON files.&lt;/p&gt;
+&lt;p&gt;Internally, Mapbox will convert your GeoJSON dataset into their own, more efficient, &lt;a href=&quot;https://www.mapbox.com/vector-tiles/&quot;&gt;Vector Tile&lt;/a&gt; format. This process takes a bit more work than simply pasting some GeoJSON into a text box on another webpage, but it means you&amp;#8217;ll be able to view much larger datasets more efficiently. If you&amp;#8217;re interested, you can also use Mapbox Studio to customize the styling of layers in your map as well.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/public/images/new_dataset.png&quot;&gt;&lt;img src=&quot;/public/images/new_dataset.png&quot; alt=&quot;/public/images/new_dataset.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Creating datasets and tilesets in Mapbox Studio is not difficult, but does involve a few steps, so for detailed instructions follow &lt;a href=&quot;https://www.mapbox.com/help/add-points-pt-1/&quot;&gt;Mapbox&amp;#8217;s detailed tutorial.&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Once you&amp;#8217;ve uploaded data for a dataset and converted your dataset to a tileset, you&amp;#8217;ll be able to add it to a new Mapbox &lt;i&gt;style&lt;/i&gt;, which can be used to generate a custom map using the MapboxGL SDK.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/public/images/studio_style.png&quot;&gt;&lt;img src=&quot;/public/images/studio_style.png&quot; alt=&quot;/public/images/studio_style.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;4. MapboxGL&lt;/h2&gt;
+&lt;p&gt;Last on the list is the heaviest hitter, &lt;a href=&quot;https://www.mapbox.com/mapbox-gl-js/api/&quot;&gt;MapboxGL&lt;/a&gt; (specifically the JS API). This is Mapbox&amp;#8217;s full-featured mapping SDK, on which most of their other visualization tools (like Mapbox Studio) are built. It exposes a detailed API for creating maps with code, giving developers the power to create heavily customized and interactive map applications.&lt;/p&gt;
+&lt;p&gt;Of course, with greater power and flexibility comes a steeper learning curve, so a few things to mention:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Creating a map with the Mapbox SDK requires writing some code, even for simple examples&lt;/li&gt;
+  &lt;li&gt;The SDK is fairly complex, and learning all its features in detail can take some time&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;There are lots of great tutorials on the web about working with mapboxgl-js, so I won&amp;#8217;t attempt to provide a detailed tutorial here, but I will briefly touch on a few of the key concepts that I found helpful when I started working with mapboxgl-js.&lt;/p&gt;
+&lt;h3&gt;Sources &amp;amp; Layers&lt;/h3&gt;
+&lt;p&gt;A &lt;code&gt;source&lt;/code&gt; in mapboxGL represent collections of geodata. This can be static data that is hardcoded into your application, or something more dynamic, like collections of points or polygons fetched from an API server you control.&lt;/p&gt;
+&lt;p&gt;There are a few different types of sources, but I most frequently use the &lt;a href=&quot;https://www.mapbox.com/mapbox-gl-js/api/#geojsonsource&quot;&gt;GeoJSONSource&lt;/a&gt;, and that&amp;#8217;s what we&amp;#8217;ll look at in this example.&lt;/p&gt;
+&lt;p&gt;Once you&amp;#8217;ve added a data source to your map, you can then add &lt;code&gt;layers&lt;/code&gt; which render that data in some way. For example if you&amp;#8217;ve added some polygons to your map you might add a &lt;code&gt;fill&lt;/code&gt; layer to color them in on the map.&lt;/p&gt;
+&lt;p&gt;Layers are meant to be composed fairly atomically, so if you want your polygons to be shaded as well as outlined, you will need to add 2 layers: one &lt;code&gt;fill&lt;/code&gt; layer for the shading and another &lt;code&gt;line&lt;/code&gt; layer for the outline stroke. This took me a little while to get used to but it gives you a lot of power and flexibility to style a map as you want.&lt;/p&gt;
+&lt;h3&gt;Hello World Example&lt;/h3&gt;
+&lt;p&gt;Mapbox has tons of great examples on their documentation site, so you should &lt;a href=&quot;https://www.mapbox.com/mapbox-gl-js/example/simple-map/&quot;&gt;start there&lt;/a&gt; if you&amp;#8217;re looking for a specific use case. But here&amp;#8217;s a short example of a basic &amp;#8220;hello world&amp;#8221; map display with a source and a layer:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://codepen.io/worace/pen/oEVxzv&quot;&gt;(View the example on Codepen)&lt;/a&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;!DOCTYPE html&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;html&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;head&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;meta&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;charset&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;title&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;Display a map&lt;span class=&quot;p&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;title&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;meta&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;viewport&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;initial-scale=1,maximum-scale=1,user-scalable=no&amp;#39;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;script&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.js&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;script&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;link&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.css&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;rel&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;stylesheet&amp;#39;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;style&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;body&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;margin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;padding&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;nn&quot;&gt;map&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;position&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;absolute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;top&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;bottom&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;%&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;style&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;head&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;body&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;div&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;map&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;div&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;body&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;html&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;// You should get your own access token by signing up for a free account at https://www.mapbox.com/&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;mapboxgl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;accessToken&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;pk.eyJ1Ijoid29yYWNlIiwiYSI6ImNpeWMxOW1jcjAwYWUyd294ZzQ0YnMyZ3QifQ.ZaWekMcNTGFN-TmpPkf9AA&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;map&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;mapboxgl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;({&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;container&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;map&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// container id&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;style&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;mapbox://styles/mapbox/streets-v9&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// also try dark-v9 or light-v9&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;center&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;118.4184041619301&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;34.05771049652868&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// starting position [lng, lat]&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;zoom&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;17&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// starting zoom&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;s2&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;FeatureCollection&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;s2&quot;&gt;&amp;quot;features&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;s2&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Feature&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;s2&quot;&gt;&amp;quot;properties&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;point_source&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;user_upload&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+      &lt;span class=&quot;s2&quot;&gt;&amp;quot;geometry&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;s2&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Point&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;s2&quot;&gt;&amp;quot;coordinates&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;118.4184041619301&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;34.05771049652868&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;s2&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Feature&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;s2&quot;&gt;&amp;quot;properties&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;point_source&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;admin_upload&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+      &lt;span class=&quot;s2&quot;&gt;&amp;quot;geometry&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;s2&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Point&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;s2&quot;&gt;&amp;quot;coordinates&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;118.4185041619301&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;34.05771249652868&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Wait for map to fully load before trying to add data&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;on&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;load&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;addSource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;some-points&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;geojson&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;addLayer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;({&lt;/span&gt;
+    &lt;span class=&quot;s1&quot;&gt;&amp;#39;id&amp;#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;point-circles&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;s1&quot;&gt;&amp;#39;type&amp;#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;circle&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;s1&quot;&gt;&amp;#39;source&amp;#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;some-points&amp;#39;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// Matches the ID we gave to our source above&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This should give you a simple map with 2 points:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/public/images/points_raw.png&quot;&gt;&lt;img src=&quot;/public/images/points_raw.png&quot; alt=&quot;/public/images/points_raw.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;h3&gt;Data-Driven Styling&lt;/h3&gt;
+&lt;p&gt;MapboxGL is meant for creating maps programmatically on top of dynamic data &amp;#8211; if you just have a small amount of static data to view ad-hoc, one of the other tools mentioned above is probably a better fit.&lt;/p&gt;
+&lt;p&gt;To this end, it also provides ways to customize the styling of different map elements based on their metadata (&lt;code&gt;properties&lt;/code&gt; in a GeoJSON object).&lt;/p&gt;
+&lt;p&gt;A GeoJSON &lt;code&gt;feature&lt;/code&gt; consists of a &lt;code&gt;geometry&lt;/code&gt; &amp;#8211; a point, polygon, linestring, etc &amp;#8211; and a JSON Object of arbitrary &lt;code&gt;properties&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Feature&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;properties&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;quot;point_source&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;user_upload&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;geometry&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Point&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;quot;coordinates&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+      &lt;span class=&quot;mf&quot;&gt;-118.4184041619301&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;mf&quot;&gt;34.05771049652868&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;GeoJSON &lt;code&gt;properties&lt;/code&gt; are arbitrary &amp;#8211; you can use them to store whatever metadata is relevant to your application.&lt;/p&gt;
+&lt;p&gt;A common mapping use-case, then, would be to customize the styling of this point based on an attribute of these properties. Mapbox calls this &amp;#8220;data-driven styling.&amp;#8221; In our example above we included a property of &lt;code&gt;point_source&lt;/code&gt; on each of our points. Here&amp;#8217;s how we would change the layer to style the circle color based on that attribute:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;addLayer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;({&lt;/span&gt;
+  &lt;span class=&quot;s1&quot;&gt;&amp;#39;id&amp;#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;point-circles&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;s1&quot;&gt;&amp;#39;type&amp;#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;circle&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;s1&quot;&gt;&amp;#39;source&amp;#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;some-points&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;s1&quot;&gt;&amp;#39;paint&amp;#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;s1&quot;&gt;&amp;#39;circle-color&amp;#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+      &lt;span class=&quot;s1&quot;&gt;&amp;#39;match&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;get&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;point_source&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+      &lt;span class=&quot;s1&quot;&gt;&amp;#39;user_uploaded&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;#ff0000&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;s1&quot;&gt;&amp;#39;#0000ff&amp;#39;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Notice that the second point has the value &lt;code&gt;admin_upload&lt;/code&gt;, which doesn&amp;#8217;t have a color explicitly specified, so it gets the default value of &lt;code&gt;#0000ff&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;/public/images/points_styled.png&quot;&gt;&lt;img src=&quot;/public/images/points_styled.png&quot; alt=&quot;/public/images/points_styled.png&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;h3&gt;Wrapup&lt;/h3&gt;
+&lt;p&gt;This brief overview only scratches the surface of all you can do with MapboxGL. It&amp;#8217;s a complex library and takes some time to master, but it&amp;#8217;s the best developer tool out there for creating complex mapping applications.&lt;/p&gt;
+&lt;p&gt;As always, check out &lt;a href=&quot;https://www.mapbox.com/mapbox-gl-js/api/&quot;&gt;their documentation&lt;/a&gt; and &lt;a href=&quot;https://www.mapbox.com/mapbox-gl-js/example/&quot;&gt;examples&lt;/a&gt; for more info.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
    <title>A Good Enough Clojure Setup for Beginners</title>
    <link href="http://worace.works/2016/06/14/good-enough-clojure-setup/"/>
-   <updated>2016-06-14T00:00:00-06:00</updated>
+   <updated>2016-06-14T00:00:00-07:00</updated>
    <id>http://worace.works/2016/06/14/good-enough-clojure-setup</id>
    <content type="html">&lt;p&gt;This document will go over a simple but effective Clojure setup aimed at beginners, and especially those used to editing Ruby, Javascript, or other dynamic languages using Atom.&lt;/p&gt;
 &lt;h2&gt;The Basics &amp;#8211; JDK and Leiningen&lt;/h2&gt;
@@ -57,7 +244,7 @@
   &lt;li&gt;&lt;code&gt;Cmd-Option-r&lt;/code&gt;: Refresh namespaces (reload files in the current project into the repl &amp;#8211;  great for evaluating some new functions or other expressions you have written in a file into the REPL so you can play around with them there)&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Finally, if you&amp;#8217;d like to set up Proto-Repl to behave more like a traditional terminal, try adding the following keybindings to your Keymap:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&amp;#39;atom-pane[data-active-item-name=&amp;quot;Clojure REPL&amp;quot;] atom-text-editor:not([mini])&amp;#39;:
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&amp;#39;atom-pane[data-active-item-name=&amp;quot;Clojure REPL&amp;quot;] atom-text-editor:not([mini])&amp;#39;:
   &amp;#39;enter&amp;#39;:&amp;#39;proto-repl:execute-text-entered-in-repl&amp;#39;
   &amp;#39;cmd-k&amp;#39;:&amp;#39;proto-repl:clear-repl&amp;#39;
 &lt;/pre&gt;&lt;/div&gt;
@@ -79,7 +266,7 @@
 &lt;h2&gt;Auto Testing: Lein Test Refresh&lt;/h2&gt;
 &lt;p&gt;The last Clojure tool that I find truly essential is a test-runner package called &lt;a href=&quot;https://github.com/jakemcc/lein-test-refresh&quot;&gt;lein-test-refresh.&lt;/a&gt; It gives us an awesome &amp;#8220;run my tests when I save a file&amp;#8221; experience for Clojure.&lt;/p&gt;
 &lt;p&gt;Test-refresh is a leiningen plugin, so the easiest way to install it is to add it to your system-wide &amp;#8220;user&amp;#8221; leiningen profile, which is defined in the configuration file at &lt;code&gt;~/.lein/profiles.clj&lt;/code&gt;. To include the plugin, add it to your leiningen configuration like so:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:user&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:plugins&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;com.jakemccrary/lein-test-refresh&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;0.15.0&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]]}}&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:user&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:plugins&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;com.jakemccrary/lein-test-refresh&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;0.15.0&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]]}}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Keep in mind that your &lt;code&gt;profiles.clj&lt;/code&gt; file just contains a Clojure (technically &lt;a href=&quot;https://github.com/edn-format/edn&quot;&gt;edn&lt;/a&gt;) data structure. If your &lt;code&gt;profiles.clj&lt;/code&gt; is empty, you can simply paste the above line into the file. If you already have the &lt;code&gt;:user&lt;/code&gt; and &lt;code&gt;:plugins&lt;/code&gt; entries defined, you&amp;#8217;ll need to add this new plugin vector (&lt;code&gt;[com.jakemccrary/lein-test-refresh &amp;quot;0.15.0&amp;quot;]&lt;/code&gt;) within the existing &lt;code&gt;:plugins&lt;/code&gt; list.&lt;/p&gt;
 &lt;p&gt;With this plugin installed, you can now run &lt;code&gt;lein test-refresh&lt;/code&gt; within any directory containing a &lt;code&gt;project.clj&lt;/code&gt; file, and leiningen will watch for your files to be edited and then run the tests in response. It&amp;#8217;s a great way to get really quick feedback from our test suite when working with code.&lt;/p&gt;
@@ -90,7 +277,7 @@
  <entry>
    <title>Getting Started with Emacs for Ruby</title>
    <link href="http://worace.works/2016/06/07/getting-started-with-emacs-for-ruby/"/>
-   <updated>2016-06-07T00:00:00-06:00</updated>
+   <updated>2016-06-07T00:00:00-07:00</updated>
    <id>http://worace.works/2016/06/07/getting-started-with-emacs-for-ruby</id>
    <content type="html">&lt;p&gt;Lately I&amp;#8217;ve been gradually drawing a few students at Turing into the Emacs fold. Along the way I&amp;#8217;ve been thinking about what is needed for a minimal but sufficient Emacs setup for working with Ruby code.&lt;/p&gt;
 &lt;p&gt;In this post I&amp;#8217;ll try to document some of the tools and configuration I&amp;#8217;ve found useful, with an aim toward keeping things accessible for a newcomer to Emacs. The key features I&amp;#8217;ll focus on include:&lt;/p&gt;
@@ -105,11 +292,11 @@
 &lt;h2&gt;Emacs Configuration 101&lt;/h2&gt;
 &lt;p&gt;The Emacs configuration journey starts with a special directory on your machine located at &lt;code&gt;~/.emacs.d&lt;/code&gt;. When Emacs starts up, it will by default look for a file called &lt;code&gt;init.el&lt;/code&gt; in this directory and use that to load any user-specific configuration you want to provide. (This is similar to how your shell loads any user configuration files at &lt;code&gt;~/.profile&lt;/code&gt; or &lt;code&gt;~/.bashrc&lt;/code&gt;, etc)&lt;/p&gt;
 &lt;p&gt;To follow along, go ahead and create this directory and file:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;mkdir ~/.emacs.d
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;mkdir ~/.emacs.d
 touch ~/.emacs.d/init.el
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;If your machine already has an Emacs configuration in this directory and you want to start from scratch, it&amp;#8217;s safe to stash the existing directory by moving it:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;mv ~/.emacs.d ~/.emacs.d.old
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;mv ~/.emacs.d ~/.emacs.d.old
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Your original config will be waiting for you should you decide to return to it.&lt;/p&gt;
 &lt;h3&gt;Baby&amp;#8217;s First Emacs Lisp&lt;/h3&gt;
@@ -124,7 +311,7 @@ touch ~/.emacs.d/init.el
 &lt;p&gt;A &amp;#8220;package&amp;#8221; is the standard unit for distributing a chunk of Emacs code. There are several free online package repositories out there, the most popular being &lt;a href=&quot;https://elpa.gnu.org/&quot;&gt;GNU ELPA&lt;/a&gt;, &lt;a href=&quot;https://www.emacswiki.org/emacs/ELPA&quot;&gt;ELPA&lt;/a&gt;, &lt;a href=&quot;https://marmalade-repo.org/&quot;&gt;Marmalade&lt;/a&gt;, and &lt;a href=&quot;https://melpa.org/&quot;&gt;Melpa&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Unfortunately, Emacs doesn&amp;#8217;t come with a built-in &amp;#8220;manifest&amp;#8221;-driven solution for defining what packages to use (like we might encounter with a Gemfile or package.json in a Ruby or Node project).&lt;/p&gt;
 &lt;p&gt;Fortunately it&amp;#8217;s pretty easy to add this functionality, so go ahead and add this Elisp to your &lt;code&gt;init.el&lt;/code&gt;:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c1&quot;&gt;; list the repositories containing them&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;; list the repositories containing them&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-archives&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;gnu&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;http://elpa.gnu.org/packages/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
                          &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;melpa&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;https://melpa.org/packages/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
 
@@ -151,19 +338,19 @@ touch ~/.emacs.d/init.el
 &lt;p&gt;Save this file and restart Emacs if it&amp;#8217;s already running (remember: &lt;code&gt;C-x C-c&lt;/code&gt; to quit), and you should see emacs pause briefly as it installs the Better Defaults package. You should also see a slightly cleaner interface now that the toolbars are removed.&lt;/p&gt;
 &lt;h2&gt;A Bit More UI:&lt;/h2&gt;
 &lt;p&gt;Next let&amp;#8217;s get rid of the default Emacs splash screen and have it put us into an empty buffer instead. The &lt;code&gt;initial-major-mode&lt;/code&gt; setting can take any of Emacs&amp;#8217; major modes &amp;#8211; a lot of people use Org or Markdown mode for their scratch buffer, but since we&amp;#8217;re targeting a Ruby setup here, we&amp;#8217;ll use that.&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;inhibit-splash-screen&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;t&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;inhibit-splash-screen&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;t&lt;/span&gt;
       &lt;span class=&quot;nv&quot;&gt;initial-scratch-message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;nil&lt;/span&gt;
       &lt;span class=&quot;nv&quot;&gt;initial-major-mode&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Additionally, it would be nice if it didn&amp;#8217;t look so glaringly white. Let&amp;#8217;s update our package list to pull in the ever-gentle-on-the-eyes &lt;a href=&quot;https://github.com/bbatsov/solarized-emacs&quot;&gt;Solarized Theme&lt;/a&gt; and load it in our init file:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
 
 &lt;span class=&quot;c1&quot;&gt;;....&lt;/span&gt;
 
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;load-theme&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;solarized-dark&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Finally, we add a few more bits of snazz like showing line numbers and setting a default font (&lt;a href=&quot;https://github.com/adobe-fonts/source-code-pro&quot;&gt;SourceCodePro&lt;/a&gt; is a free, open source monospaced font for editing code from Adobe.)&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c1&quot;&gt;;; Show line numbers&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;;; Show line numbers&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;global-linum-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 
 &lt;span class=&quot;c1&quot;&gt;;; Typography&lt;/span&gt;
@@ -176,7 +363,7 @@ touch ~/.emacs.d/init.el
 &lt;h2&gt;OS X Conveniences&lt;/h2&gt;
 &lt;p&gt;I generally recommend people start out using Emacs in GUI mode (as opposed to the text-based terminal interface). Personally I still use this mode most often even a few years into using Emacs, but when starting out it&amp;#8217;s especially helpful to have some of the familiar OS X keybindings for Copying, Pasting, Cmd-Tabbing, etc. On a Mac you&amp;#8217;ll have this available if you installed using homebrew with the &lt;code&gt;--with-cocoa&lt;/code&gt; flag (&lt;code&gt;brew install emacs --with-cocoa&lt;/code&gt;).&lt;/p&gt;
 &lt;p&gt;It&amp;#8217;s also convenient to be able to open your editor from the command line and pass it a file or directory to start with. To make this easy, you can add this function to your shell profile (&lt;code&gt;~/.bashrc&lt;/code&gt;, &lt;code&gt;~/.bash_profile&lt;/code&gt;, etc):&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;em &lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;em &lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
   open -a /usr/local/Cellar/emacs/24.5/Emacs.app/Contents/MacOS/Emacs &lt;span class=&quot;nv&quot;&gt;$*&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
@@ -189,7 +376,7 @@ touch ~/.emacs.d/init.el
 &lt;/ul&gt;
 &lt;p&gt;We can get these features pretty easily using 3 popular packages: &lt;a href=&quot;https://github.com/emacs-helm/helm&quot;&gt;Helm&lt;/a&gt;, &lt;a href=&quot;https://github.com/bbatsov/helm-projectile&quot;&gt;Helm Projectile&lt;/a&gt; and &lt;a href=&quot;https://github.com/syohex/emacs-helm-ag&quot;&gt;Helm ag&lt;/a&gt;. Helm is actually something of a &amp;#8220;parent&amp;#8221; package for these other 2 &amp;#8211; it provides a generalized framework for doing the kind of slick &amp;#8220;fuzzily-search some text in a list of stuff&amp;#8221; interface that we all know and love. Then other packages like Helm Projectile and Helm ag can take advantage of this interaction to build neat tools like &amp;#8220;find a file in my project&amp;#8221; or &amp;#8220;find some text in my project.&amp;#8221;&lt;/p&gt;
 &lt;p&gt;Add these to your &lt;code&gt;package-list&lt;/code&gt; and give them some basic keybindings as follows:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
@@ -204,7 +391,7 @@ touch ~/.emacs.d/init.el
 &lt;h2&gt;Ruby Basics: Highlighting and Auto-matching&lt;/h2&gt;
 &lt;p&gt;Now that we&amp;#8217;ve tamed Emacs into a slightly more well-behaved general editing environment, we can dive into our Ruby setup!&lt;/p&gt;
 &lt;p&gt;Let&amp;#8217;s start with a bit of basic auto-matching for paired characters (parens, quotes, def/class/if-end, etc). Add &lt;code&gt;ruby-electric&lt;/code&gt; to your package list and tell emacs to require it automatically whenever we enter ruby mode like so:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
@@ -216,7 +403,7 @@ touch ~/.emacs.d/init.el
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-mode-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;ruby-electric-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Sometimes Ruby code appears in other kinds of files that don&amp;#8217;t end with the standard &lt;code&gt;.rb&lt;/code&gt; extension. We can tell emacs to treat these as ruby files using this snippet:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-to-list&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;auto-mode-alist&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-to-list&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;auto-mode-alist&lt;/span&gt;
              &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;\\.\\(?:cap\\|gemspec\\|irbrc\\|gemrc\\|rake\\|rb\\|ru\\|thor\\)\\&amp;#39;&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ruby-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-to-list&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;auto-mode-alist&lt;/span&gt;
              &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;\\(?:Brewfile\\|Capfile\\|Gemfile\\(?:\\.[a-zA-Z0-9._-]+\\)?\\|[rR]akefile\\)\\&amp;#39;&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ruby-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
@@ -226,7 +413,7 @@ touch ~/.emacs.d/init.el
 &lt;p&gt;To further complicate things, the community hasn&amp;#8217;t really standardized on any of the particular options, which means you&amp;#8217;re likely using one of Rbenv, RVM, or Chruby. Depending on which of these you&amp;#8217;re using, you&amp;#8217;ll want to pull in the appropriate config below:&lt;/p&gt;
 &lt;h3&gt;RVM (Using &lt;a href=&quot;https://github.com/senny/rvm.el&quot;&gt;rvm.el&lt;/a&gt;)&lt;/h3&gt;
 &lt;p&gt;Add the &lt;code&gt;rvm&lt;/code&gt; package and invoke it using &lt;code&gt;(rvm-use-default)&lt;/code&gt;&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
@@ -237,7 +424,7 @@ touch ~/.emacs.d/init.el
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;rvm-use-default&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;h3&gt;RBENV (using &lt;a href=&quot;https://github.com/senny/rbenv.el&quot;&gt;rbenv.el&lt;/a&gt; )&lt;/h3&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
@@ -253,7 +440,7 @@ touch ~/.emacs.d/init.el
 &lt;span class=&quot;c1&quot;&gt;;;(setq rbenv-installation-dir &amp;quot;/usr/local/rbenv&amp;quot;)&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;h3&gt;Chruby (using &lt;a href=&quot;https://github.com/plexus/chruby.el&quot;&gt;chruby.el&lt;/a&gt;)&lt;/h3&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
@@ -275,10 +462,10 @@ touch ~/.emacs.d/init.el
 &lt;p&gt;Let&amp;#8217;s check out some neat Emacs packages that make interactions like these possible.&lt;/p&gt;
 &lt;h3&gt;Ruby Buffer Interaction &amp;#8211; Seeing truly is believing&lt;/h3&gt;
 &lt;p&gt;First, install the Gem:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;gem install seeing_is_believing --version 3.0.0.beta.7
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;gem install seeing_is_believing --version &lt;span class=&quot;m&quot;&gt;3&lt;/span&gt;.0.0.beta.7
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Then, add and configure the corresponding Emacs package:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
@@ -304,7 +491,7 @@ touch ~/.emacs.d/init.el
 &lt;h3&gt;inf-ruby &amp;#8211; IRB from Emacs&lt;/h3&gt;
 &lt;p&gt;Next stop is a neat package called &lt;a href=&quot;https://github.com/nonsequitur/inf-ruby&quot;&gt;inf-ruby&lt;/a&gt;. In the tradition of other Emacs Inferior Language Modes, it gives us an embedded IRB process running inside of Emacs, as well as some standard keybindings to interact with the REPL by sending code snippets to it from a buffer.&lt;/p&gt;
 &lt;p&gt;First, install and configure inf-ruby:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
@@ -328,7 +515,7 @@ touch ~/.emacs.d/init.el
 &lt;/ul&gt;
 &lt;h3&gt;Ruby TDD &amp;#8211; &lt;a href=&quot;https://github.com/r0man/ruby-test-mode&quot;&gt;ruby-test-mode.el&lt;/a&gt;&lt;/h3&gt;
 &lt;p&gt;Now for the last item on our interactive workflow checklist &amp;#8211; running tests from Emacs. At its core, TDD is about incorporating more feedback into our development workflow. To take full advantage of this, we want running tests to be as seamless as possible &amp;#8211; no context switching of jumping out to a terminal, etc etc. We can accomplish this in Emacs using the ruby-test-mode package. First install and configure it in your init file:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;package-list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;better-defaults&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;solarized-theme&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-projectile&lt;/span&gt;
                      &lt;span class=&quot;nv&quot;&gt;helm-ag&lt;/span&gt;
@@ -351,7 +538,7 @@ touch ~/.emacs.d/init.el
 &lt;h3&gt;Improving Ruby Test Mode Interaction&lt;/h3&gt;
 &lt;p&gt;This setup is coming along pretty nicely, but I find dealing with all the compilation buffers created by ruby-test-mode a little cumbersome. By default it pulls them up in a new window, which potentially covers up something you were working on before, or at least takes up half of your frame. Then you have to manually swap over and kill the buffer if you want to get rid of it.&lt;/p&gt;
 &lt;p&gt;We can make this a little smoother by hooking into the compilation completion hook and setting up a keybinding to easily close the buffer:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;compilation-finish-functions&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;add-hook&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;compilation-finish-functions&lt;/span&gt;
           &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;lambda &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;buf&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;strg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
             &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;switch-to-buffer-other-window&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;*compilation*&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
             &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;read-only-mode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
@@ -381,13 +568,13 @@ touch ~/.emacs.d/init.el
  <entry>
    <title>RSA Cryptography In Clojure</title>
    <link href="http://worace.works/2016/06/05/rsa-cryptography-in-clojure/"/>
-   <updated>2016-06-05T00:00:00-06:00</updated>
+   <updated>2016-06-05T00:00:00-07:00</updated>
    <id>http://worace.works/2016/06/05/rsa-cryptography-in-clojure</id>
    <content type="html">&lt;p&gt;I recently found myself needing to do some public/private key cryptography using RSA in Clojure. Fortunately there is pretty good library support for doing this kind of thing in Java, but it still took me a while to get all of the interop working. Additionally, I needed to be able to serialize and de-serialize keys in a couple of formats (.pem and .der, specifically), so we&amp;#8217;ll look at setting this up as well.&lt;/p&gt;
 &lt;h2&gt;Generating a Keypair&lt;/h2&gt;
 &lt;p&gt;Keys are generated based on the desired length and algorithm. To generate a key we have to do a little bit of Java ceremony around requesting a &lt;code&gt;KeyPairGenerator&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;We can use this to generate a Private Key, and from that Private Key retrieve the Public Key if needed.&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kp-generator&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kp-generator&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;doto &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.KeyPairGenerator/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
     &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.initialize&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
 
@@ -400,14 +587,14 @@ touch ~/.emacs.d/init.el
 &lt;/pre&gt;&lt;/div&gt;
 &lt;h2&gt;Encrypting, Decrypting, and Encoding Messages&lt;/h2&gt;
 &lt;p&gt;The Java crypto methods we&amp;#8217;re using generally return a Byte Array of their encrypted data. For my use-case I wanted to encode these in Base64, which is easy in Java 8 thanks to the built-in Base64 module (For earlier versions, check out &lt;a href=&quot;https://docs.oracle.com/javase/7/docs/api/javax/xml/bind/DatatypeConverter.html&quot;&gt;javax.xml.bind.DatatypeConverter&lt;/a&gt;).&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;decode64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;decode64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.decode&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.util.Base64/getDecoder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
 
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;encode64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;bytes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.encodeToString&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.util.Base64/getEncoder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;bytes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Now we can use the keys we generated to encrypt and decrypt a message. This being public/private key crypto, remember of course that encryption is done using the public key and decryption using the private.&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;encrypt&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;public-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;encrypt&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;public-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
   &lt;span class=&quot;s&quot;&gt;&amp;quot;Perform RSA public key encryption of the given message string.&lt;/span&gt;
 &lt;span class=&quot;s&quot;&gt;   Returns a Base64-encoded string of the encrypted data.&amp;quot;&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode64&lt;/span&gt;
@@ -428,7 +615,7 @@ touch ~/.emacs.d/init.el
 &lt;/pre&gt;&lt;/div&gt;
 &lt;h2&gt;Signing and Verifying&lt;/h2&gt;
 &lt;p&gt;The other big asymmetric crypto operation is to sign using a private key and verify using a public key. This is pretty easy with a bit of Java interop as well.&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;sign&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;sign&lt;/span&gt;
   &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA private key signing of a message. Takes message as string&amp;quot;&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;private-key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode64&lt;/span&gt;
@@ -451,7 +638,7 @@ touch ~/.emacs.d/init.el
 &lt;h2&gt;Serializing and Deserializing Keys&lt;/h2&gt;
 &lt;p&gt;Finally for my use-case it was important to be able to serialize and de-serialize keys in a format that would be readable by other systems. I found this part the trickiest to get working due to relatively sparse documentation and some confusion about the various formats and key serialization algorithms, but here it is.&lt;/p&gt;
 &lt;h3&gt;DER Encoding Public Keys&lt;/h3&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;der-string-&amp;gt;pub-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;der-string-&amp;gt;pub-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
   &lt;span class=&quot;s&quot;&gt;&amp;quot;Generate an RSA public key from a DER-encoded Base64 string.&lt;/span&gt;
 &lt;span class=&quot;s&quot;&gt;   Some systems like to line-wrap these at 64 characters, so we&lt;/span&gt;
 &lt;span class=&quot;s&quot;&gt;   have to get rid of any newlines before decoding.&amp;quot;&lt;/span&gt;
@@ -469,7 +656,7 @@ touch ~/.emacs.d/init.el
       &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;clojure.string/replace&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;\n&amp;quot;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;h3&gt;DER Encoding Private Keys&lt;/h3&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;der-string-&amp;gt;private-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defn &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;der-string-&amp;gt;private-key&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.generatePrivate&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.KeyFactory/getInstance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;RSA&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
                     &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.spec.PKCS8EncodedKeySpec.&lt;/span&gt;
                      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;decode64&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.getBytes&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))))&lt;/span&gt;
@@ -485,12 +672,12 @@ touch ~/.emacs.d/init.el
 &lt;p&gt;PEM-encoding is another common format for serializing cryptographic keys. I was able to get everything so far working using just pieces from Java&amp;#8217;s standard library, but after much experimentation could never get it to read PEM-encoded keys reliably. So I ended up reaching for &lt;a href=&quot;https://www.bouncycastle.org/java.html&quot;&gt;Bouncy Castle&lt;/a&gt;, one of the go-to crypto Java crypto libraries.&lt;/p&gt;
 &lt;p&gt;BC supports a sizeable menu of different signing, hashing, and encryption algorithms. Fortunately for me reading and writing PEM keys was tucked in among them.&lt;/p&gt;
 &lt;p&gt;To pull in BouncyCastle I used this &lt;code&gt;project.clj&lt;/code&gt; configuration for leiningen:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defproject &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;block-chain&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;0.2.0&amp;quot;&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;defproject &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;block-chain&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;0.2.0&amp;quot;&lt;/span&gt;
   &lt;span class=&quot;ss&quot;&gt;:dependencies&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;org.clojure/clojure&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;1.8.0&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
                  &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;org.bouncycastle/bcpkix-jdk15on&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;1.53&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]])&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Then used it to decode the keys.&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c1&quot;&gt;;; Have to do this bit of setup first so the keyparsers&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;;; Have to do this bit of setup first so the keyparsers&lt;/span&gt;
 &lt;span class=&quot;c1&quot;&gt;;; can find BouncyCastle&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;java.security.Security/addProvider&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;org.bouncycastle.jce.provider.BouncyCastleProvider.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
 
@@ -555,7 +742,7 @@ touch ~/.emacs.d/init.el
  <entry>
    <title>Hash Array Mapped Tries</title>
    <link href="http://worace.works/2016/05/24/hash-array-mapped-tries/"/>
-   <updated>2016-05-24T00:00:00-06:00</updated>
+   <updated>2016-05-24T00:00:00-07:00</updated>
    <id>http://worace.works/2016/05/24/hash-array-mapped-tries</id>
    <content type="html">&lt;p&gt;A Hash Array Mapped Trie (HAMT) is a structure for organizing arbitrary data in a broadly-branching tree. HAMTs are commonly used to build immutable Hash Maps in functional programming languages. By using a value&amp;#8217;s hash code to represent a unique &amp;#8220;path&amp;#8221; into the tree, we can build a Hash Map on top of a tree, rather than on an Array-based table as is more commonly seen. The structure is more complex than a simple Hash Table, but provides a few key benefits, including:&lt;/p&gt;
 &lt;ul&gt;
@@ -628,7 +815,7 @@ touch ~/.emacs.d/init.el
   library. This gives us a (large) numeric value representing a unique
   digest of that piece of data.&lt;/p&gt;
 &lt;p&gt;For example:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;digest&amp;quot;&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;digest&amp;quot;&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SHA1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;calzone&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;334703588949583183218034173573122019749278332384&lt;/span&gt;
@@ -642,7 +829,7 @@ touch ~/.emacs.d/init.el
   child branches using a single bitmap. &lt;code&gt;(=2 ** 5 == 32)&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;To get the numeric value of the first 5 bits of our hashcode, we can
   bitwise &lt;code&gt;AND&lt;/code&gt; it with a 5-bit number containing all &amp;#8220;on&amp;#8221; bits:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;13&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;31&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;13&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;31&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;11111&amp;quot;&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;14&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SHA1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;calzone&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;31&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;
@@ -671,14 +858,14 @@ touch ~/.emacs.d/init.el
 &lt;p&gt;A bitwise shift simply takes the bits that make a number and slides them in one direction or another.&lt;/p&gt;
 &lt;p&gt;In the case of a left shift, we move the existing bits to the left, usually padding them with 0&amp;#8217;s on the righthand side.&lt;/p&gt;
 &lt;p&gt;For example:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;1111&amp;quot;&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;21&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;11110000&amp;quot;&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;In our case, we just want to consume the next 5 bits of our hash code value, so we can use a right shift of 5 bits.&lt;/p&gt;
 &lt;p&gt;Consider our &amp;#8220;calzone&amp;#8221; example from before:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;24&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SHA1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;calzone&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;31&lt;/span&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;24&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SHA1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;calzone&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;31&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;We now get a completely different subtrie index, helping us avoid the &amp;#8220;stacking&amp;#8221; behavior we would get if we just re-used the existing one. As we walk down the trie, we want to use this technique to shift off 5 bits at each layer.&lt;/p&gt;

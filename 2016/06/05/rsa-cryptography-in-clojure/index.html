@@ -37,12 +37,12 @@
       <main>
         <article class="post">
   <h1 class="post-title">RSA Cryptography In Clojure</h1>
-  <time datetime="2016-06-05T00:00:00-06:00" class="post-date">05 Jun 2016</time>
+  <time datetime="2016-06-05T00:00:00-07:00" class="post-date">05 Jun 2016</time>
   <p>I recently found myself needing to do some public/private key cryptography using RSA in Clojure. Fortunately there is pretty good library support for doing this kind of thing in Java, but it still took me a while to get all of the interop working. Additionally, I needed to be able to serialize and de-serialize keys in a couple of formats (.pem and .der, specifically), so we&#8217;ll look at setting this up as well.</p>
 <h2>Generating a Keypair</h2>
 <p>Keys are generated based on the desired length and algorithm. To generate a key we have to do a little bit of Java ceremony around requesting a <code>KeyPairGenerator</code>.</p>
 <p>We can use this to generate a Private Key, and from that Private Key retrieve the Public Key if needed.</p>
-<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">kp-generator</span> <span class="p">[</span><span class="nv">length</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="kd">defn </span><span class="nv">kp-generator</span> <span class="p">[</span><span class="nv">length</span><span class="p">]</span>
   <span class="p">(</span><span class="nb">doto </span><span class="p">(</span><span class="nf">java.security.KeyPairGenerator/getInstance</span> <span class="s">&quot;RSA&quot;</span><span class="p">)</span>
     <span class="p">(</span><span class="nf">.initialize</span> <span class="nv">length</span><span class="p">)))</span>
 
@@ -55,14 +55,14 @@
 </pre></div>
 <h2>Encrypting, Decrypting, and Encoding Messages</h2>
 <p>The Java crypto methods we&#8217;re using generally return a Byte Array of their encrypted data. For my use-case I wanted to encode these in Base64, which is easy in Java 8 thanks to the built-in Base64 module (For earlier versions, check out <a href="https://docs.oracle.com/javase/7/docs/api/javax/xml/bind/DatatypeConverter.html">javax.xml.bind.DatatypeConverter</a>).</p>
-<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">decode64</span> <span class="p">[</span><span class="nv">str</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="kd">defn </span><span class="nv">decode64</span> <span class="p">[</span><span class="nv">str</span><span class="p">]</span>
   <span class="p">(</span><span class="nf">.decode</span> <span class="p">(</span><span class="nf">java.util.Base64/getDecoder</span><span class="p">)</span> <span class="nv">str</span><span class="p">))</span>
 
 <span class="p">(</span><span class="kd">defn </span><span class="nv">encode64</span> <span class="p">[</span><span class="nv">bytes</span><span class="p">]</span>
   <span class="p">(</span><span class="nf">.encodeToString</span> <span class="p">(</span><span class="nf">java.util.Base64/getEncoder</span><span class="p">)</span> <span class="nv">bytes</span><span class="p">))</span>
 </pre></div>
 <p>Now we can use the keys we generated to encrypt and decrypt a message. This being public/private key crypto, remember of course that encryption is done using the public key and decryption using the private.</p>
-<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">encrypt</span> <span class="p">[</span><span class="nv">message</span> <span class="nv">public-key</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="kd">defn </span><span class="nv">encrypt</span> <span class="p">[</span><span class="nv">message</span> <span class="nv">public-key</span><span class="p">]</span>
   <span class="s">&quot;Perform RSA public key encryption of the given message string.</span>
 <span class="s">   Returns a Base64-encoded string of the encrypted data.&quot;</span>
   <span class="p">(</span><span class="nf">encode64</span>
@@ -83,7 +83,7 @@
 </pre></div>
 <h2>Signing and Verifying</h2>
 <p>The other big asymmetric crypto operation is to sign using a private key and verify using a public key. This is pretty easy with a bit of Java interop as well.</p>
-<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">sign</span>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="kd">defn </span><span class="nv">sign</span>
   <span class="s">&quot;RSA private key signing of a message. Takes message as string&quot;</span>
   <span class="p">[</span><span class="nv">message</span> <span class="nv">private-key</span><span class="p">]</span>
   <span class="p">(</span><span class="nf">encode64</span>
@@ -106,7 +106,7 @@
 <h2>Serializing and Deserializing Keys</h2>
 <p>Finally for my use-case it was important to be able to serialize and de-serialize keys in a format that would be readable by other systems. I found this part the trickiest to get working due to relatively sparse documentation and some confusion about the various formats and key serialization algorithms, but here it is.</p>
 <h3>DER Encoding Public Keys</h3>
-<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">der-string-&gt;pub-key</span> <span class="p">[</span><span class="nv">string</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="kd">defn </span><span class="nv">der-string-&gt;pub-key</span> <span class="p">[</span><span class="nv">string</span><span class="p">]</span>
   <span class="s">&quot;Generate an RSA public key from a DER-encoded Base64 string.</span>
 <span class="s">   Some systems like to line-wrap these at 64 characters, so we</span>
 <span class="s">   have to get rid of any newlines before decoding.&quot;</span>
@@ -124,7 +124,7 @@
       <span class="p">(</span><span class="nf">clojure.string/replace</span> <span class="o">#</span><span class="s">&quot;\n&quot;</span> <span class="s">&quot;&quot;</span><span class="p">)))</span>
 </pre></div>
 <h3>DER Encoding Private Keys</h3>
-<div class="highlight"><pre><span class="p">(</span><span class="kd">defn </span><span class="nv">der-string-&gt;private-key</span> <span class="p">[</span><span class="nv">string</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="kd">defn </span><span class="nv">der-string-&gt;private-key</span> <span class="p">[</span><span class="nv">string</span><span class="p">]</span>
   <span class="p">(</span><span class="nf">.generatePrivate</span> <span class="p">(</span><span class="nf">java.security.KeyFactory/getInstance</span> <span class="s">&quot;RSA&quot;</span><span class="p">)</span>
                     <span class="p">(</span><span class="nf">java.security.spec.PKCS8EncodedKeySpec.</span>
                      <span class="p">(</span><span class="nf">decode64</span> <span class="p">(</span><span class="nf">.getBytes</span> <span class="nv">string</span><span class="p">)))))</span>
@@ -140,12 +140,12 @@
 <p>PEM-encoding is another common format for serializing cryptographic keys. I was able to get everything so far working using just pieces from Java&#8217;s standard library, but after much experimentation could never get it to read PEM-encoded keys reliably. So I ended up reaching for <a href="https://www.bouncycastle.org/java.html">Bouncy Castle</a>, one of the go-to crypto Java crypto libraries.</p>
 <p>BC supports a sizeable menu of different signing, hashing, and encryption algorithms. Fortunately for me reading and writing PEM keys was tucked in among them.</p>
 <p>To pull in BouncyCastle I used this <code>project.clj</code> configuration for leiningen:</p>
-<div class="highlight"><pre><span class="p">(</span><span class="kd">defproject </span><span class="nv">block-chain</span> <span class="s">&quot;0.2.0&quot;</span>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="kd">defproject </span><span class="nv">block-chain</span> <span class="s">&quot;0.2.0&quot;</span>
   <span class="ss">:dependencies</span> <span class="p">[[</span><span class="nv">org.clojure/clojure</span> <span class="s">&quot;1.8.0&quot;</span><span class="p">]</span>
                  <span class="p">[</span><span class="nv">org.bouncycastle/bcpkix-jdk15on</span> <span class="s">&quot;1.53&quot;</span><span class="p">]])</span>
 </pre></div>
 <p>Then used it to decode the keys.</p>
-<div class="highlight"><pre><span class="c1">;; Have to do this bit of setup first so the keyparsers</span>
+<div class="highlight"><pre><span></span><span class="c1">;; Have to do this bit of setup first so the keyparsers</span>
 <span class="c1">;; can find BouncyCastle</span>
 <span class="p">(</span><span class="nf">java.security.Security/addProvider</span> <span class="p">(</span><span class="nf">org.bouncycastle.jce.provider.BouncyCastleProvider.</span><span class="p">))</span>
 
