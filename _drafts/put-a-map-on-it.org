@@ -1,5 +1,5 @@
 ---
-title: "Put a Map On It: Visualizing GeoJSON in 2018"
+title: "Put a Map On It: Tools for Visualizing Geo Data"
 layout: post
 ---
 
@@ -17,6 +17,8 @@ In a nutshell GeoJSON defines standards for representing the fundamental geospat
 If you're new to working with GeoJSON or would like to read about it in more detail, the best resource I know is Tom MacWright's thorough overview: [[https://macwright.org/2015/03/23/geojson-second-bite][More than you ever wanted to know about GeoJSON]].
 
 Lots of tools work GeoJSON, or at least can export to it (for example PostGIS's ~ST_AsGeoJSON~ function). For considering the tools below, we'll assume you've generated some GeoJSON data through some other process and need a simple way to visualize it.
+
+You'll notice that many of the tools listed below come from the fine folks at [[https://www.mapbox.com/help/add-points-pt-1/][Mapbox]]. Mapbox has become a standard bearer of open mapping tools over the last several years, so big thanks to them for providing so many useful tools to the community!
 
 ** 1. GitHub Gists
 GitHub's document hosting platform is packed with features, including the ability to render uploaded GeoJSON data on a map. This Gist feature isn't that well known, but it can be pretty handy and makes it easy to share small amounts of GeoJSON on a map.
@@ -90,3 +92,22 @@ Studio is really a full-featured cartographic toolkit, and boasts a lot of featu
 
 Creating datasets and tilesets in Mapbox Studio is not difficult, but does involve a few steps, so for detailed instructions follow [[https://www.mapbox.com/help/add-points-pt-1/][Mapbox's detailed tutorial.]]
 ** MapboxGL
+Last on the list is the heaviest hitter, [[https://www.mapbox.com/mapbox-gl-js/api/][MapboxGL]] (specifically the JS API). This is Mapbox's full-featured mapping SDK, on which most of their other visualization tools (like Mapbox Studio) are built. It exposes a detailed API for creating maps with code, giving developers the power to create heavily customized and interactive map applications.
+
+Of course, with greater power and flexibility comes a steeper learning curve, so a few things to mention:
+ * Creating a map with the Mapbox SDK requires writing some code, even for simple examples
+ * The SDK is fairly complex, and learning all its features in detail can take some time
+
+There are lots of great tutorials on the web about working with mapboxgl-js, so I won't attempt to provide a detailed tutorial here, but I will briefly touch on a few of the key concepts that I found helpful when I started working with mapboxgl-js.
+*** Sources & Layers
+In mapbox-gl **sources** represent collections of geodata. This can be static data that is hardcoded into your application, or something more dynamic, like collections of points or polygons fetched from an API server you control.
+
+There are a few different types of sources, but I most frequently use the [[https://www.mapbox.com/mapbox-gl-js/api/#geojsonsource][GeoJSONSource]] API.
+
+Once you've added a data source to your map, you can then add **layers** which render that data in some way. For example if you've added some polygons to your map you might add a ~fill~ layer to color them in on the map.
+
+Layers are meant to be composed fairly atomically, so if you want your polygons to be shaded as well as outlined, you will need to add 2 layers: one ~fill~ layer for the shading and another ~line~ layer for the outline stroke. This took me a little while to get used to but it gives you a lot of power and flexibility to style a map as you want.
+*** Data-Driven Styling
+
+*** Hello World Example
+
