@@ -1,0 +1,271 @@
+---
+title: "MapboxGL Cookbook"
+layout: post
+---
+
+** Hello World
+#+BEGIN_SRC html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Display a map</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+
+</body>
+</html>
+#+END_SRC
+
+
+#+BEGIN_SRC js
+// You should get your own access token by signing up for a free account at https://www.mapbox.com/
+mapboxgl.accessToken = 'pk.eyJ1Ijoid29yYWNlIiwiYSI6ImNpeWMxOW1jcjAwYWUyd294ZzQ0YnMyZ3QifQ.ZaWekMcNTGFN-TmpPkf9AA';
+
+var map = new mapboxgl.Map({
+  container: 'map', // container id
+  style: 'mapbox://styles/mapbox/streets-v9', // also try dark-v9 or light-v9
+  center: [-118.4184041619301, 34.05771049652868], // starting position [lng, lat]
+  zoom: 17 // starting zoom
+});
+
+var data = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"point_source": "user_upload"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-118.4184041619301, 34.05771049652868]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"point_source": "admin_upload"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-118.4185041619301, 34.05771249652868]
+      }
+    }
+  ]
+};
+
+// Wait for map to fully load before trying to add data
+map.on('load', function() {
+  map.addSource('some-points', {type: 'geojson', data: data});
+  map.addLayer({
+    'id': 'point-circles',
+    'type': 'circle',
+    'source': 'some-points' // Matches the ID we gave to our source above
+  });
+});
+#+END_SRC
+
+** Data Driven Styles
+https://jsfiddle.net/93t7wjub/4/
+
+#+BEGIN_SRC js
+map.addLayer({
+  'id': 'point-circles',
+  'type': 'circle',
+  'source': 'some-points',
+  'paint': {
+    'circle-color': [
+      'match',
+      ['get', 'point_source'],
+      'user_upload', '#ff0000',
+      '#0000ff'
+    ]
+  }
+});
+#+END_SRC
+
+** Pull GeoJSON via Ajax
+JSFiddle: https://jsfiddle.net/hra8op4a/8/
+
+#+BEGIN_SRC html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8' />
+    <title>Display a map</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js'></script>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+      body {margin: 0; padding: 0;}
+      #map {position: absolute; top: 0; bottom: 0; width: 100%;}
+    </style>
+  </head>
+
+  <body>
+    <div id='map'></div>
+  </body>
+</html>
+#+END_SRC
+
+#+BEGIN_SRC js
+// You should get your own access token by signing up for a free account at https://www.mapbox.com/
+mapboxgl.accessToken = 'pk.eyJ1Ijoid29yYWNlIiwiYSI6ImNpeWMxOW1jcjAwYWUyd294ZzQ0YnMyZ3QifQ.ZaWekMcNTGFN-TmpPkf9AA';
+
+var map = new mapboxgl.Map({
+  container: 'map', // container id
+  style: 'mapbox://styles/mapbox/streets-v9', // also try dark-v9 or light-v9
+  center: [-118.4184041619301, 34.05771049652868], // starting position [lng, lat]
+  zoom: 4 // starting zoom
+});
+
+const geoJSONURL = "https://gist.githubusercontent.com/worace/540d89a5dbaa0b6274cd19f6ab6d4994/raw/162a757c3a82b6eabafe721529cc9fc55625aae2/test.geojson";
+// Wait for map to fully load before trying to add data
+map.on('load', function() {
+
+  map.addSource('polygons', {
+    type: 'geojson',
+    data: {
+      type: "FeatureCollection",
+      features: []
+    }
+  });
+
+  map.addLayer({
+    'id': 'polygons',
+    'type': 'fill',
+    'source': 'polygons',
+    'paint': {
+      'fill-color': '#088',
+      'fill-opacity': 0.5
+    }
+  });
+
+  $.getJSON(geoJSONURL).then(data => {
+    map.getSource('polygons').setData(data);
+  });
+});
+#+END_SRC
+** Add a Popup on Click
+https://jsfiddle.net/0to0d29q/10/
+
+#+BEGIN_SRC js
+// You should get your own access token by signing up for a free account at https://www.mapbox.com/
+mapboxgl.accessToken = 'pk.eyJ1Ijoid29yYWNlIiwiYSI6ImNpeWMxOW1jcjAwYWUyd294ZzQ0YnMyZ3QifQ.ZaWekMcNTGFN-TmpPkf9AA';
+
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v9',
+  center: [-118.4184041619301, 34.05771049652868],
+  zoom: 4
+});
+
+map.on('load', function() {
+  map.on('click', (event) => {
+    const {lng, lat} = event.lngLat;
+    const markup = `<h6>Marker at ${lat}, ${lng}</h6>`;
+    new mapboxgl.Popup({anchor: 'bottom'})
+        .setLngLat([lng, lat])
+        .setHTML(markup)
+        .addTo(map);
+  });
+});
+#+END_SRC
+
+** Clicking on Specific map Elements
+https://jsfiddle.net/d368mtvm/4/
+
+#+BEGIN_SRC js
+// You should get your own access token by signing up for a free account at https://www.mapbox.com/
+mapboxgl.accessToken = 'pk.eyJ1Ijoid29yYWNlIiwiYSI6ImNpeWMxOW1jcjAwYWUyd294ZzQ0YnMyZ3QifQ.ZaWekMcNTGFN-TmpPkf9AA';
+
+var map = new mapboxgl.Map({
+  container: 'map', // container id
+  style: 'mapbox://styles/mapbox/streets-v9', // also try dark-v9 or light-v9
+  center: [-118.4184041619301, 34.05771049652868], // starting position [lng, lat]
+  zoom: 4 // starting zoom
+});
+
+const geoJSONURL = "https://gist.githubusercontent.com/worace/b887bdee144eecb8ad7ae1178798a154/raw/88465854eeb237d69e45aa7ff1f550abe93f7338/usa.geojson";
+// Wait for map to fully load before trying to add data
+map.on('load', function() {
+  map.addSource('polygons', {
+    type: 'geojson',
+    data: {
+      type: "FeatureCollection",
+      features: []
+    }
+  });
+  map.addLayer({
+    'id': 'polygons',
+    'type': 'fill',
+    'source': 'polygons',
+    'paint': {
+      'fill-color': '#088',
+      'fill-opacity': 0.5
+    }
+  });
+  map.addLayer({
+    'id': 'polygons-outline',
+    'type': 'line',
+    'source': 'polygons',
+    "paint": {
+      "line-color": "#088",
+      "line-width": 2
+    }
+  });
+  $.getJSON(geoJSONURL).then(data => {
+    map.getSource('polygons').setData(data);
+  });
+  map.on('click', 'polygons', (event) => {
+    //event.features contains the clicked elements
+    const state = event.features[0];
+    const {lng, lat} = event.lngLat;
+    const markup = `<h6>${state.properties.name}</h6>`;
+    new mapboxgl.Popup({anchor: 'bottom'})
+        .setLngLat([lng, lat])
+        .setHTML(markup)
+        .addTo(map);
+
+  });
+});
+#+END_SRC
+*** Dealing with overlapping layers
+** Moving the Map
+https://jsfiddle.net/4hqrfaxu/4/
+
+#+BEGIN_SRC js
+// You should get your own access token by signing up for a free account at https://www.mapbox.com/
+mapboxgl.accessToken = 'pk.eyJ1Ijoid29yYWNlIiwiYSI6ImNpeWMxOW1jcjAwYWUyd294ZzQ0YnMyZ3QifQ.ZaWekMcNTGFN-TmpPkf9AA';
+
+var map = new mapboxgl.Map({
+  container: 'map', // container id
+  style: 'mapbox://styles/mapbox/streets-v9', // also try dark-v9 or light-v9
+  center: [-118.4184041619301, 34.05771049652868], // starting position [lng, lat]
+  zoom: 4 // starting zoom
+});
+
+// Wait for map to fully load before trying to add data
+map.on('load', function() {
+  map.on('click', (event) => {
+  	const {lng, lat} = event.lngLat;
+    const markup = `<h6>New Center: ${lat}, ${lng}</h6>`;
+    new mapboxgl.Popup({anchor: 'bottom'})
+        .setLngLat([lng, lat])
+        .setHTML(markup)
+        .addTo(map);
+
+    map.easeTo({center: [lng, lat]});
+  });
+});
+
+#+END_SRC
+
+** Getting Bounds
