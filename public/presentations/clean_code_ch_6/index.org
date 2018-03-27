@@ -1,0 +1,106 @@
+* Chapter 6: Objects and Data Structures
+** TODO Data image
+* Overview
+** IMO Most nuanced chapter so far
+** Focused on 2 patterns for programming domain entities
+** Objects: Wrapping data as a vehicle for implementation and business logic
+** Data Structures: Wrapping data in a container meant for external access and manipulation (glorified structs)
+* A Good Example
+** I found the 2 Point implementations fairly Compelling:
+#+BEGIN_SRC java
+public class Point {
+  public double x;
+  public double y;
+}
+#+END_SRC
+
+#+BEGIN_SRC java
+public interface Point {
+  double getX();
+  double getY();
+  // nice access control -- enforces setting both at once
+  void setCartesian(double x, double y);
+  double getR();
+  double getTheta();
+  void setPolar(double r, double theta);
+}
+#+END_SRC
+** Pros
+*** Describes behavior without specifying internal structure
+*** Methods could be direct "getters", or could be computing things on the fly
+** Cons
+*** More complex - additional behavior is cool but only if you need it
+*** More layers - potentially separating the description from the implementation
+** Discussion - any preference for one side or the other?
+* A less good example
+** I found the Vehicle examples less compelling
+
+#+BEGIN_SRC java
+public interface Vehicle {
+  // Used by caller to calculate percent fuel remaining
+  getFuelTankCapacityInGallons();
+  getGallonsOfGasoline();
+}
+
+// vs
+
+public interface Vehicle {
+  getPercentFuelRemaining();
+}
+#+END_SRC
+
+** Often I think we end up needing all 3 methods
+** i.e. we want a convenience method for getting the percentage, but we might also have other situations that need access to the underlying values
+** Example was a little trivial to me
+* Summary: Objects
+** Encapsulate as much of your logic as you can
+** Define an interface in terms of what you want the object to do, not how you want it to be structured
+** Think carefully about what data needs to be exposed publicly. Avoid unnecessary getters and setters
+* Summary: Data Structures
+** Treating domain objects as simple containers for stored values
+** Just make all fields public and define external/separate functions to handle it
+** Also could be a generic map/dict/tuple/etc
+* Polymorphism vs. Data-oriented Branching
+** Subtyping vs. Case Statement
+
+#+BEGIN_SRC java
+public class Square {
+  public Point topLeft;
+  public double side;
+}
+
+public class Rectangle {
+  public Point topLeft;
+  public double width;
+  public double height;
+}
+
+public class Geometry {
+  public double area(Object shape) {
+    if (shape instanceof Square) {
+      return shape.side * shape.side;
+    } else if (shape instanceof Rectangle) {
+      return shape.width * shape.height;
+    } else {
+      // durn
+    }
+  }
+}
+#+END_SRC
+
+* Pros and Cons
+** Crux of the chapter was identifying the differences between these approaches
+** Appreciated that he didn't treat this as "one is always better" but rather identified
+* Law of Demeter
+** Don't talk to your friends' friends -- you haven't been introduced!
+** More snootily, try to only access:
+*** a) Own methods
+*** b) Local vars and arguments
+*** c) Member variables
+*** d) Methods of b and c
+** Encourages you to aggregate more cohesive interfaces rather than just chaining through a bunch of data
+** I'm personally less zealous about this one but open to being convinced.
+** LoD -- should we care?
+* Antipattern: The Hybrid
+
+* Case Study: Active Record
