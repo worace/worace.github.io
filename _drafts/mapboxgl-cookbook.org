@@ -2,8 +2,8 @@
 title: "MapboxGL Cookbook"
 layout: post
 ---
-
 ** Hello World
+https://jsfiddle.net/r8444xuk/
 #+BEGIN_SRC html
 <!DOCTYPE html>
 <html>
@@ -19,13 +19,10 @@ layout: post
     </style>
 </head>
 <body>
-
 <div id='map'></div>
-
 </body>
 </html>
 #+END_SRC
-
 
 #+BEGIN_SRC js
 // You should get your own access token by signing up for a free account at https://www.mapbox.com/
@@ -70,7 +67,6 @@ map.on('load', function() {
   });
 });
 #+END_SRC
-
 ** Data Driven Styles
 https://jsfiddle.net/93t7wjub/4/
 
@@ -129,7 +125,6 @@ var map = new mapboxgl.Map({
 const geoJSONURL = "https://gist.githubusercontent.com/worace/540d89a5dbaa0b6274cd19f6ab6d4994/raw/162a757c3a82b6eabafe721529cc9fc55625aae2/test.geojson";
 // Wait for map to fully load before trying to add data
 map.on('load', function() {
-
   map.addSource('polygons', {
     type: 'geojson',
     data: {
