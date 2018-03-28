@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2018-03-27 Tue 18:05 -->
+<!-- 2018-03-28 Wed 10:37 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Clean Code Chapter 6: Objects and Data Structures</title>
@@ -233,9 +233,9 @@ for the JavaScript code in this tag.
 </div>
 <div id="content">
 
-<div id="outline-container-org21dc0aa" class="outline-2">
-<h2 id="org21dc0aa">Chapter 6: Objects and Data Structures</h2>
-<div class="outline-text-2" id="text-org21dc0aa">
+<div id="outline-container-org6ce48f0" class="outline-2">
+<h2 id="org6ce48f0">Chapter 6: Objects and Data Structures</h2>
+<div class="outline-text-2" id="text-org6ce48f0">
 
 <div class="figure">
 <p><a href="images/data_st.jpg"><img src="images/data_st.jpg" alt="data_st.jpg" /></a>
@@ -243,45 +243,69 @@ for the JavaScript code in this tag.
 </div>
 </div>
 </div>
-<div id="outline-container-org90b38e2" class="outline-2">
-<h2 id="org90b38e2">Overview</h2>
-<div class="outline-text-2" id="text-org90b38e2">
+<div id="outline-container-org1df6479" class="outline-2">
+<h2 id="org1df6479">Overview</h2>
+<div class="outline-text-2" id="text-org1df6479">
 <ul class="org-ul">
-<li>IMO Most nuanced chapter so far</li>
-<li>Focused on 2 patterns for programming domain entities</li>
-<li>Was expecting a more one-sided take but he actually had a pretty reasonable approach and identifies situations when either approach might be better.</li>
+<li>Not "Data Structures" like linked lists/btree/etc</li>
+<li>Looks at different ways of using Objects in OOP</li>
+<li>Had a pretty balanced take on when each one might be good</li>
+</ul>
+</div>
+<div id="outline-container-org62704bb" class="outline-3">
+<h3 id="org62704bb">Objects: Data + Behavior live together</h3>
+<div class="outline-text-3" id="text-org62704bb">
+<ul class="org-ul">
+<li>Encapsulate as much logic as possible</li>
+<li>Define an interface in terms of what you want the object to do, not how you want it to be structured</li>
+<li>Think carefully about what data needs to be exposed publicly. Avoid unnecessary getters and setters</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgdd126cd" class="outline-2">
-<h2 id="orgdd126cd">Example (p. 94)</h2>
-<div class="outline-text-2" id="text-orgdd126cd">
+<div id="outline-container-orgd0b4d06" class="outline-3">
+<h3 id="orgd0b4d06">Data Structures: Store data, BYO Behavior</h3>
+<div class="outline-text-3" id="text-orgd0b4d06">
+<ul class="org-ul">
+<li>Treating domain objects as simple containers for stored values</li>
+<li>Just make all fields public and define external/separate functions to handle it</li>
+<li>Also could be a generic map/dict/tuple/etc</li>
+<li>TBH I came in expecting him to straw man this approach and not really consider it but he was cool</li>
+</ul>
 </div>
-<div id="outline-container-orgb3591d4" class="outline-3">
-<h3 id="orgb3591d4">Data Structure:</h3>
-<div class="outline-text-3" id="text-orgb3591d4">
-<p>
-Treat the object as a "dumb" container for data.
-</p>
-
+</div>
+</div>
+<div id="outline-container-orgf3bdea7" class="outline-2">
+<h2 id="orgf3bdea7">Data Structure : "dumb" container for data</h2>
+<div class="outline-text-2" id="text-orgf3bdea7">
+</div>
+<div id="outline-container-org7353978" class="outline-4">
+<h4 id="org7353978">Example (p. 94) (embellished)</h4>
+<div class="outline-text-4" id="text-org7353978">
 <p>
 Then logic would be defined separately by other functions or objects which manipulate this structure.
 </p>
 <div class="org-src-container">
-<pre class="src src-java"><span style="color: #fb4933;">public</span> <span style="color: #fb4933;">class</span> <span style="color: #d3869b;">Point</span> {
+<pre class="src src-java"><span style="color: #fb4933;">public</span> <span style="color: #fb4933;">class</span> <span style="color: #d3869b;">CartesianPoint</span> {
   <span style="color: #fb4933;">public</span> <span style="color: #d3869b;">double</span> <span style="color: #83a598;">x</span>;
   <span style="color: #fb4933;">public</span> <span style="color: #d3869b;">double</span> <span style="color: #83a598;">y</span>;
+}
+
+<span style="color: #fb4933;">public</span> <span style="color: #fb4933;">class</span> <span style="color: #d3869b;">GeometryOperations</span> {
+  <span style="color: #fb4933;">public</span> <span style="color: #fabd2f;">getR</span>(<span style="color: #d3869b;">CartesianPoint</span> <span style="color: #83a598;">point</span>) {
+    <span style="color: #7c6f64;">// </span><span style="color: #7c6f64;">do some trig...</span>
+  }
+  <span style="color: #fb4933;">public</span> <span style="color: #fabd2f;">getTheta</span>(<span style="color: #d3869b;">CartesianPoint</span> <span style="color: #83a598;">point</span>) {
+    <span style="color: #7c6f64;">// </span><span style="color: #7c6f64;">do some trig...</span>
+  }
 }
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-org40242c5" class="outline-3">
-<h3 id="org40242c5">Object:</h3>
-<div class="outline-text-3" id="text-org40242c5">
-<p>
-Treat the Object as a vehicle for implementation and business logic
-</p>
+</div>
+<div id="outline-container-org42aeb83" class="outline-2">
+<h2 id="org42aeb83">Object: Vehicle for implementation and business logic</h2>
+<div class="outline-text-2" id="text-org42aeb83">
 <div class="org-src-container">
 <pre class="src src-java"><span style="color: #fb4933;">public</span> <span style="color: #fb4933;">interface</span> <span style="color: #d3869b;">Point</span> {
   <span style="color: #7c6f64;">// </span><span style="color: #7c6f64;">- Describes behavior without specifying internal structure</span>
@@ -297,67 +321,17 @@ Treat the Object as a vehicle for implementation and business logic
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-orge1968de" class="outline-3">
-<h3 id="orge1968de">Discussion - what do you think?</h3>
-</div>
-</div>
-<div id="outline-container-orga1e07b1" class="outline-2">
-<h2 id="orga1e07b1">A less good example (p. 94-95)</h2>
-<div class="outline-text-2" id="text-orga1e07b1">
-</div>
-<div id="outline-container-org1191212" class="outline-3">
-<h3 id="org1191212">I found the Vehicle examples less compelling</h3>
-<div class="outline-text-3" id="text-org1191212">
-<ul class="org-ul">
-<li>Reality is we often need all 3 methods (i.e. we want a convenience method for getting the percentage, but we might also have other situations that need access to the underlying values)</li>
-<li>Example seemed a little contrived</li>
-</ul>
-<div class="org-src-container">
-<pre class="src src-java"><span style="color: #fb4933;">public</span> <span style="color: #fb4933;">interface</span> <span style="color: #d3869b;">Vehicle</span> {
-  <span style="color: #7c6f64;">// </span><span style="color: #7c6f64;">Used by caller to calculate percent fuel remaining</span>
-  getFuelTankCapacityInGallons();
-  getGallonsOfGasoline();
-}
-
-<span style="color: #7c6f64;">// </span><span style="color: #7c6f64;">vs</span>
-
-<span style="color: #fb4933;">public</span> <span style="color: #fb4933;">interface</span> <span style="color: #d3869b;">Vehicle</span> {
-  getPercentFuelRemaining();
-}
-</pre>
+<div id="outline-container-org4a807b5" class="outline-3">
+<h3 id="org4a807b5">What do you think?</h3>
 </div>
 </div>
+<div id="outline-container-orgde6cc5d" class="outline-2">
+<h2 id="orgde6cc5d">Polymorphism vs. case/switch</h2>
+<div class="outline-text-2" id="text-orgde6cc5d">
 </div>
-</div>
-<div id="outline-container-org3c881a1" class="outline-2">
-<h2 id="org3c881a1">Summary: Objects vs. Data Structures</h2>
-<div class="outline-text-2" id="text-org3c881a1">
-</div>
-<div id="outline-container-org249ef93" class="outline-3">
-<h3 id="org249ef93">Objects</h3>
-<div class="outline-text-3" id="text-org249ef93">
-<ul class="org-ul">
-<li>Encapsulate as much of your logic as you can</li>
-<li>Define an interface in terms of what you want the object to do, not how you want it to be structured</li>
-<li>Think carefully about what data needs to be exposed publicly. Avoid unnecessary getters and setters</li>
-</ul>
-</div>
-</div>
-<div id="outline-container-org7c33450" class="outline-3">
-<h3 id="org7c33450">Data Structures</h3>
-<div class="outline-text-3" id="text-org7c33450">
-<ul class="org-ul">
-<li>Treating domain objects as simple containers for stored values</li>
-<li>Just make all fields public and define external/separate functions to handle it</li>
-<li>Also could be a generic map/dict/tuple/etc</li>
-</ul>
-</div>
-</div>
-</div>
-<div id="outline-container-orgc06fa8f" class="outline-2">
-<h2 id="orgc06fa8f">Polymorphism vs. case/switch</h2>
-<div class="outline-text-2" id="text-orgc06fa8f">
+<div id="outline-container-org322abd2" class="outline-4">
+<h4 id="org322abd2">Using centralized dispatch to branch between data types</h4>
+<div class="outline-text-4" id="text-org322abd2">
 <div class="org-src-container">
 <pre class="src src-java"><span style="color: #fb4933;">public</span> <span style="color: #fb4933;">class</span> <span style="color: #d3869b;">Square</span> {
   <span style="color: #fb4933;">public</span> <span style="color: #d3869b;">Point</span> <span style="color: #83a598;">topLeft</span>;
@@ -381,8 +355,17 @@ Treat the Object as a vehicle for implementation and business logic
     }
   }
 }
-
-<span style="color: #7c6f64;">// </span><span style="color: #7c6f64;">vs</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org88efd7b" class="outline-4">
+<h4 id="org88efd7b">Using class or interface-based subtyping to separate concerns</h4>
+<div class="outline-text-4" id="text-org88efd7b">
+<div class="org-src-container">
+<pre class="src src-java"><span style="color: #fb4933;">public</span> <span style="color: #fb4933;">interface</span> <span style="color: #d3869b;">Geometry</span> {
+  <span style="color: #fb4933;">public</span> <span style="color: #d3869b;">double</span> <span style="color: #fabd2f;">area</span>();
+}
 
 <span style="color: #fb4933;">public</span> <span style="color: #fb4933;">class</span> <span style="color: #d3869b;">Square</span> {
   <span style="color: #7c6f64;">//</span><span style="color: #7c6f64;">...</span>
@@ -401,33 +384,56 @@ Treat the Object as a vehicle for implementation and business logic
 </div>
 </div>
 </div>
+</div>
 
-<div id="outline-container-org1f8a8e2" class="outline-2">
-<h2 id="org1f8a8e2">Pros and Cons: Uncle Bob's Take</h2>
-<div class="outline-text-2" id="text-org1f8a8e2">
-</div>
-<div id="outline-container-org40a200b" class="outline-4">
-<h4 id="org40a200b">Polymorphism (OO approach) makes it easy to add implementations but hard to change the interface</h4>
-</div>
-<div id="outline-container-org9002e2d" class="outline-4">
-<h4 id="org9002e2d">Data Structure approach is the opposite (more complex to add a new complete implementation, but less scary to change the interface)</h4>
-<div class="outline-text-4" id="text-org9002e2d">
+<div id="outline-container-orgcb6e953" class="outline-2">
+<h2 id="orgcb6e953">Pros and Cons: Uncle Bob's Take</h2>
+<div class="outline-text-2" id="text-orgcb6e953">
+<ul class="org-ul">
+<li>Polymorphism (OO approach) makes it easy to add implementations but hard to change the interface</li>
+<li>Polymorphism lets us isolate implementations from one another</li>
+<li>But changes to the interface may require changes to all existing implementation (can be problematic for library code, for example)</li>
+<li>Data Structure approach is the opposite &#x2013; more complex to add a new complete implementation, but less scary to change the interface</li>
+</ul>
 <p>
 Appreciated that he didn't treat this as "one is always better" but identified different conditions when either one might be preferable.
 </p>
 </div>
+<div id="outline-container-orgaa289bc" class="outline-3">
+<h3 id="orgaa289bc">Do you think this is true? Is one of these more common than the others?</h3>
+</div>
+<div id="outline-container-org2de2822" class="outline-3">
+<h3 id="org2de2822">Is it really one or the other? Are there in between approaches?</h3>
 </div>
 </div>
-<div id="outline-container-orgc75b386" class="outline-2">
-<h2 id="orgc75b386">Law of Demeter</h2>
-<div class="outline-text-2" id="text-orgc75b386">
+<div id="outline-container-org7150a59" class="outline-2">
+<h2 id="org7150a59">Elephant In the Room: FP / Modern OO / Python</h2>
+<div class="outline-text-2" id="text-org7150a59">
+<ul class="org-ul">
+<li>Stuff in this chapter comes from a pretty old-school OOP point of view</li>
+<li>Lots of stuff has changed over last 10-15 years that probably shifts the discussion</li>
+<li>FP langs like Clojure etc have become much more popular</li>
+<li>Even in OOP langs, lots of people have moved to more of a hybrid approach mixing a bit of FP and OOP style</li>
+<li>In many contexts (e.g. Python programming against Pandas), using class-based OOP might not be the dominant style</li>
+</ul>
 </div>
-<div id="outline-container-org593411c" class="outline-3">
-<h3 id="org593411c">Don't talk to your friends' friends &#x2013; you haven't been introduced!</h3>
+<div id="outline-container-org9fcb8da" class="outline-3">
+<h3 id="org9fcb8da">So, do any of these things change the validity of Uncle Bob's advice?</h3>
 </div>
-<div id="outline-container-orgdd23320" class="outline-3">
-<h3 id="orgdd23320">More snootily, try to only access:</h3>
-<div class="outline-text-3" id="text-orgdd23320">
+<div id="outline-container-orge432c6a" class="outline-3">
+<h3 id="orge432c6a">Are there insights from this chapter we can still apply even in non-OOP contexts?</h3>
+</div>
+</div>
+<div id="outline-container-org3f980c5" class="outline-2">
+<h2 id="org3f980c5">Law of Demeter</h2>
+<div class="outline-text-2" id="text-org3f980c5">
+</div>
+<div id="outline-container-orgcbcacf8" class="outline-3">
+<h3 id="orgcbcacf8">Don't talk to your friends' friends &#x2013; you haven't been introduced!</h3>
+</div>
+<div id="outline-container-org2c6ab77" class="outline-3">
+<h3 id="org2c6ab77">More snootily, try to only access:</h3>
+<div class="outline-text-3" id="text-org2c6ab77">
 <ul class="org-ul">
 <li>a) Own methods</li>
 <li>b) Local vars and arguments</li>
@@ -445,28 +451,52 @@ I'm personally less zealous about this one but open to being convinced.
 </div>
 </div>
 
-<div id="outline-container-org2bc4ab0" class="outline-3">
-<h3 id="org2bc4ab0">LoD &#x2013; should we care?</h3>
+<div id="outline-container-orgd0e62fe" class="outline-3">
+<h3 id="orgd0e62fe">LoD &#x2013; should we care?</h3>
 </div>
 </div>
 
-<div id="outline-container-orgeb2e694" class="outline-2">
-<h2 id="orgeb2e694">Antipattern: The Hybrid</h2>
+<div id="outline-container-orgbcadef9" class="outline-2">
+<h2 id="orgbcadef9">Antipattern: The Hybrid</h2>
+<div class="outline-text-2" id="text-orgbcadef9">
+<ul class="org-ul">
+<li>UB points out a common tendency to mix the 2 paradigms</li>
+<li>Start out trying for a strong Object-based approach but end up leaking some vars anyway</li>
+<li>Did not find a great example of this but it did resonate with me because I feel like I have definitely done this</li>
+<li>Even when you start out with a strong design in mind it's hard to keep to it, especially when things get complex</li>
+</ul>
 </div>
-<div id="outline-container-org5d9a676" class="outline-2">
-<h2 id="org5d9a676">Elephant In the Room: FP / Modern OO / Python</h2>
+<div id="outline-container-orgdd58d1f" class="outline-3">
+<h3 id="orgdd58d1f">Anyone have experiences with this problem?</h3>
 </div>
-<div id="outline-container-org1f00ef5" class="outline-2">
-<h2 id="org1f00ef5">Example: Protocols as means of Polymorphism</h2>
-<div class="outline-text-2" id="text-org1f00ef5">
+</div>
+<div id="outline-container-org3913916" class="outline-2">
+<h2 id="org3913916">Example: CLJ Protocols as means of Polymorphism</h2>
+<div class="outline-text-2" id="text-org3913916">
+<p>
+This example is from our clojure "geo" library
+</p>
+
+<p>
+Clojure has an interface programming feature called "Protocols"
+</p>
+
+<p>
+Works similar to a Java interface except that the implementation can be added separately from the class definition
+</p>
+
+<p>
+So you can add protocol implementations after the fact
+</p>
+
 <p>
 <a href="https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145">https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145</a>
 </p>
 </div>
 </div>
-<div id="outline-container-org7c6697c" class="outline-2">
-<h2 id="org7c6697c">Example: Manipulating data structures vs Relying on an Object:</h2>
-<div class="outline-text-2" id="text-org7c6697c">
+<div id="outline-container-orgc9f7e62" class="outline-2">
+<h2 id="orgc9f7e62">Example: Manipulating data structures vs Relying on an Object:</h2>
+<div class="outline-text-2" id="text-orgc9f7e62">
 <p>
 <a href="https://github.com/Factual/work5/blob/master/app/controllers/submissions_controller.rb#L7-L19">https://github.com/Factual/work5/blob/master/app/controllers/submissions<sub>controller.rb</sub>#L7-L19</a>
 </p>
@@ -481,13 +511,24 @@ vs
 </div>
 </div>
 
-<div id="outline-container-org0d457ae" class="outline-2">
-<h2 id="org0d457ae">Example: DataMapper Pattern</h2>
+<div id="outline-container-orgecf1d8a" class="outline-2">
+<h2 id="orgecf1d8a">Example: DataMapper Pattern</h2>
+<div class="outline-text-2" id="text-orgecf1d8a">
+<p>
+Kevin added a neat usage of this pattern in the tile API code.
+</p>
+<ul class="org-ul">
+<li>Have "Tile" objects which we treat as domain entities</li>
+<li>Use Tile "Adaptor" for translating to and from various serialization formats (Thrift or JSON)</li>
+<li>Tile: <a href="https://github.com/Factual/tile-builder/blob/develop/api/src/main/java/com/factual/tile/api/v3/TileWrapper.java#L49-L51">https://github.com/Factual/tile-builder/blob/develop/api/src/main/java/com/factual/tile/api/v3/TileWrapper.java#L49-L51</a></li>
+<li>Mapper: <a href="https://github.com/Factual/tile-builder/blob/develop/api/src/main/java/com/factual/tile/adaptor/v3/TileAdaptor.java#L14-L24">https://github.com/Factual/tile-builder/blob/develop/api/src/main/java/com/factual/tile/adaptor/v3/TileAdaptor.java#L14-L24</a></li>
+</ul>
+</div>
 </div>
 
-<div id="outline-container-orgebb2bc9" class="outline-2">
-<h2 id="orgebb2bc9">Case Study: Active Record</h2>
-<div class="outline-text-2" id="text-orgebb2bc9">
+<div id="outline-container-orge58ca58" class="outline-2">
+<h2 id="orge58ca58">Case Study: Active Record</h2>
+<div class="outline-text-2" id="text-orge58ca58">
 <ul class="org-ul">
 <li>AR: Tends to combine biz logic + serialization + data access</li>
 <li>Considered gross by some</li>
@@ -499,23 +540,17 @@ vs
 </div>
 </div>
 
-<div id="outline-container-org5050398" class="outline-2">
-<h2 id="org5050398">Cut</h2>
-<div class="outline-text-2" id="text-org5050398">
-</div>
-<div id="outline-container-org2289e34" class="outline-3">
-<h3 id="org2289e34">Pros</h3>
-</div>
-<div id="outline-container-org794a537" class="outline-3">
-<h3 id="org794a537">Cons</h3>
-<div class="outline-text-3" id="text-org794a537">
-</div>
-<div id="outline-container-org30e84bb" class="outline-4">
-<h4 id="org30e84bb">More complex - additional behavior is cool but only if you need it</h4>
-</div>
-<div id="outline-container-orgabf854d" class="outline-4">
-<h4 id="orgabf854d">More layers - potentially separating the description from the implementation</h4>
-</div>
+<div id="outline-container-orgf1ea53d" class="outline-2">
+<h2 id="orgf1ea53d">This slide show brought to you by</h2>
+<div class="outline-text-2" id="text-orgf1ea53d">
+<p>
+some janky JS and CSS:
+<a href="https://github.com/worace/worace.github.io/blob/source/public/presentations/clean_code_ch_6/presentation.js">https://github.com/worace/worace.github.io/blob/source/public/presentations/clean_code_ch_6/presentation.js</a>
+</p>
+
+<p>
+<a href="https://github.com/worace/worace.github.io/blob/source/public/presentations/clean_code_ch_6/styles.css">https://github.com/worace/worace.github.io/blob/source/public/presentations/clean_code_ch_6/styles.css</a>
+</p>
 </div>
 </div>
 </div>
