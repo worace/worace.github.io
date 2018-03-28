@@ -9,20 +9,37 @@
 * Chapter 6: Objects and Data Structures
 [[file:images/data_st.jpg][file:images/data_st.jpg]]
 * Overview
- * IMO Most nuanced chapter so far
  * Focused on 2 patterns for programming domain entities
  * Was expecting a more one-sided take but he actually had a pretty reasonable approach and identifies situations when either approach might be better.
-* Example (p. 94)
+** Objects
+ * Encapsulate as much of your logic as you can
+ * Define an interface in terms of what you want the object to do, not how you want it to be structured
+ * Think carefully about what data needs to be exposed publicly. Avoid unnecessary getters and setters
+** Data Structures
+ * Treating domain objects as simple containers for stored values
+ * Just make all fields public and define external/separate functions to handle it
+ * Also could be a generic map/dict/tuple/etc
+* Example (p. 94) (embellished)
 ** Data Structure:
 Treat the object as a "dumb" container for data.
 
 Then logic would be defined separately by other functions or objects which manipulate this structure.
 #+BEGIN_SRC java
-public class Point {
+public class CartesianPoint {
   public double x;
   public double y;
 }
+
+public class GeometryOperations {
+  public getR(CartesianPoint point) {
+    // do some trig...
+  }
+  public getTheta(CartesianPoint point) {
+    // do some trig...
+  }
+}
 #+END_SRC
+
 ** Object:
 Treat the Object as a vehicle for implementation and business logic
 #+BEGIN_SRC java
@@ -56,15 +73,6 @@ public interface Vehicle {
   getPercentFuelRemaining();
 }
 #+END_SRC
-* Summary: Objects vs. Data Structures
-** Objects
- * Encapsulate as much of your logic as you can
- * Define an interface in terms of what you want the object to do, not how you want it to be structured
- * Think carefully about what data needs to be exposed publicly. Avoid unnecessary getters and setters
-** Data Structures
- * Treating domain objects as simple containers for stored values
- * Just make all fields public and define external/separate functions to handle it
- * Also could be a generic map/dict/tuple/etc
 * Polymorphism vs. case/switch
 #+BEGIN_SRC java
 public class Square {
@@ -111,6 +119,15 @@ public class Rectangle {
 *** Polymorphism (OO approach) makes it easy to add implementations but hard to change the interface
 *** Data Structure approach is the opposite (more complex to add a new complete implementation, but less scary to change the interface)
 Appreciated that he didn't treat this as "one is always better" but identified different conditions when either one might be preferable.
+** Do you think this is true? Is one of these more common than the others?
+* Elephant In the Room: FP / Modern OO / Python
+ * Stuff in this chapter comes from a pretty old-school OOP point of view
+ * Lots of stuff has changed over last 10-15 years that probably shifts the discussion
+ * FP langs like Clojure etc have become much more popular
+ * Even in OOP langs, lots of people have moved to more of a hybrid approach mixing a bit of FP and OOP style
+ * Also on some context (e.g. Python programming against Pandas), using class-based OOP might not be the dominant style
+** So, do any of these things change the validity of Uncle Bob's advice?
+** Are there insights from this chapter we can still apply even in non-OOP contexts?
 * Law of Demeter
 ** Don't talk to your friends' friends -- you haven't been introduced!
 ** More snootily, try to only access:
@@ -126,7 +143,6 @@ I'm personally less zealous about this one but open to being convinced.
 ** LoD -- should we care?
 
 * Antipattern: The Hybrid
-* Elephant In the Room: FP / Modern OO / Python
 * Example: Protocols as means of Polymorphism
 [[https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145][https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145]]
 * Example: Manipulating data structures vs Relying on an Object:
