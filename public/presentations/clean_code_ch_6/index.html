@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2018-03-27 Tue 17:30 -->
+<!-- 2018-03-27 Tue 18:05 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Clean Code Chapter 6: Objects and Data Structures</title>
@@ -233,9 +233,9 @@ for the JavaScript code in this tag.
 </div>
 <div id="content">
 
-<div id="outline-container-orgc41ad2b" class="outline-2">
-<h2 id="orgc41ad2b">Chapter 6: Objects and Data Structures</h2>
-<div class="outline-text-2" id="text-orgc41ad2b">
+<div id="outline-container-org21dc0aa" class="outline-2">
+<h2 id="org21dc0aa">Chapter 6: Objects and Data Structures</h2>
+<div class="outline-text-2" id="text-org21dc0aa">
 
 <div class="figure">
 <p><a href="images/data_st.jpg"><img src="images/data_st.jpg" alt="data_st.jpg" /></a>
@@ -243,9 +243,9 @@ for the JavaScript code in this tag.
 </div>
 </div>
 </div>
-<div id="outline-container-org9d150b1" class="outline-2">
-<h2 id="org9d150b1">Overview</h2>
-<div class="outline-text-2" id="text-org9d150b1">
+<div id="outline-container-org90b38e2" class="outline-2">
+<h2 id="org90b38e2">Overview</h2>
+<div class="outline-text-2" id="text-org90b38e2">
 <ul class="org-ul">
 <li>IMO Most nuanced chapter so far</li>
 <li>Focused on 2 patterns for programming domain entities</li>
@@ -253,13 +253,13 @@ for the JavaScript code in this tag.
 </ul>
 </div>
 </div>
-<div id="outline-container-orgcdd610f" class="outline-2">
-<h2 id="orgcdd610f">Example (p. 94)</h2>
-<div class="outline-text-2" id="text-orgcdd610f">
+<div id="outline-container-orgdd126cd" class="outline-2">
+<h2 id="orgdd126cd">Example (p. 94)</h2>
+<div class="outline-text-2" id="text-orgdd126cd">
 </div>
-<div id="outline-container-org092af86" class="outline-3">
-<h3 id="org092af86">Data Structure:</h3>
-<div class="outline-text-3" id="text-org092af86">
+<div id="outline-container-orgb3591d4" class="outline-3">
+<h3 id="orgb3591d4">Data Structure:</h3>
+<div class="outline-text-3" id="text-orgb3591d4">
 <p>
 Treat the object as a "dumb" container for data.
 </p>
@@ -276,9 +276,9 @@ Then logic would be defined separately by other functions or objects which manip
 </div>
 </div>
 </div>
-<div id="outline-container-orga776b06" class="outline-3">
-<h3 id="orga776b06">Object:</h3>
-<div class="outline-text-3" id="text-orga776b06">
+<div id="outline-container-org40242c5" class="outline-3">
+<h3 id="org40242c5">Object:</h3>
+<div class="outline-text-3" id="text-org40242c5">
 <p>
 Treat the Object as a vehicle for implementation and business logic
 </p>
@@ -298,17 +298,17 @@ Treat the Object as a vehicle for implementation and business logic
 </div>
 </div>
 </div>
-<div id="outline-container-org5be6821" class="outline-3">
-<h3 id="org5be6821">Discussion - what do you think?</h3>
+<div id="outline-container-orge1968de" class="outline-3">
+<h3 id="orge1968de">Discussion - what do you think?</h3>
 </div>
 </div>
-<div id="outline-container-orgbfdb81d" class="outline-2">
-<h2 id="orgbfdb81d">A less good example (p. 94-95)</h2>
-<div class="outline-text-2" id="text-orgbfdb81d">
+<div id="outline-container-orga1e07b1" class="outline-2">
+<h2 id="orga1e07b1">A less good example (p. 94-95)</h2>
+<div class="outline-text-2" id="text-orga1e07b1">
 </div>
-<div id="outline-container-org7d1a16c" class="outline-3">
-<h3 id="org7d1a16c">I found the Vehicle examples less compelling</h3>
-<div class="outline-text-3" id="text-org7d1a16c">
+<div id="outline-container-org1191212" class="outline-3">
+<h3 id="org1191212">I found the Vehicle examples less compelling</h3>
+<div class="outline-text-3" id="text-org1191212">
 <ul class="org-ul">
 <li>Reality is we often need all 3 methods (i.e. we want a convenience method for getting the percentage, but we might also have other situations that need access to the underlying values)</li>
 <li>Example seemed a little contrived</li>
@@ -330,13 +330,13 @@ Treat the Object as a vehicle for implementation and business logic
 </div>
 </div>
 </div>
-<div id="outline-container-org7ea087b" class="outline-2">
-<h2 id="org7ea087b">Summary: Objects vs. Data Structures</h2>
-<div class="outline-text-2" id="text-org7ea087b">
+<div id="outline-container-org3c881a1" class="outline-2">
+<h2 id="org3c881a1">Summary: Objects vs. Data Structures</h2>
+<div class="outline-text-2" id="text-org3c881a1">
 </div>
-<div id="outline-container-org0377fda" class="outline-3">
-<h3 id="org0377fda">Objects</h3>
-<div class="outline-text-3" id="text-org0377fda">
+<div id="outline-container-org249ef93" class="outline-3">
+<h3 id="org249ef93">Objects</h3>
+<div class="outline-text-3" id="text-org249ef93">
 <ul class="org-ul">
 <li>Encapsulate as much of your logic as you can</li>
 <li>Define an interface in terms of what you want the object to do, not how you want it to be structured</li>
@@ -344,9 +344,9 @@ Treat the Object as a vehicle for implementation and business logic
 </ul>
 </div>
 </div>
-<div id="outline-container-org02d6fd7" class="outline-3">
-<h3 id="org02d6fd7">Data Structures</h3>
-<div class="outline-text-3" id="text-org02d6fd7">
+<div id="outline-container-org7c33450" class="outline-3">
+<h3 id="org7c33450">Data Structures</h3>
+<div class="outline-text-3" id="text-org7c33450">
 <ul class="org-ul">
 <li>Treating domain objects as simple containers for stored values</li>
 <li>Just make all fields public and define external/separate functions to handle it</li>
@@ -355,9 +355,9 @@ Treat the Object as a vehicle for implementation and business logic
 </div>
 </div>
 </div>
-<div id="outline-container-org95af7b7" class="outline-2">
-<h2 id="org95af7b7">Polymorphism vs. case/switch</h2>
-<div class="outline-text-2" id="text-org95af7b7">
+<div id="outline-container-orgc06fa8f" class="outline-2">
+<h2 id="orgc06fa8f">Polymorphism vs. case/switch</h2>
+<div class="outline-text-2" id="text-orgc06fa8f">
 <div class="org-src-container">
 <pre class="src src-java"><span style="color: #fb4933;">public</span> <span style="color: #fb4933;">class</span> <span style="color: #d3869b;">Square</span> {
   <span style="color: #fb4933;">public</span> <span style="color: #d3869b;">Point</span> <span style="color: #83a598;">topLeft</span>;
@@ -402,32 +402,32 @@ Treat the Object as a vehicle for implementation and business logic
 </div>
 </div>
 
-<div id="outline-container-orgc90ab5f" class="outline-2">
-<h2 id="orgc90ab5f">Pros and Cons: Uncle Bob's Take</h2>
-<div class="outline-text-2" id="text-orgc90ab5f">
+<div id="outline-container-org1f8a8e2" class="outline-2">
+<h2 id="org1f8a8e2">Pros and Cons: Uncle Bob's Take</h2>
+<div class="outline-text-2" id="text-org1f8a8e2">
 </div>
-<div id="outline-container-org00949cc" class="outline-4">
-<h4 id="org00949cc">Polymorphism (OO approach) makes it easy to add implementations but hard to change the interface</h4>
+<div id="outline-container-org40a200b" class="outline-4">
+<h4 id="org40a200b">Polymorphism (OO approach) makes it easy to add implementations but hard to change the interface</h4>
 </div>
-<div id="outline-container-org16f6297" class="outline-4">
-<h4 id="org16f6297">Data Structure approach is the opposite (more complex to add a new complete implementation, but less scary to change the interface)</h4>
-<div class="outline-text-4" id="text-org16f6297">
+<div id="outline-container-org9002e2d" class="outline-4">
+<h4 id="org9002e2d">Data Structure approach is the opposite (more complex to add a new complete implementation, but less scary to change the interface)</h4>
+<div class="outline-text-4" id="text-org9002e2d">
 <p>
 Appreciated that he didn't treat this as "one is always better" but identified different conditions when either one might be preferable.
 </p>
 </div>
 </div>
 </div>
-<div id="outline-container-org49790a2" class="outline-2">
-<h2 id="org49790a2">Law of Demeter</h2>
-<div class="outline-text-2" id="text-org49790a2">
+<div id="outline-container-orgc75b386" class="outline-2">
+<h2 id="orgc75b386">Law of Demeter</h2>
+<div class="outline-text-2" id="text-orgc75b386">
 </div>
-<div id="outline-container-org5c1af19" class="outline-3">
-<h3 id="org5c1af19">Don't talk to your friends' friends &#x2013; you haven't been introduced!</h3>
+<div id="outline-container-org593411c" class="outline-3">
+<h3 id="org593411c">Don't talk to your friends' friends &#x2013; you haven't been introduced!</h3>
 </div>
-<div id="outline-container-orge8efc9b" class="outline-3">
-<h3 id="orge8efc9b">More snootily, try to only access:</h3>
-<div class="outline-text-3" id="text-orge8efc9b">
+<div id="outline-container-orgdd23320" class="outline-3">
+<h3 id="orgdd23320">More snootily, try to only access:</h3>
+<div class="outline-text-3" id="text-orgdd23320">
 <ul class="org-ul">
 <li>a) Own methods</li>
 <li>b) Local vars and arguments</li>
@@ -445,35 +445,76 @@ I'm personally less zealous about this one but open to being convinced.
 </div>
 </div>
 
-<div id="outline-container-org9d8d01c" class="outline-3">
-<h3 id="org9d8d01c">LoD &#x2013; should we care?</h3>
+<div id="outline-container-org2bc4ab0" class="outline-3">
+<h3 id="org2bc4ab0">LoD &#x2013; should we care?</h3>
 </div>
 </div>
 
-<div id="outline-container-orgc10c8d6" class="outline-2">
-<h2 id="orgc10c8d6">Antipattern: The Hybrid</h2>
+<div id="outline-container-orgeb2e694" class="outline-2">
+<h2 id="orgeb2e694">Antipattern: The Hybrid</h2>
+</div>
+<div id="outline-container-org5d9a676" class="outline-2">
+<h2 id="org5d9a676">Elephant In the Room: FP / Modern OO / Python</h2>
+</div>
+<div id="outline-container-org1f00ef5" class="outline-2">
+<h2 id="org1f00ef5">Example: Protocols as means of Polymorphism</h2>
+<div class="outline-text-2" id="text-org1f00ef5">
+<p>
+<a href="https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145">https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145</a>
+</p>
+</div>
+</div>
+<div id="outline-container-org7c6697c" class="outline-2">
+<h2 id="org7c6697c">Example: Manipulating data structures vs Relying on an Object:</h2>
+<div class="outline-text-2" id="text-org7c6697c">
+<p>
+<a href="https://github.com/Factual/work5/blob/master/app/controllers/submissions_controller.rb#L7-L19">https://github.com/Factual/work5/blob/master/app/controllers/submissions<sub>controller.rb</sub>#L7-L19</a>
+</p>
+
+<p>
+vs
+</p>
+
+<p>
+<a href="https://github.com/Factual/work5/blob/master/app/controllers/tasks_controller.rb#L7">https://github.com/Factual/work5/blob/master/app/controllers/tasks<sub>controller.rb</sub>#L7</a>
+</p>
+</div>
 </div>
 
-<div id="outline-container-orgc6b660b" class="outline-2">
-<h2 id="orgc6b660b">Case Study: Active Record</h2>
+<div id="outline-container-org0d457ae" class="outline-2">
+<h2 id="org0d457ae">Example: DataMapper Pattern</h2>
 </div>
 
-<div id="outline-container-org26206ec" class="outline-2">
-<h2 id="org26206ec">Cut</h2>
-<div class="outline-text-2" id="text-org26206ec">
+<div id="outline-container-orgebb2bc9" class="outline-2">
+<h2 id="orgebb2bc9">Case Study: Active Record</h2>
+<div class="outline-text-2" id="text-orgebb2bc9">
+<ul class="org-ul">
+<li>AR: Tends to combine biz logic + serialization + data access</li>
+<li>Considered gross by some</li>
+<li>But also durned convenient</li>
+<li>Alternatives: Data Mapper, Repository Pattern</li>
+<li>Example: <a href="https://github.com/Factual/work5/blob/master/app/models/task_queue.rb">https://github.com/Factual/work5/blob/master/app/models/task<sub>queue.rb</sub></a></li>
+<li>VS Batch: <a href="https://github.com/Factual/work5/blob/master/app/models/batch.rb">https://github.com/Factual/work5/blob/master/app/models/batch.rb</a></li>
+</ul>
 </div>
-<div id="outline-container-orgc2d35a0" class="outline-3">
-<h3 id="orgc2d35a0">Pros</h3>
 </div>
-<div id="outline-container-orgf0bf589" class="outline-3">
-<h3 id="orgf0bf589">Cons</h3>
-<div class="outline-text-3" id="text-orgf0bf589">
+
+<div id="outline-container-org5050398" class="outline-2">
+<h2 id="org5050398">Cut</h2>
+<div class="outline-text-2" id="text-org5050398">
 </div>
-<div id="outline-container-org8c449ab" class="outline-4">
-<h4 id="org8c449ab">More complex - additional behavior is cool but only if you need it</h4>
+<div id="outline-container-org2289e34" class="outline-3">
+<h3 id="org2289e34">Pros</h3>
 </div>
-<div id="outline-container-orga133261" class="outline-4">
-<h4 id="orga133261">More layers - potentially separating the description from the implementation</h4>
+<div id="outline-container-org794a537" class="outline-3">
+<h3 id="org794a537">Cons</h3>
+<div class="outline-text-3" id="text-org794a537">
+</div>
+<div id="outline-container-org30e84bb" class="outline-4">
+<h4 id="org30e84bb">More complex - additional behavior is cool but only if you need it</h4>
+</div>
+<div id="outline-container-orgabf854d" class="outline-4">
+<h4 id="orgabf854d">More layers - potentially separating the description from the implementation</h4>
 </div>
 </div>
 </div>
