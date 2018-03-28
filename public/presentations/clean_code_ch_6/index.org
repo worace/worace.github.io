@@ -128,13 +128,15 @@ I'm personally less zealous about this one but open to being convinced.
 * Antipattern: The Hybrid
 * Elephant In the Room: FP / Modern OO / Python
 * Example: Protocols as means of Polymorphism
-https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145
+[[https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145][https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145]]
 * Example: Manipulating data structures vs Relying on an Object:
-https://github.com/Factual/work5/blob/master/app/controllers/submissions_controller.rb#L7-L19
+
+[[https://github.com/Factual/work5/blob/master/app/controllers/submissions_controller.rb#L7-L19][https://github.com/Factual/work5/blob/master/app/controllers/submissions_controller.rb#L7-L19]]
 
 vs
 
-https://github.com/Factual/work5/blob/master/app/controllers/tasks_controller.rb#L7
+[[https://github.com/Factual/work5/blob/master/app/controllers/tasks_controller.rb#L7][https://github.com/Factual/work5/blob/master/app/controllers/tasks_controller.rb#L7]]
+
 * Example: DataMapper Pattern
 
 * Case Study: Active Record
@@ -142,8 +144,8 @@ https://github.com/Factual/work5/blob/master/app/controllers/tasks_controller.rb
  * Considered gross by some
  * But also durned convenient
  * Alternatives: Data Mapper, Repository Pattern
- * Example: https://github.com/Factual/work5/blob/master/app/models/task_queue.rb
- * VS Batch: https://github.com/Factual/work5/blob/master/app/models/batch.rb
+ * Example: [[https://github.com/Factual/work5/blob/master/app/models/task_queue.rb][https://github.com/Factual/work5/blob/master/app/models/task_queue.rb]]
+ * VS Batch: [[https://github.com/Factual/work5/blob/master/app/models/batch.rb][https://github.com/Factual/work5/blob/master/app/models/batch.rb]]
 
 * Cut
 ** Pros
