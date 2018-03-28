@@ -9,20 +9,20 @@
 * Chapter 6: Objects and Data Structures
 [[file:images/data_st.jpg][file:images/data_st.jpg]]
 * Overview
- * Focused on 2 patterns for programming domain entities
- * Was expecting a more one-sided take but he actually had a pretty reasonable approach and identifies situations when either approach might be better.
-** Objects
- * Encapsulate as much of your logic as you can
+ * Not "Data Structures" like linked lists/btree/etc
+ * Looks at different ways of using Objects in OOP
+ * Had a pretty balanced take on when each one might be good
+** Objects: Data + Behavior live together
+ * Encapsulate as much logic as possible
  * Define an interface in terms of what you want the object to do, not how you want it to be structured
  * Think carefully about what data needs to be exposed publicly. Avoid unnecessary getters and setters
-** Data Structures
+** Data Structures: Store data, BYO Behavior
  * Treating domain objects as simple containers for stored values
  * Just make all fields public and define external/separate functions to handle it
  * Also could be a generic map/dict/tuple/etc
-* Example (p. 94) (embellished)
-** Data Structure:
-Treat the object as a "dumb" container for data.
-
+ * TBH I came in expecting him to straw man this approach and not really consider it but he was cool
+* Data Structure : "dumb" container for data
+*** Example (p. 94) (embellished)
 Then logic would be defined separately by other functions or objects which manipulate this structure.
 #+BEGIN_SRC java
 public class CartesianPoint {
@@ -39,9 +39,7 @@ public class GeometryOperations {
   }
 }
 #+END_SRC
-
-** Object:
-Treat the Object as a vehicle for implementation and business logic
+* Object: Vehicle for implementation and business logic
 #+BEGIN_SRC java
 public interface Point {
   // - Describes behavior without specifying internal structure
@@ -55,25 +53,9 @@ public interface Point {
   void setPolar(double r, double theta);
 }
 #+END_SRC
-** Discussion - what do you think?
-* A less good example (p. 94-95)
-** I found the Vehicle examples less compelling
- * Reality is we often need all 3 methods (i.e. we want a convenience method for getting the percentage, but we might also have other situations that need access to the underlying values)
- * Example seemed a little contrived
-#+BEGIN_SRC java
-public interface Vehicle {
-  // Used by caller to calculate percent fuel remaining
-  getFuelTankCapacityInGallons();
-  getGallonsOfGasoline();
-}
-
-// vs
-
-public interface Vehicle {
-  getPercentFuelRemaining();
-}
-#+END_SRC
+** What do you think?
 * Polymorphism vs. case/switch
+*** Using centralized dispatch to branch between data types
 #+BEGIN_SRC java
 public class Square {
   public Point topLeft;
@@ -97,8 +79,12 @@ public class Geometry {
     }
   }
 }
-
-// vs
+#+END_SRC
+*** Using class or interface-based subtyping to separate concerns
+#+BEGIN_SRC java
+public interface Geometry {
+  public double area();
+}
 
 public class Square {
   //...
@@ -116,16 +102,19 @@ public class Rectangle {
 #+END_SRC
 
 * Pros and Cons: Uncle Bob's Take
-*** Polymorphism (OO approach) makes it easy to add implementations but hard to change the interface
-*** Data Structure approach is the opposite (more complex to add a new complete implementation, but less scary to change the interface)
+ * Polymorphism (OO approach) makes it easy to add implementations but hard to change the interface
+ * Polymorphism lets us isolate implementations from one another
+ * But changes to the interface may require changes to all existing implementation (can be problematic for library code, for example)
+ * Data Structure approach is the opposite -- more complex to add a new complete implementation, but less scary to change the interface
 Appreciated that he didn't treat this as "one is always better" but identified different conditions when either one might be preferable.
 ** Do you think this is true? Is one of these more common than the others?
+** Is it really one or the other? Are there in between approaches?
 * Elephant In the Room: FP / Modern OO / Python
  * Stuff in this chapter comes from a pretty old-school OOP point of view
  * Lots of stuff has changed over last 10-15 years that probably shifts the discussion
  * FP langs like Clojure etc have become much more popular
  * Even in OOP langs, lots of people have moved to more of a hybrid approach mixing a bit of FP and OOP style
- * Also on some context (e.g. Python programming against Pandas), using class-based OOP might not be the dominant style
+ * In many contexts (e.g. Python programming against Pandas), using class-based OOP might not be the dominant style
 ** So, do any of these things change the validity of Uncle Bob's advice?
 ** Are there insights from this chapter we can still apply even in non-OOP contexts?
 * Law of Demeter
@@ -143,7 +132,20 @@ I'm personally less zealous about this one but open to being convinced.
 ** LoD -- should we care?
 
 * Antipattern: The Hybrid
-* Example: Protocols as means of Polymorphism
+ * UB points out a common tendency to mix the 2 paradigms
+ * Start out trying for a strong Object-based approach but end up leaking some vars anyway
+ * Did not find a great example of this but it did resonate with me because I feel like I have definitely done this
+ * Even when you start out with a strong design in mind it's hard to keep to it, especially when things get complex
+** Anyone have experiences with this problem?
+* Example: CLJ Protocols as means of Polymorphism
+This example is from our clojure "geo" library
+
+Clojure has an interface programming feature called "Protocols"
+
+Works similar to a Java interface except that the implementation can be added separately from the class definition
+
+So you can add protocol implementations after the fact
+
 [[https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145][https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145]]
 * Example: Manipulating data structures vs Relying on an Object:
 
@@ -154,6 +156,11 @@ vs
 [[https://github.com/Factual/work5/blob/master/app/controllers/tasks_controller.rb#L7][https://github.com/Factual/work5/blob/master/app/controllers/tasks_controller.rb#L7]]
 
 * Example: DataMapper Pattern
+Kevin added a neat usage of this pattern in the tile API code.
+ * Have "Tile" objects which we treat as domain entities
+ * Use Tile "Adaptor" for translating to and from various serialization formats (Thrift or JSON)
+ * Tile: https://github.com/Factual/tile-builder/blob/develop/api/src/main/java/com/factual/tile/api/v3/TileWrapper.java#L49-L51
+ * Mapper: https://github.com/Factual/tile-builder/blob/develop/api/src/main/java/com/factual/tile/adaptor/v3/TileAdaptor.java#L14-L24
 
 * Case Study: Active Record
  * AR: Tends to combine biz logic + serialization + data access
@@ -163,8 +170,8 @@ vs
  * Example: [[https://github.com/Factual/work5/blob/master/app/models/task_queue.rb][https://github.com/Factual/work5/blob/master/app/models/task_queue.rb]]
  * VS Batch: [[https://github.com/Factual/work5/blob/master/app/models/batch.rb][https://github.com/Factual/work5/blob/master/app/models/batch.rb]]
 
-* Cut
-** Pros
-** Cons
-*** More complex - additional behavior is cool but only if you need it
-*** More layers - potentially separating the description from the implementation
+* This slide show brought to you by
+some janky JS and CSS:
+https://github.com/worace/worace.github.io/blob/source/public/presentations/clean_code_ch_6/presentation.js
+
+https://github.com/worace/worace.github.io/blob/source/public/presentations/clean_code_ch_6/styles.css

@@ -1,6 +1,11 @@
+h1, h2, h3, h4, h5, h6, ul, p, div, img {
+  margin: 5px;
+}
+
 #content {
   padding: 20px;
-  max-width: 600px;
+  max-width: 800px;
+  font-family: 'Lora', Georga, serif;
 }
 .outline-2 {
   display: none;
@@ -19,3 +24,7 @@ img {
   max-height: 60vh;
 }
 
+.outline-4 {
+  float: left;
+  width: 380px;
+}
