@@ -1,0 +1,154 @@
+#+TITLE: Clean Code Chapter 6: Objects and Data Structures
+#+OPTIONS: toc:nil
+#+OPTIONS: num:nil
+#+OPTIONS: title:nil
+#+BIND: org-html-preamble "<link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'><link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'><link rel='stylesheet' href='./styles.css'><script src='https://code.jquery.com/jquery-3.3.1.slim.min.js' integrity='sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E=' crossorigin='anonymous'></script><script src='./presentation.js'></script>"
+#+BIND: org-html-postamble ""
+#+AUTHOR: Horace Williams
+
+* Chapter 6: Objects and Data Structures
+[[file:images/data_st.jpg][file:images/data_st.jpg]]
+* Overview
+ * IMO Most nuanced chapter so far
+ * Focused on 2 patterns for programming domain entities
+ * Was expecting a more one-sided take but he actually had a pretty reasonable approach and identifies situations when either approach might be better.
+* Example (p. 94)
+** Data Structure:
+Treat the object as a "dumb" container for data.
+
+Then logic would be defined separately by other functions or objects which manipulate this structure.
+#+BEGIN_SRC java
+public class Point {
+  public double x;
+  public double y;
+}
+#+END_SRC
+** Object:
+Treat the Object as a vehicle for implementation and business logic
+#+BEGIN_SRC java
+public interface Point {
+  // - Describes behavior without specifying internal structure
+  // - Methods could be direct "getters", or could be computing things on the fly
+  double getX();
+  double getY();
+  // nice access control -- enforces setting both at once
+  void setCartesian(double x, double y);
+  double getR();
+  double getTheta();
+  void setPolar(double r, double theta);
+}
+#+END_SRC
+** Discussion - what do you think?
+* A less good example (p. 94-95)
+** I found the Vehicle examples less compelling
+ * Reality is we often need all 3 methods (i.e. we want a convenience method for getting the percentage, but we might also have other situations that need access to the underlying values)
+ * Example seemed a little contrived
+#+BEGIN_SRC java
+public interface Vehicle {
+  // Used by caller to calculate percent fuel remaining
+  getFuelTankCapacityInGallons();
+  getGallonsOfGasoline();
+}
+
+// vs
+
+public interface Vehicle {
+  getPercentFuelRemaining();
+}
+#+END_SRC
+* Summary: Objects vs. Data Structures
+** Objects
+ * Encapsulate as much of your logic as you can
+ * Define an interface in terms of what you want the object to do, not how you want it to be structured
+ * Think carefully about what data needs to be exposed publicly. Avoid unnecessary getters and setters
+** Data Structures
+ * Treating domain objects as simple containers for stored values
+ * Just make all fields public and define external/separate functions to handle it
+ * Also could be a generic map/dict/tuple/etc
+* Polymorphism vs. case/switch
+#+BEGIN_SRC java
+public class Square {
+  public Point topLeft;
+  public double side;
+}
+
+public class Rectangle {
+  public Point topLeft;
+  public double width;
+  public double height;
+}
+
+public class Geometry {
+  public double area(Object shape) {
+    if (shape instanceof Square) {
+      return shape.side * shape.side;
+    } else if (shape instanceof Rectangle) {
+      return shape.width * shape.height;
+    } else {
+      // durn
+    }
+  }
+}
+
+// vs
+
+public class Square {
+  //...
+  public double area() {
+    return side * side;
+  }
+}
+
+public class Rectangle {
+  //...
+  public double area() {
+    return width + height;
+  }
+}
+#+END_SRC
+
+* Pros and Cons: Uncle Bob's Take
+*** Polymorphism (OO approach) makes it easy to add implementations but hard to change the interface
+*** Data Structure approach is the opposite (more complex to add a new complete implementation, but less scary to change the interface)
+Appreciated that he didn't treat this as "one is always better" but identified different conditions when either one might be preferable.
+* Law of Demeter
+** Don't talk to your friends' friends -- you haven't been introduced!
+** More snootily, try to only access:
+ * a) Own methods
+ * b) Local vars and arguments
+ * c) Member variables
+ * d) Methods of b and c
+
+Encourages you to aggregate more cohesive interfaces rather than chaining through a bunch of data
+
+I'm personally less zealous about this one but open to being convinced.
+
+** LoD -- should we care?
+
+* Antipattern: The Hybrid
+* Elephant In the Room: FP / Modern OO / Python
+* Example: Protocols as means of Polymorphism
+[[https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145][https://github.com/Factual/geo/blob/master/src/geo/spatial.clj#L115-L145]]
+* Example: Manipulating data structures vs Relying on an Object:
+
+[[https://github.com/Factual/work5/blob/master/app/controllers/submissions_controller.rb#L7-L19][https://github.com/Factual/work5/blob/master/app/controllers/submissions_controller.rb#L7-L19]]
+
+vs
+
+[[https://github.com/Factual/work5/blob/master/app/controllers/tasks_controller.rb#L7][https://github.com/Factual/work5/blob/master/app/controllers/tasks_controller.rb#L7]]
+
+* Example: DataMapper Pattern
+
+* Case Study: Active Record
+ * AR: Tends to combine biz logic + serialization + data access
+ * Considered gross by some
+ * But also durned convenient
+ * Alternatives: Data Mapper, Repository Pattern
+ * Example: [[https://github.com/Factual/work5/blob/master/app/models/task_queue.rb][https://github.com/Factual/work5/blob/master/app/models/task_queue.rb]]
+ * VS Batch: [[https://github.com/Factual/work5/blob/master/app/models/batch.rb][https://github.com/Factual/work5/blob/master/app/models/batch.rb]]
+
+* Cut
+** Pros
+** Cons
+*** More complex - additional behavior is cool but only if you need it
+*** More layers - potentially separating the description from the implementation
