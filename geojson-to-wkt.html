@@ -1,0 +1,58 @@
+---
+layout: default
+title: Pizza
+permalink: geojson-to-wkt.html
+---
+
+<!--
+     Features:
+     * Copy to clipboard button for outputs
+     * Save inputs in cookie and restore on page load
+     * Style input/output side by side
+     * Allow GeoJSON input with or without Feature
+
+     * Error handling and display:
+       * JSON parse Error
+       * Invalid WKT
+       * Invalid GeoJSON
+
+     * Styling:
+     * Make it wider
+     * Remove Header
+   -->
+
+<script>
+  {% include wellknown.js %}
+</script>
+
+<script>
+  {% include jquery.min.js %}
+</script>
+
+<script>
+ {% include geojson_to_wkt.js %}
+</script>
+
+<div>
+  <h3>Convert GeoJSON to WKT</h3>
+  <form id="geojson-form">
+    <textarea id="geojson-input" rows="10" cols="50" placeholder="Enter GeoJSON here."></textarea>
+    <button type="submit">
+      Convert
+    </button>
+  </form>
+
+  <pre id="wkt-output">wkt output here</pre>
+</div>
+
+<div>
+  <h3>Convert WKT to GeoJSON</h3>
+
+  <form id="wkt-form">
+    <textarea id="wkt-input" rows="10" cols="50" placeholder="Enter WKT here."></textarea>
+    <button type="submit">Convert</button>
+  </form>
+
+  <pre id="geojson-output">geojson output here</pre>
+</div>
+
