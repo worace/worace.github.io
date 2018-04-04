@@ -1,0 +1,10 @@
+.col {
+  float: left;
+  display: inline-block;
+  width: 600px;
+}
+
+.row {
+  display: inline-block;
+  width: 1200px;
+}

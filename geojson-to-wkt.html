@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Pizza
+title: GeoJSON & WKT Converter
 permalink: geojson-to-wkt.html
 ---
 
@@ -10,6 +10,8 @@ permalink: geojson-to-wkt.html
      * Save inputs in cookie and restore on page load
      * Style input/output side by side
      * Allow GeoJSON input with or without Feature
+     * Handle leading/trailing whitespace
+     * Syntax highlighting
 
      * Error handling and display:
        * JSON parse Error
@@ -33,26 +35,38 @@ permalink: geojson-to-wkt.html
  {% include geojson_to_wkt.js %}
 </script>
 
-<div>
-  <h3>Convert GeoJSON to WKT</h3>
-  <form id="geojson-form">
-    <textarea id="geojson-input" rows="10" cols="50" placeholder="Enter GeoJSON here."></textarea>
-    <button type="submit">
-      Convert
-    </button>
-  </form>
+<style>
+ {% include geojson_to_wkt.css %}
+</style>
 
-  <pre id="wkt-output">wkt output here</pre>
+<div class="row">
+  <h3>Convert GeoJSON to WKT</h3>
+  <div class="col">
+    <form id="geojson-form">
+      <textarea id="geojson-input" rows="15" cols="50" placeholder="Enter GeoJSON here."></textarea>
+      <button type="submit">
+        Convert
+      </button>
+    </form>
+  </div>
+
+  <div class="col">
+    <pre id="wkt-output">wkt output here</pre>
+  </div>
 </div>
 
-<div>
+<div class="row">
   <h3>Convert WKT to GeoJSON</h3>
 
-  <form id="wkt-form">
-    <textarea id="wkt-input" rows="10" cols="50" placeholder="Enter WKT here."></textarea>
-    <button type="submit">Convert</button>
-  </form>
+  <div class="col">
+    <form id="wkt-form">
+      <textarea id="wkt-input" rows="15" cols="50" placeholder="Enter WKT here."></textarea>
+      <button type="submit">Convert</button>
+    </form>
+  </div>
 
-  <pre id="geojson-output">geojson output here</pre>
+  <div class="col">
+    <pre id="geojson-output">geojson output here</pre>
+  </div>
 </div>
 
