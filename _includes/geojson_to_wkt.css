@@ -8,3 +8,7 @@
   display: inline-block;
   width: 1200px;
 }
+
+pre {
+  white-space: pre-wrap;
+}
