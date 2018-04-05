@@ -6,6 +6,7 @@
   <body>
 
     <div class="container content">
+      {% unless page.hide_masthead %}
       <header class="masthead">
         <h3 class="masthead-title">
           <a href="{{ site.baseurl }}/" title="Home">{{ site.title }}</a>
@@ -17,6 +18,7 @@
           <li><a href="http://twitter.com/worace">twitter</a></li>
         </ul>
       </header>
+      {% endunless %}
 
       <main>
         {{ content }}
