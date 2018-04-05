@@ -25,6 +25,7 @@ author:
 version:             2.0.0
 github:
   repo:              https://github.com/worace/worace.github.io
+analytics_id:        "UA-117025935-1"
 # Templates for Rakefile generators:
 post:
   template: _templates/_post.txt
