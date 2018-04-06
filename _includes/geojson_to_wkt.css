@@ -1,12 +1,15 @@
+.container {
+  max-width: 100%;
+}
 .col {
   float: left;
   display: inline-block;
-  width: 600px;
+  width: 40%;
 }
 
 .row {
   display: inline-block;
-  width: 1200px;
+  width: 100%;
 }
 
 pre {

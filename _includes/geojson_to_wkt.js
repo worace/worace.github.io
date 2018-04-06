@@ -8,8 +8,8 @@ function wkt(geojson) {
 }
 
 function convertGeoJSON() {
-  $("#errors").hide();
-  $("#errors").text("");
+  $(".errors").hide();
+  $(".errors").text("");
   const rawJSON = $("#geojson-input").val();
 
   let geojson;
