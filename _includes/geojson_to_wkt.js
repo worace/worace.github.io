@@ -16,9 +16,8 @@ function convertGeoJSON() {
   try {
     geojson = JSON.parse(rawJSON);
   } catch(e) {
-    console.error(e);
-    $("#errors").show();
-    $("#errors").text("Invalid JSON: " + e.message);
+    $("#geojson-form .errors").show();
+    $("#geojson-form .errors").text("Invalid JSON: " + e.message);
     return;
   }
 
@@ -26,7 +25,12 @@ function convertGeoJSON() {
 
   $("#geojson-input").val(pretty);
 
-  $("#wkt-output").text(wkt(geojson));
+  try {
+    $("#wkt-output").text(wkt(geojson));
+  } catch(e) {
+    $("#geojson-form .errors").show();
+    $("#geojson-form .errors").text("Invalid GeoJSON: Requires a valid GeoJSON Feature or geometry object as input.");
+  }
 }
 
 function convertWKT() {

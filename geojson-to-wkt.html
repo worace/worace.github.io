@@ -46,7 +46,7 @@ hide_masthead: true
   <h3>Convert GeoJSON to WKT</h3>
   <div class="col">
     <form id="geojson-form">
-      <p id="errors"></p>
+      <p class="errors"></p>
       <textarea id="geojson-input" rows="15" cols="50" placeholder="Enter GeoJSON here."></textarea>
       <button type="submit">
         Convert
@@ -65,6 +65,7 @@ hide_masthead: true
 
   <div class="col">
     <form id="wkt-form">
+      <p class="errors"></p>
       <textarea id="wkt-input" rows="15" cols="50" placeholder="Enter WKT here."></textarea>
       <button type="submit">Convert</button>
     </form>
