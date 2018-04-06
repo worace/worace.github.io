@@ -7,21 +7,23 @@ hide_masthead: true
 
 <!--
      Features:
-     * Copy to clipboard button for outputs
-     * Save inputs in cookie and restore on page load
-     * Style input/output side by side
-     * Allow GeoJSON input with or without Feature
-     * Handle leading/trailing whitespace
-     * Syntax highlighting
+     * [x] Copy to clipboard button for outputs
+     * [x] Style input/output side by side
+     * [x] Allow GeoJSON input with or without Feature
+     * [x] Handle leading/trailing whitespace
+     * [x] Handle featurecollections
+     * [ ] Syntax highlighting
+     * [ ] Save inputs in cookie and restore on page load
 
      * Error handling and display:
-       * JSON parse Error
-       * Invalid WKT
-       * Invalid GeoJSON
+       * [x] JSON parse Error
+       * [ ] Invalid WKT
+       * [ ] Invalid GeoJSON
 
      * Styling:
-     * Make it wider
-     * Remove Header
+     * [ ] Make it wider
+     * [ ] Remove Header
+     * [ ] Constrain pre tag height
    -->
 
 <script>
@@ -44,6 +46,7 @@ hide_masthead: true
   <h3>Convert GeoJSON to WKT</h3>
   <div class="col">
     <form id="geojson-form">
+      <p id="errors"></p>
       <textarea id="geojson-input" rows="15" cols="50" placeholder="Enter GeoJSON here."></textarea>
       <button type="submit">
         Convert
@@ -54,6 +57,7 @@ hide_masthead: true
   <div class="col">
     <pre id="wkt-output">wkt output here</pre>
   </div>
+  <button id="copy-wkt">Copy</button>
 </div>
 
 <div class="row">
@@ -69,5 +73,6 @@ hide_masthead: true
   <div class="col">
     <pre id="geojson-output">geojson output here</pre>
   </div>
+  <button id="copy-geojson">Copy</button>
 </div>
 

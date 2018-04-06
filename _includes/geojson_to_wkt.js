@@ -6,10 +6,22 @@ function wkt(geojson) {
     return wellknown.stringify(geojson);
   }
 }
+
 function convertGeoJSON() {
+  $("#errors").hide();
+  $("#errors").text("");
   const rawJSON = $("#geojson-input").val();
 
-  const geojson = JSON.parse(rawJSON);
+  let geojson;
+  try {
+    geojson = JSON.parse(rawJSON);
+  } catch(e) {
+    console.error(e);
+    $("#errors").show();
+    $("#errors").text("Invalid JSON: " + e.message);
+    return;
+  }
+
   const pretty = JSON.stringify(geojson, null, 2)
 
   $("#geojson-input").val(pretty);
