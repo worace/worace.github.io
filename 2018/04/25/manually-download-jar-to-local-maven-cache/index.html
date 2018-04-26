@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Manually download JAR to local Maven cache &middot; Horace Williams
+    
+  </title>
+  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+</head>
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-117025935-1"></script>
+<script>
+ window.dataLayer = window.dataLayer || [];
+ function gtag(){dataLayer.push(arguments);}
+ gtag('js', new Date());
+
+ gtag('config', 'UA-117025935-1');
+</script>
+
+
+
+  <body>
+
+    <div class="container content">
+      
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a href="https://github.com/worace">github</a></li>
+          <li><a href="http://twitter.com/worace">twitter</a></li>
+        </ul>
+      </header>
+      
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Manually download JAR to local Maven cache</h1>
+  <time datetime="2018-04-25T00:00:00-07:00" class="post-date">25 Apr 2018</time>
+  <p>Sometimes I need to install a JAR from a remote Maven server into my local <code>~/.m2</code> repository for testing or experimentation (i.e. in absence of an actual pom.xml / project.clj / build.sbt file).</p>
+<p>It always takes longer to figure this out than I&#8217;d expect since <code>mvn</code> doesn&#8217;t have something as easy as Ruby or Python&#8217;s <code>gem/pip install &lt;package&gt;</code>.</p>
+<p>It is supported though and you can do it with:</p>
+<div class="highlight"><pre><span></span>$ mvn -DgroupId<span class="o">=</span>&lt;GROUP&gt; <span class="se">\</span>
+      -DartifactId<span class="o">=</span>&lt;PACKAGE&gt; <span class="se">\</span>
+      -Dversion<span class="o">=</span>&lt;VERSION&gt; <span class="se">\</span>
+      dependency:get
+</pre></div>
+<p>e.g.</p>
+<div class="highlight"><pre><span></span>$ mvn -DgroupId<span class="o">=</span>org.locationtech.jts <span class="se">\</span>
+      -DartifactId<span class="o">=</span>jts-core <span class="se">\</span>
+      -Dversion<span class="o">=</span><span class="m">1</span>.15.0 <span class="se">\</span>
+      dependency:get
+<span class="c1"># [Maven Output...]</span>
+$ find ~/.m2 -name <span class="s2">&quot;*jts-core*jar&quot;</span>
+<span class="c1"># /home/horace/.m2/repository/org/locationtech/jts/jts-core/1.15.0/jts-core-1.15.0.jar</span>
+</pre></div>
+<p>To fetch one from an internal or private maven repo, you can use the additional setting <code>remoteRepositories</code>:</p>
+<div class="highlight"><pre><span></span>$ mvn -DremoteRepositories<span class="o">=</span>&lt;MAVEN URL&gt; <span class="se">\</span>
+      -DgroupId<span class="o">=</span>&lt;GROUP&gt; <span class="se">\</span>
+      -DartifactId<span class="o">=</span>&lt;PACKAGE&gt; <span class="se">\</span>
+      -Dversion<span class="o">=</span>&lt;VERSION&gt; <span class="se">\</span>
+      dependency:get
+</pre></div>
+<p>Note that if you&#8217;re running <a href="https://www.sonatype.com/nexus-repository-sonatype">Nexus</a>, you may need the full url to your releases directory, e.g. <code>http://maven.my.company.com/nexus/content/repositories/releases</code>.</p>
+
+</article>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>

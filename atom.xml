@@ -4,13 +4,46 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2018-04-06T08:48:29-07:00</updated>
+ <updated>2018-04-25T18:12:25-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
    <email>horace@worace.works</email>
  </author>
 
+ 
+ <entry>
+   <title>Manually download JAR to local Maven cache</title>
+   <link href="http://worace.works/2018/04/25/manually-download-jar-to-local-maven-cache/"/>
+   <updated>2018-04-25T00:00:00-07:00</updated>
+   <id>http://worace.works/2018/04/25/manually-download-jar-to-local-maven-cache</id>
+   <content type="html">&lt;p&gt;Sometimes I need to install a JAR from a remote Maven server into my local &lt;code&gt;~/.m2&lt;/code&gt; repository for testing or experimentation (i.e. in absence of an actual pom.xml / project.clj / build.sbt file).&lt;/p&gt;
+&lt;p&gt;It always takes longer to figure this out than I&amp;#8217;d expect since &lt;code&gt;mvn&lt;/code&gt; doesn&amp;#8217;t have something as easy as Ruby or Python&amp;#8217;s &lt;code&gt;gem/pip install &amp;lt;package&amp;gt;&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;It is supported though and you can do it with:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ mvn -DgroupId&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&amp;lt;GROUP&amp;gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      -DartifactId&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&amp;lt;PACKAGE&amp;gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      -Dversion&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&amp;lt;VERSION&amp;gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      dependency:get
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;e.g.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ mvn -DgroupId&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;org.locationtech.jts &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      -DartifactId&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;jts-core &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      -Dversion&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;.15.0 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      dependency:get
+&lt;span class=&quot;c1&quot;&gt;# [Maven Output...]&lt;/span&gt;
+$ find ~/.m2 -name &lt;span class=&quot;s2&quot;&gt;&amp;quot;*jts-core*jar&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;# /home/horace/.m2/repository/org/locationtech/jts/jts-core/1.15.0/jts-core-1.15.0.jar&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;To fetch one from an internal or private maven repo, you can use the additional setting &lt;code&gt;remoteRepositories&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ mvn -DremoteRepositories&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&amp;lt;MAVEN URL&amp;gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      -DgroupId&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&amp;lt;GROUP&amp;gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      -DartifactId&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&amp;lt;PACKAGE&amp;gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      -Dversion&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&amp;lt;VERSION&amp;gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      dependency:get
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Note that if you&amp;#8217;re running &lt;a href=&quot;https://www.sonatype.com/nexus-repository-sonatype&quot;&gt;Nexus&lt;/a&gt;, you may need the full url to your releases directory, e.g. &lt;code&gt;http://maven.my.company.com/nexus/content/repositories/releases&lt;/code&gt;.&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Put a Map On It: Tools for Visualizing Geo Data</title>
