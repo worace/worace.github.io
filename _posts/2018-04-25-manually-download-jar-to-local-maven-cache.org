@@ -1,0 +1,41 @@
+---
+title: "Manually download JAR to local Maven cache"
+layout: post
+---
+
+Sometimes I need to install a JAR from a remote Maven server into my local =~/.m2= repository for testing or experimentation (i.e. in absence of an actual pom.xml / project.clj / build.sbt file).
+
+It always takes longer to figure this out than I'd expect since =mvn= doesn't have something as easy as Ruby or Python's =gem/pip install <package>=.
+
+It is supported though and you can do it with:
+
+#+BEGIN_SRC shell
+$ mvn -DgroupId=<GROUP> \
+      -DartifactId=<PACKAGE> \
+      -Dversion=<VERSION> \
+      dependency:get
+#+END_SRC
+
+e.g.
+
+#+BEGIN_SRC shell
+$ mvn -DgroupId=org.locationtech.jts \
+      -DartifactId=jts-core \
+      -Dversion=1.15.0 \
+      dependency:get
+# [Maven Output...]
+$ find ~/.m2 -name "*jts-core*jar"
+# /home/horace/.m2/repository/org/locationtech/jts/jts-core/1.15.0/jts-core-1.15.0.jar
+#+END_SRC
+
+To fetch one from an internal or private maven repo, you can use the additional setting =remoteRepositories=:
+
+#+BEGIN_SRC shell
+$ mvn -DremoteRepositories=<MAVEN URL> \
+      -DgroupId=<GROUP> \
+      -DartifactId=<PACKAGE> \
+      -Dversion=<VERSION> \
+      dependency:get
+#+END_SRC
+
+Note that if you're running [[https://www.sonatype.com/nexus-repository-sonatype][Nexus]], you may need the full url to your releases directory, e.g. =http://maven.my.company.com/nexus/content/repositories/releases=.
