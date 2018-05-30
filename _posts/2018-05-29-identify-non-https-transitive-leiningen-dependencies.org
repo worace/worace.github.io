@@ -1,0 +1,84 @@
+---
+title: "Identify Non-HTTPS Transitive Leiningen Dependencies"
+layout: post
+---
+
+If you've been using Leiningen any time over the last several months you have likely run into the dreaded error: =Tried to use insecure HTTP repository without TLS=.
+
+This is due to a change in [[https://github.com/technomancy/leiningen/blob/master/NEWS.md#280-rc1--2017-09-18][Leiningen 2.8]] which blocks non-TLS remote maven repositories. The change itself is well-intentioned and reasonable: relying on non-HTTPS dependencies is, overall, a bad idea. However dealing with it has caused lots of headaches for people who have a non-HTTPS dependency buried somewhere in their tree but don't know which one it is or where it's coming from.
+
+The Leiningen FAQ contains a note directing you to either track down the offending dependency and exclude it, or include a scary code snippet in your =project.clj= file:
+
+Others I know have even resorted to just downgrading back to Leiningen 2.7.1 to avoid dealing with this issue (j.k. this was definitely me for a while).
+
+*** Find problematic dependencies
+
+Unfortunately Leiningen and the dependency-management tools it uses under the hood (e.g. [[https://wiki.eclipse.org/Aether/What_Is_Aether][Aether]]) don't currently have an out-of-the-box solution for pointing out which of your transitive deps are being pulled in from non-TLS sources.
+
+However it is possible to cobble together something using existing tools:
+
+**** 1. Add the "Never do this" snippet to your =project.clj=:
+#+BEGIN_SRC clojure
+;; never do this
+(require 'cemerick.pomegranate.aether)
+(cemerick.pomegranate.aether/register-wagon-factory!
+ "http" #(org.apache.maven.wagon.providers.http.HttpWagon.))
+#+END_SRC
+
+Just temporarily, we'll take it out once we're done.
+**** 2. Generate a =pom.xml= file for your project:
+
+#+BEGIN_SRC shell
+lein pom
+#+END_SRC
+
+Because we added the TLS authorization snippet, leiningen should be able to download whatever it needs to succeed in this step.
+
+This will let us use maven dependency management plugins since they can read the generated pom.xml file.
+**** 3. Clear your maven cache
+
+#+BEGIN_SRC shell
+rm -rf ~/.m2/repository
+#+END_SRC
+
+This will force maven to re-download dependencies in the next step.
+
+In theory there are other maven tools like the [[https://maven.apache.org/plugins/maven-dependency-plugin/purge-local-repository-mojo.html][purge-local-repository]] plugin which would let us do this without destroying the whole cache, but I found they missed some insecure dependencies in my project. YMMV.
+
+If you're concerned about losing stuff in your cache you can always save it somewhere and move it back when you're done: =mv ~/.m2/repository ~/.m2/repository_BAK=.
+**** 4. Use maven to download your deps
+
+#+BEGIN_SRC shell
+mvn dependency:tree > tree.txt
+#+END_SRC
+
+The trick here is that maven is a little more verbose when downloading dependencies than leiningen, and it will show you the full URL which was used to retrieve each package.
+**** 5. Search for any non-https entries
+
+#+BEGIN_SRC shell
+grep "http:" tree.txt
+#+END_SRC
+
+You should find some entries like:
+
+=Downloading: http://maven.my-company.com/nexus/content/groups/public/com/mycorp/mypackage/1.0.0/maven-metadata.xml=
+
+These will be the ones you want to exclude.
+
+*** Exclude the offending entries
+
+Remember that a maven artifact URL like =http://maven.my-company.com/nexus/content/groups/public/com/mycorp/mypackage/1.0.0/maven-metadata.xml= translates to =[com.mycorp/mypackage "1.0.0"]= in leiningen vector form.
+
+Once you've identified the problematic deps, you can exclude them using the [[https://github.com/technomancy/leiningen/blob/master/sample.project.clj#L91-L92][:exclusions key]] in your project.clj:
+
+#+BEGIN_SRC clojure
+:exclusions [com.mycorp/mypackage]
+#+END_SRC
+
+If they turn out to be things you actually need, you may have to go find a compatible version from an HTTPS source to replace them with.
+
+*** Clean Up
+Finally, to clean up all the debugging you had to do to get here:
+
+ * Remove the =Never do this= HTTP authorization snippet from your =project.clj=
+ * Clear your maven cache again to wipe out any non-https dependencies you downloaded in the process
