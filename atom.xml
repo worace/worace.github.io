@@ -4,13 +4,68 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2018-04-25T18:12:25-07:00</updated>
+ <updated>2018-05-29T18:33:38-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
    <email>horace@worace.works</email>
  </author>
 
+ 
+ <entry>
+   <title>Identify Non-HTTPS Transitive Leiningen Dependencies</title>
+   <link href="http://worace.works/2018/05/29/identify-non-https-transitive-leiningen-dependencies/"/>
+   <updated>2018-05-29T00:00:00-07:00</updated>
+   <id>http://worace.works/2018/05/29/identify-non-https-transitive-leiningen-dependencies</id>
+   <content type="html">&lt;p&gt;If you&amp;#8217;ve been using Leiningen any time over the last several months you have likely run into the dreaded error: &lt;code&gt;Tried to use insecure HTTP repository without TLS&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;This is due to a change in &lt;a href=&quot;https://github.com/technomancy/leiningen/blob/master/NEWS.md#280-rc1--2017-09-18&quot;&gt;Leiningen 2.8&lt;/a&gt; which blocks non-TLS remote maven repositories. The change itself is well-intentioned and reasonable: relying on non-HTTPS dependencies is, overall, a bad idea. However dealing with it has caused lots of headaches for people who have a non-HTTPS dependency buried somewhere in their tree but don&amp;#8217;t know which one it is or where it&amp;#8217;s coming from.&lt;/p&gt;
+&lt;p&gt;The Leiningen FAQ contains a note directing you to either track down the offending dependency and exclude it, or include a scary code snippet in your &lt;code&gt;project.clj&lt;/code&gt; file:&lt;/p&gt;
+&lt;p&gt;Others I know have even resorted to just downgrading back to Leiningen 2.7.1 to avoid dealing with this issue (j.k. this was definitely me for a while).&lt;/p&gt;
+&lt;h3&gt;Find problematic dependencies&lt;/h3&gt;
+&lt;p&gt;Unfortunately Leiningen and the dependency-management tools it uses under the hood (e.g. &lt;a href=&quot;https://wiki.eclipse.org/Aether/What_Is_Aether&quot;&gt;Aether&lt;/a&gt;) don&amp;#8217;t currently have an out-of-the-box solution for pointing out which of your transitive deps are being pulled in from non-TLS sources.&lt;/p&gt;
+&lt;p&gt;However it is possible to cobble together something using existing tools:&lt;/p&gt;
+&lt;h4&gt;1. Add the &amp;#8220;Never do this&amp;#8221; snippet to your &lt;code&gt;project.clj&lt;/code&gt;:&lt;/h4&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;;; never do this&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;#39;cemerick.pomegranate.aether&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;cemerick.pomegranate.aether/register-wagon-factory!&lt;/span&gt;
+ &lt;span class=&quot;s&quot;&gt;&amp;quot;http&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;org.apache.maven.wagon.providers.http.HttpWagon.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Just temporarily, we&amp;#8217;ll take it out once we&amp;#8217;re done.&lt;/p&gt;
+&lt;h4&gt;2. Generate a &lt;code&gt;pom.xml&lt;/code&gt; file for your project:&lt;/h4&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;lein pom
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Because we added the TLS authorization snippet, leiningen should be able to download whatever it needs to succeed in this step.&lt;/p&gt;
+&lt;p&gt;This will let us use maven dependency management plugins since they can read the generated pom.xml file.&lt;/p&gt;
+&lt;h4&gt;3. Clear your maven cache&lt;/h4&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;rm -rf ~/.m2/repository
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This will force maven to re-download dependencies in the next step.&lt;/p&gt;
+&lt;p&gt;In theory there are other maven tools like the &lt;a href=&quot;https://maven.apache.org/plugins/maven-dependency-plugin/purge-local-repository-mojo.html&quot;&gt;purge-local-repository&lt;/a&gt; plugin which would let us do this without destroying the whole cache, but I found they missed some insecure dependencies in my project. YMMV.&lt;/p&gt;
+&lt;p&gt;If you&amp;#8217;re concerned about losing stuff in your cache you can always save it somewhere and move it back when you&amp;#8217;re done: &lt;code&gt;mv ~/.m2/repository ~/.m2/repository_BAK&lt;/code&gt;.&lt;/p&gt;
+&lt;h4&gt;4. Use maven to download your deps&lt;/h4&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;mvn dependency:tree &amp;gt; tree.txt
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The trick here is that maven is a little more verbose when downloading dependencies than leiningen, and it will show you the full URL which was used to retrieve each package.&lt;/p&gt;
+&lt;h4&gt;5. Search for any non-https entries&lt;/h4&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;grep &lt;span class=&quot;s2&quot;&gt;&amp;quot;http:&amp;quot;&lt;/span&gt; tree.txt
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;You should find some entries like:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Downloading: http://maven.my-company.com/nexus/content/groups/public/com/mycorp/mypackage/1.0.0/maven-metadata.xml&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;These will be the ones you want to exclude.&lt;/p&gt;
+&lt;h3&gt;Exclude the offending entries&lt;/h3&gt;
+&lt;p&gt;Remember that a maven artifact URL like &lt;code&gt;http://maven.my-company.com/nexus/content/groups/public/com/mycorp/mypackage/1.0.0/maven-metadata.xml&lt;/code&gt; translates to &lt;code&gt;[com.mycorp/mypackage &amp;quot;1.0.0&amp;quot;]&lt;/code&gt; in leiningen vector form.&lt;/p&gt;
+&lt;p&gt;Once you&amp;#8217;ve identified the problematic deps, you can exclude them using the &lt;a href=&quot;https://github.com/technomancy/leiningen/blob/master/sample.project.clj#L91-L92&quot;&gt;:exclusions key&lt;/a&gt; in your project.clj:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:exclusions&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;com.mycorp/mypackage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;If they turn out to be things you actually need, you may have to go find a compatible version from an HTTPS source to replace them with.&lt;/p&gt;
+&lt;h3&gt;Clean Up&lt;/h3&gt;
+&lt;p&gt;Finally, to clean up all the debugging you had to do to get here:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Remove the &lt;code&gt;Never do this&lt;/code&gt; HTTP authorization snippet from your &lt;code&gt;project.clj&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Clear your maven cache again to wipe out any non-https dependencies you downloaded in the process&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Manually download JAR to local Maven cache</title>
