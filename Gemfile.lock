@@ -36,6 +36,9 @@ GEM
       sass (~> 3.4)
     jekyll-watch (2.0.0)
       listen (~> 3.0)
+    jgd (1.11)
+      jekyll (>= 1.5.1)
+      trollop (= 2.1.2)
     kramdown (1.16.2)
     liquid (4.0.0)
     listen (3.1.5)
@@ -70,6 +73,7 @@ GEM
     sawyer (0.8.1)
       addressable (>= 2.3.5, < 2.6)
       faraday (~> 0.8, < 1.0)
+    trollop (2.1.2)
 
 PLATFORMS
   ruby
@@ -78,9 +82,10 @@ DEPENDENCIES
   jekyll
   jekyll-gist
   jekyll-paginate
+  jgd
   org-ruby
   pygments.rb
   rake
 
 BUNDLED WITH
-   1.16.0
+   1.16.1
