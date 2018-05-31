@@ -1,0 +1,53 @@
+---
+title: "Random Point in Radius with Spatial4J"
+layout: post
+---
+
+Recently I needed to generate random points within a given radius around a known point. I found it less obvious than I expected, so I decided to document the process here in case it helps anyone.
+
+This is using Spatial4J.
+
+#+BEGIN_SRC clojure
+(import (org.locationtech.spatial4j.context SpatialContextFactory)
+        (org.locationtech.spatial4j.context.jts JtsSpatialContext)
+        (org.locationtech.spatial4j.distance DistanceUtils))
+
+;; Setup
+;; create a spatial context based on Spatial4J's generic Earth model
+(def s4j-earth (SpatialContextFactory/makeSpatialContext
+            {"geo" "true"
+             "datelineRule" "width180"
+             "spatialContextFactory" "org.locationtech.spatial4j.context.jts.JtsSpatialContextFactory"
+             "distCalculator" "vincentySphere"}
+            (.getClassLoader JtsSpatialContext)))
+;; Create a distance calculator to use for generating offset points
+(def vincenty-distance-calculator (org.locationtech.spatial4j.distance.GeodesicSphereDistCalc$Vincenty.))
+
+(def radius 500) ;; meters
+(def lat 33.9103414)
+(def lon -118.428336)
+
+(def center-point (.makePoint s4j-earth lon lat))
+
+;; Generate a random offset within the given radius
+(def offset-meters (* (rand) radius))
+
+;; Spatial4J's pointOnBearing operates in angular rather than linear distance, so
+;; we need to convert the desired offset (in meters) to earth radius (in degrees)
+(def earth-radius (* 1000 DistanceUtils/EARTH_MEAN_RADIUS_KM))
+(def offset-radians (DistanceUtils/dist2Radians offset-meters earth-radius))
+(def offset-degrees (DistanceUtils/toDegrees offset-radians))
+
+;; Pick a random angle
+(def angle-degrees (rand 360))
+
+;; Generate a new point at the desired distance on the desired angle
+
+(def new-point (.pointOnBearing vincenty-distance-calculator
+                                center-point
+                                offset-degrees
+                                angle-degrees
+                                s4j-earth
+                                nil))
+
+#+END_SRC
