@@ -51,3 +51,9 @@ This is using Spatial4J.
                                 nil))
 
 #+END_SRC
+
+Producing a uniform distribution within the radius:
+
+#+BEGIN_SRC clojure
+(def offset-meters (* (Math/sqrt (rand)) radius))
+#+END_SRC
