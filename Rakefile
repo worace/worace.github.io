@@ -27,7 +27,7 @@ DRAFTS = "_drafts"
 
 # Execute a system command
 def execute(command)
-  system "#{command}"
+  system "#{command}" or raise "Error executing command: #{command}"
 end
 
 # Chech the title
