@@ -1,0 +1,292 @@
+class: middle, center
+
+# Working with Geospatial Data in Rust
+
+* [ ] Introduction - concepts + formats
+  * Formats: WKT, WKB, GeoJSON, Shapefile, Projections
+  * Related tools: Geodesic Grids (Geohash, H3, Quad Tiles)
+* [ ] Lay of the land -- JTS/Geos/PostGIS/RGeo/Shapely/Turf/etc.
+* [ ] GeoRust overview
+* [ ] Geoq Demo / Playtime
+  * [ ] Prep Los Angeles Microsoft buildings sample (post to github)
+
+---
+
+# Outline
+
+### 1 - Domain + Concepts
+
+### 2 - History + Existing Tools
+
+### 3 - GeoRust Ecosystem
+
+### 4 - Geoq Intro + Demo
+
+---
+
+class: middle, center
+
+# 1. Geospatial Intro
+
+1. Basics - Shapes!
+2. More basics - Globes!
+3. Extras: Grids
+4. Extras: Serialization
+
+---
+
+# Computational Geometry
+
+.fl-left.w-40[
+* GIS Part 1
+* Euclidean data types
+  * Points
+  * Lines
+  * Polygons
+* Euclidean Queries
+  * Intersection
+  * Containment
+* Euclidean Manipulation
+  * Cutting / Rotating / Buffering / etc.
+]
+
+<img src="compgeo.jpg" class="w-50 fl-right">
+
+---
+
+### [DE9IM](https://en.wikipedia.org/wiki/DE-9IM)
+
+* "Dimensionally Extended nine-Intersection Model (DE-9IM)"
+* Standards-based Topological model
+
+<img src="de9im.png" class="center" style="max-width: 80%; max-height: 80%;">
+
+---
+
+### PostGIS Example
+
+```sql
+select ST_Contains( -- Ask if this polygon contains the point 0,0
+  ST_Buffer( -- Buffer the point to make a polygon
+    ST_Point(0,0), -- Make a point with X/Y coordinate
+    10
+  ),
+  ST_Point(0,0)
+);
+```
+
+```
+ st_contains
+-------------
+ t
+(1 row)
+```
+
+---
+
+### Euclidean Problems
+
+```sql
+select ST_Distance( -- Distance b/t 2 points
+  -- Note X/Y == Lon/Lat
+  ST_Point(-118.2437, 34.0522), -- LA Lat/Lon
+  ST_Point(-74.0060, 40.7128) -- NYC Lat/Lon
+);
+```
+
+```
+   st_distance
+------------------
+ 44.7363129197076
+(1 row)
+```
+
+#### 44.73...whats?
+
+* 44.73 == 44.73 "degrees" on a flattened cartesian plane
+* For most GIS applications, pure euclidean operations are only part of the puzzle
+
+---
+
+### GIS Part 2 - [Geodesy](https://en.wikipedia.org/wiki/Geodesy)
+
+.fl-left.w-50[
+* Earth is a sphere
+  * ...or an ellipsoid
+  * ...or a really lumpy ellipsoid
+* **Geodesy:** Science of measuring the Earth's shape
+* Great Circle Distance (i.e. what airplanes use)
+* Distance algorithms
+  * [Vincenty](https://en.wikipedia.org/wiki/Vincenty%27s_formulae)
+  * [Haversine](https://en.wikipedia.org/wiki/Haversine_formula)
+]
+
+<img src="greatcircledistance.png" class="w-50 fl-right">
+
+---
+
+### Distance Revisited
+
+```sql
+select ST_Distance(
+  -- Tell PostGIS to use Geodesic types for this query
+  ST_Point(-118.2437, 34.0522)::geography,
+  ST_Point(-74.0060, 40.7128)::geography
+);
+```
+
+```
+   st_distance
+------------------
+ 3944422.23148992
+(1 row)
+```
+
+#### 3944422.23 meters == 3944 km ✅
+
+---
+
+### GIS Related Tools: Grids
+
+---
+
+### GIS Related Tools: Serialization Formats
+
+---
+
+# GIS Tools -- Lay of the Land
+
+* [JTS](https://github.com/locationtech/jts) - The "original" modern open source geometry library
+* [Geos](http://geos.refractions.net/ro/doxygen_docs/html/) - C++ port of JTS
+* [RGeo](https://github.com/rgeo/rgeo) - Ruby - partially a set of bindings to Geos
+* [Shapely](https://github.com/Toblerity/Shapely) - Python - Also uses Geos for some functionality
+* [TurfJS](https://github.com/Turfjs/turf) - Haven't used this much but seems to be good and all native javascript
+* [RustGeo](https://github.com/georust/rust-geo) - **New and Shiny** - Rust library providing similar functionality. Still new but getting pretty good.
+
+---
+
+# GIS in Rust - GeoRust Ecosystem
+
+---
+
+# Geoq Goals
+
+* Unify some common GIS operations - **Replace copy-and-paste workflows**
+* Be easy to use
+* "DWIM" -- try to read common formats automagically without guidance from user
+* Be relatively fast (maybe more fast in the future)
+* Be streaming
+* Learn some stuff along the way
+
+---
+
+## [geoq-rb](https://github.com/worace/geoq-rb)
+
+* First attempt in Ruby.
+* Used RGeo for GIS operations
+* Actually worked pretty well.
+* Helped figure out the concept and refine the API
+* Kind of slow -- both in run time and startup time
+
+---
+
+## [geoq](https://github.com/worace/geoq)
+
+* Rust rewrite
+* Provide native binary executables (faster startup, potentially easier distribution)
+* Be faster
+* Learn Rust along the way
+* "Kick the tires" of the Rust GIS ecosystem
+
+---
+
+## Rust Taste
+
+```rust
+fn parsed_geojson_entities(gj: GeoJson) -> Vec<Entity> {
+    match gj {
+        GeoJson::Geometry(gj_geom) => vec![Entity::GeoJsonGeometry(gj_geom)],
+        GeoJson::Feature(gj_feature) => vec![Entity::GeoJsonFeature(gj_feature)],
+        GeoJson::FeatureCollection(gj_fc) => gj_fc
+            .features
+            .into_iter()
+            .flat_map(|f| parsed_geojson_entities(GeoJson::Feature(f)))
+            .collect(),
+    }
+}
+```
+---
+
+## State of GIS in Rust
+
+<img src="georust_org.png" width="100%">
+
+* They have some pretty decent libraries
+* Some things are not totally complete yet (I have had to add a bunch of things to the WKT library)
+* [Sometimes there are bugs](https://github.com/georust/rust-geojson/pull/99)
+* But there is enough stuff there to build this library on
+
+---
+
+## Usage / Setup
+
+Install using Cargo, the rust package manager (similar to Ruby's Bundler).
+
+```sh
+# if you don't have rust toolchain installed:
+curl https://sh.rustup.rs -sSf | sh
+
+# Add cargo's bin directory to your path
+export PATH="$HOME/.cargo/bin:$PATH"
+
+cargo install geoq
+
+# view the manual
+geoq help
+```
+
+* [Github](https://github.com/worace/geoq)
+* [Install Instructions](https://github.com/worace/geoq#install)
+* [Manual](https://github.com/worace/geoq/blob/master/manual.md)
+
+---
+
+## Demo
+
+### Input Formats:
+
+* Lat/Lon (comma or tab separated)
+* WKT
+* GeoJSON
+* Geohash (base 32)
+* **One input per line**
+
+```sh
+echo 9q5 | geoq type
+# Geohash(9q5)
+```
+
+---
+
+## Other Commands
+
+See `geoq help <command>` for more info
+
+* `gj` - convert to geojson
+* `wkt` - convert to wkt
+* `gh` - stuff with geohashes
+* `filter` - select inputs based on spatial predicates
+* `map` - pipe to geojson.io
+
+```
+40.245991504199026,-122.78320312499999
+36.1733569352216,-116.630859375
+44.96479793033101,-100.8984375
+34.88593094075317,-105.029296875
+```
+
+```
+LINESTRING (30 10, 10 30, 40 40)
+POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))
+9xj64su
+```
