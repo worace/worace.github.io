@@ -393,6 +393,7 @@ let (
 * "Kick the tires" of the Rust GIS ecosystem
 * Using [Clap](https://docs.rs/clap/2.32.0/clap/) for CLI parsing
 * Using various GeoRust packages for GIS operations
+* **Caveats:** I have definitely been learning Rust while developing this, so there are likely many rookie mistakes and also bugs...
 
 ---
 
@@ -423,13 +424,13 @@ SUBCOMMANDS:
 
 ## Demo
 
-### Input Formats:
+### Input Formats
 
-* Lat/Lon (comma or tab separated)
-* WKT
-* GeoJSON
-* Geohash (base 32)
-* **One input per line**
+* Read Features from STDIN -- **One input per line**
+  * Lat/Lon (comma or tab separated)
+  * WKT
+  * GeoJSON
+  * Geohash (base 32)
 
 ```sh
 $ echo 9q5 | geoq read
@@ -468,12 +469,12 @@ Display input on a map using [geojson.io](http://geojson.io)
 echo 9q5 | geoq gh neighbors | geoq map
 ```
 
----
-
 ### Filtering + Multi-Core
 
+(run htop)
+
 ```sh
-cat ~/data/msft_buildings/ca_features.json \
+cat ~/data/msft_buildings/9q5_features.json \
   | geoq filter intersects 9q5c3 \
   | wc -l
 ```
