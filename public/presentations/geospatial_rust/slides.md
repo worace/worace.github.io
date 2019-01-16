@@ -2,6 +2,12 @@ class: middle
 
 # Rust + GeoSpatial
 
+[twitter.com/worace](http://twitter.com/worace)
+
+[github.com/worace](http://github.com/worace)
+
+[Factual](http://www.factual.com/) (my job!)
+
 #### 1 - Domain + Concepts
 
 #### 2 - History + Existing Tools
