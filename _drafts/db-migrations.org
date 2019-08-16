@@ -25,23 +25,39 @@ psql -d pizza_toppings -c "ALTER TABLE toppings DROP COLUMN ranking;"
 psql -d pizza_toppings -c "ALTER TABLE toppings ADD COLUMN attitude topping_attitude;"
 #+END_SRC
 
-This works well enough. It's straightforward, and gives us a way to get up and running in our local development environment quickly. But there are several problems that come along with this approach:
+This can work well enough, especially for small projects or quick experiments. Another developer can connect to the database and see that the schema ends up like this:
 
- - The configuration process lives in your head (or perhaps in a soon-to-be-outdated README). Enabling other team members to repeat it will be tedious.
+#+BEGIN_EXAMPLE
+pizza_toppings=# \d toppings
+                   Table "public.toppings"
+  Column  |       Type       | Collation | Nullable | Default
+----------+------------------+-----------+----------+---------
+ name     | text             |           | not null |
+ attitude | topping_attitude |           |          |
+#+END_EXAMPLE
+
+But there are several problems with this approach:
+
+ - Without talking to the engineer who configured the DB (or perhaps consulting a soon-to-be-outdated README) we have no way of knowing how things got to this state.
  - Manually entering commands is error prone. It's hard to remember the right SQL syntax for various operations, and it's easy to forget certain less-visible DB effects like adding indices or NULL constraints.
- - We will eventually need to re-run the process for other environments, for example to create a copy of the database for testing or production, and these processes will have to be excecuted from memory or documentation.
+ - We will eventually need to re-run the process for other environments, for example to create a separate copy of the database for testing or production, and these processes will have to be excecuted manually from memory or documentation.
 
 This type of on-the-fly DB configuration is especially common in data engineering and analysis projects. Developers working on online production systems may be more accustomed to the need to automate and standardize their DB configuration, but when working on analytics DBs that will mostly be used by other internal engineers, we may be more likely to give ourselves a pass.
 
 Don't do this.
 
-First of all, there's never a "one time" setup process in modern data engineering. You /will/ need to re-do this process sooner or later (hopefully sooner, since you'll want another copy of the database for running all those automated tests you are writing, right?) And in that case, you'll be happy to have some automation around it.
+There's no such thing as a "one time" setup process in modern data engineering. You /will/ need to re-do this process sooner or later (hopefully sooner, since you'll want another copy of the database for running all those automated tests you are writing, right?) And in that case, you'll be happy to have some automation around it.
 ** Proper Tools
-So what can we do instead? The technique we're looking for is called a Database Migration or Schema Migration. Perhaps confusingly Database Migrations don't involve moving your DB between locations (for example migrating from one service provider to another). Rather the term refers to migrating the configuration of the database from one state to another. (Some tools also call this a database "evolution.")
+So what can we do instead? The tool we're looking for is called a "Database Migration" or "Schema Migration". Perhaps confusingly Database Migrations don't involve moving your DB between locations (for example migrating from one service provider to another). Rather the term refers to migrating the configuration of the database from one state to another. (Some tools also call this a database "evolution.")
 
-In practice, this usually comes up in the context of relational (e.g. SQL) databases, since these systems enforce pre-defined schemas which must be explicitly upated in order to change the structure of your data.
+In practice, this comes up most often in the context of relational (e.g. SQL) databases, since these systems enforce pre-defined schemas which must be explicitly upated in order to change the structure of your data. Adding or removing tables, updating indices, or modifying null constraints are all examples of things we might do with a migration tool.
 
-The purpose of Schema Migrations is to make the process of modifying your database's schema predictable, repeatable, and manageable. By managing evolution of our schema with an automated tool rather than manual commands, we gain some important benefits:
+Schema Migrations make the process of modifying your database's schema predictable, repeatable, and manageable. By managing schema evolution with an automated tool rather than manual commands, we gain some important benefits:
+
+ - Repeatability: You'll be able to re-run the process reliably on different databases and different environments.
+ - Version Control: By treating your migration scripts as code artifacts, you're able to commit them into a repository along with the rest of your code. This helps with reviewing and communicating about potential changes.
+ - Documentation: Similar to the previous point, your project's migrations document how the database got to its current state and help new developers understand the history of the project.
+ - Operability: Using a dedicated tool to run schema migrations helps you integrate the process into automated deployment pipelines.
 
 ** Essence of A DB Migration Tool
 At its core, a migration tool contains a few parts:
