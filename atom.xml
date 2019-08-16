@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2019-08-16T10:19:09-07:00</updated>
+ <updated>2019-08-16T10:57:42-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -134,10 +134,56 @@ psql -d pizza_toppings -c &lt;span class=&quot;s2&quot;&gt;&amp;quot;ALTER TABLE
   &lt;li&gt;In node.js, as is often the case, you have as many options as you are willing to spend time researching. &lt;a href=&quot;https://github.com/db-migrate/node-db-migrate&quot;&gt;node-db-migrate&lt;/a&gt;, &lt;a href=&quot;https://github.com/salsita/node-pg-migrate&quot;&gt;node-pg-migrate&lt;/a&gt;, and &lt;a href=&quot;https://sequelize.readthedocs.io/en/latest/docs/migrations/&quot;&gt;sequelize&lt;/a&gt; all seem like popular solutions (sequelize being included with a popular ORM framework as well).&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;https://github.com/jeremyevans/sequel/blob/master/doc/migration.rdoc&quot;&gt;Ruby&amp;#8217;s Sequel&lt;/a&gt; and Python&amp;#8217;s &lt;a href=&quot;https://www.sqlalchemy.org/&quot;&gt;SQLAlchemy&lt;/a&gt; (in the form of &lt;a href=&quot;https://pypi.org/project/alembic/&quot;&gt;Alembic&lt;/a&gt;), both include migration options.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h4&gt;A recent recommendation: dbmate&lt;/h4&gt;
+&lt;h4&gt;A recent favorite: &lt;a href=&quot;https://github.com/amacneil/dbmate&quot;&gt;dbmate&lt;/a&gt;&lt;/h4&gt;
 &lt;p&gt;Finally, a great option I have been enjoying lately is &lt;a href=&quot;https://github.com/amacneil/dbmate&quot;&gt;dbmate&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;This is a standalone, library and language-independent migration tool. &lt;b&gt;dbmate&lt;/b&gt; itself is written in Go, so it can be easily built as a standalone binary for many platforms (on Mac OS you can install it with &lt;code&gt;brew install dbmate&lt;/code&gt;). It&amp;#8217;s designed to run as a separate tool from your runtime application process, which gives you a lot of flexibility in how you integrate it with your deployment process.&lt;/p&gt;
-&lt;p&gt;I like this option for data engineering projects in particular, since we often have unconventional deployment models. For example my &amp;#8220;application&amp;#8221; might be a collection of Airflow DAGs that manage ETL in and out of some database. Projects like these often don&amp;#8217;t revolve around a core framework or application server, so sometimes it can be simpler to just manage database migrations as an independent process. And this is where a standalone tool like dbmate can really shine.&lt;/p&gt;
+&lt;p&gt;This is a standalone, library and language-independent migration tool. &lt;b&gt;dbmate&lt;/b&gt; itself is written in Go, so it can be easily built as a standalone binary for many platforms (on Mac OS you can install it with &lt;code&gt;brew install dbmate&lt;/code&gt;). It&amp;#8217;s designed to run as a separate tool from your runtime application process, which gives you a lot of flexibility in how you integrate it with your deployment workflow. And since it&amp;#8217;s deployed as a standalone binary, you don&amp;#8217;t need to integrate an additional language dependency chain into your environment just to support your migration tool.&lt;/p&gt;
+&lt;p&gt;The dbmate CLI includes many of the common commands you&amp;#8217;ll find in ActiveRecord or other tools:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;COMMANDS:
+     new, n          Generate a new migration file
+     up              Create database (if necessary) and migrate to the latest version
+     create          Create database
+     drop            Drop database (if it exists)
+     migrate         Migrate to the latest version
+     rollback, down  Rollback the most recent migration
+     dump            Write the database schema to disk
+     wait            Wait for the database to become available
+     help, h         Shows a list of commands or help for one command
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;By default, you store your migrations in a &lt;code&gt;db/migrations&lt;/code&gt; directory in your project, and you can generate a new one with the &lt;code&gt;new&lt;/code&gt; command: &lt;code&gt;dbmate new create_users_table&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;This will generate a placeholder file which you can then populate with the contents of your migration:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;-- migrate:up&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;create&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;users&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;id&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;integer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;varchar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;email&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;varchar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;not&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;null&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;-- migrate:down&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;drop&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;users&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Then you can run &lt;code&gt;dbmate up&lt;/code&gt; to create the database (if necessary) and migrate it to the latest version.&lt;/p&gt;
+&lt;p&gt;dbmate uses the environment variable &lt;code&gt;DATABASE_URL&lt;/code&gt; for its configuration, so a full example might look like:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;DATABASE_URL&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;postgres://postgres:postgres@localhost:5432/my_db&amp;quot;&lt;/span&gt; dbmate up
+Creating: my_db
+Applying: 20190816175153_create_users.sql
+Writing: ./db/schema.sql
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And we can see what it created here:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;psql -d my_db
+psql (10.8 (Ubuntu 10.8-1.pgdg16.04+1))
+Type &amp;quot;help&amp;quot; for help.
+
+my_db=&amp;gt; \dt
+               List of relations
+ Schema |       Name        | Type  |  Owner
+--------+-------------------+-------+----------
+ public | schema_migrations | table | postgres
+ public | users             | table | postgres
+(2 rows)
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Note that dbmate automatically created the &lt;code&gt;schema_migrations&lt;/code&gt; table which it uses to track schema versions.&lt;/p&gt;
+&lt;p&gt;I like this tool for data engineering projects in particular, since we often have unconventional deployment models.&lt;/p&gt;
+&lt;p&gt;For example my &amp;#8220;application&amp;#8221; might be a collection of Airflow DAGs that manage ETL in and out of some database. Projects like these often don&amp;#8217;t revolve around a core framework or application server, so sometimes it can be simpler to just manage database migrations as an independent process. And this is where a standalone tool like dbmate can really shine.&lt;/p&gt;
 &lt;h3&gt;Postscript: What about non-SQL DBs?&lt;/h3&gt;
 &lt;p&gt;More to come!&lt;/p&gt;
 </content>
