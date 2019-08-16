@@ -1,5 +1,5 @@
 ---
-title: "Database Migrations"
+title: "Schema Migrations for Data Projects"
 layout: post
 ---
 ** Introduction
