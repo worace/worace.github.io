@@ -5,7 +5,9 @@ layout: post
 ** Introduction
 Database migrations are a tool for managing the evolution of a database schema in an automated and centralized way.
 
-Without a migration tool, you might perform schema updates on your database by manually running SQL commands. For example imagine you want to create a database to track your favorite pizza toppings. You could create the DB manually from the command line:
+Without a migration tool, you might perform schema updates on your database by manually running SQL commands.
+
+For example imagine you want to create a database to track your favorite pizza toppings. You could create the DB manually from the command line:
 
 #+BEGIN_SRC sh
 psql -c "CREATE DATABASE pizza_toppings;"
@@ -25,22 +27,25 @@ psql -d pizza_toppings -c "ALTER TABLE toppings DROP COLUMN ranking;"
 psql -d pizza_toppings -c "ALTER TABLE toppings ADD COLUMN attitude topping_attitude;"
 #+END_SRC
 
-This can work well enough, especially for small projects or quick experiments. Another developer can connect to the database and see that the schema ends up like this:
+We can connect to the database and see that the schema ends up like this:
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC txt
 pizza_toppings=# \d toppings
                    Table "public.toppings"
   Column  |       Type       | Collation | Nullable | Default
 ----------+------------------+-----------+----------+---------
  name     | text             |           | not null |
  attitude | topping_attitude |           |          |
-#+END_EXAMPLE
+#+END_SRC
 
-But there are several problems with this approach:
+** Manual Migration Problems
+This can work well enough, especially for small projects or quick experiments. However it brings several problems:
 
  - Without talking to the engineer who configured the DB (or perhaps consulting a soon-to-be-outdated README) we have no way of knowing how things got to this state.
  - Manually entering commands is error prone. It's hard to remember the right SQL syntax for various operations, and it's easy to forget certain less-visible DB effects like adding indices or NULL constraints.
  - We will eventually need to re-run the process for other environments, for example to create a separate copy of the database for testing or production, and these processes will have to be excecuted manually from memory or documentation.
+
+** You're not off the hook just because your DB is "internal"
 
 This type of on-the-fly DB configuration is especially common in data engineering and analysis projects. Developers working on online production systems may be more accustomed to the need to automate and standardize their DB configuration, but when working on analytics DBs that will mostly be used by other internal engineers, we may be more likely to give ourselves a pass.
 
@@ -52,6 +57,8 @@ So what can we do instead? The tool we're looking for is called a "Database Migr
 
 In practice, this comes up most often in the context of relational (e.g. SQL) databases, since these systems enforce pre-defined schemas which must be explicitly upated in order to change the structure of your data. Adding or removing tables, updating indices, or modifying null constraints are all examples of things we might do with a migration tool.
 
+** Schema Migration Benefits
+
 Schema Migrations make the process of modifying your database's schema predictable, repeatable, and manageable. By managing schema evolution with an automated tool rather than manual commands, we gain some important benefits:
 
  - Repeatability: You'll be able to re-run the process reliably on different databases and different environments.
@@ -61,12 +68,16 @@ Schema Migrations make the process of modifying your database's schema predictab
 
 ** Essence of A DB Migration Tool
 At its core, a migration tool contains a few parts:
-1. One or more scripts for describing changes we want to make to the schema. Depending on the tool these could be written explicitly as SQL commands, or specified using a language-specific DSL. Most tools version migration scripts in some way, such as prepending an incrementing counter (=001=, =002=, etc) or a timestamp (=20190101=) to the migration files.
-2. A mechanism for recording the current version of the database in relation to our migration versions. That is, if we have a series of migrations =001_create_users.sql=, =002_create_items.sql=, =003_create_orders.sql=, we need to know which version we're currently on so we can decide which ones remain to be run. Many tools create a dedicated table like =schema_migrations= or =schema_version= in your database for storing this information. It may go without saying, but you should allow your migration tool to manage this table and avoid editing it manually.
 
+**** 1. Migration scripts describing schema changes
+Depending on the tool these could be written explicitly as SQL commands, or specified using a language-specific DSL. Most tools version migration scripts in some way, such as prepending an incrementing counter (=001=, =002=, etc) or a timestamp (=20190101=) to the migration files.
+**** 2. Version-tracking mechanism
+If we have a series of migrations =001_create_users.sql=, =002_create_items.sql=, =003_create_orders.sql=, we need to know which version we're currently on so we can decide which ones remain to be run. Many tools create a dedicated table like =schema_migrations= or =schema_version= in your database for storing this information. It may go without saying, but you should allow your migration tool to manage this table and avoid editing it manually.
+
+** Migration Workflow
 With these pieces in mind, a common migration workflow might look like this:
 
-*** 1. Create a new migration file
+**** 1. Create a new migration file
 To start a DB for a new e-commerce web application, we might create a migration file like =001_create_users.sql= and populate it with a bit of SQL:
 
 #+BEGIN_SRC sql
@@ -76,7 +87,7 @@ CREATE TABLE users(
 );
 #+END_SRC
 
-*** 2. Run the migration
+**** 2. Run the migration
 At its most primitive, we could do this manually with a combination of running the sql script:
 
 #+BEGIN_SRC sh
@@ -90,10 +101,10 @@ psql -d our_databse -c "INSERT INTO schema_migrations (version) ('001_create_use
 #+END_SRC
 
 However these steps will generally be handled by a migration tool for us, so often all we have to do is run some command like =cool_migrator migrate up=.
-*** Bells and Whistles
+** Bells and Whistles
 On top of this basic functionality, some migration tools include various additional features such as:
 **** Rollbacks
-Some tools give you a way to define a "backwards" or "down" migration alongside each forward one you define. For example you might have:
+Some tools give you a way to define a "backwards" or "down" migration alongside each forward one. For example you might have:
 
 #+BEGIN_SRC sql
 -- 001_create_users.sql
@@ -124,12 +135,13 @@ Many tools include command-line helpers for generating new migration files with 
 ** Configuration
 A common theme among schema migration tools is that connection configuration is specified separately from the code that defines your actual migration operations. Different tools have different techniques for this -- it could be a =DATABASE_URL= system var (like many [[https://12factor.net/][Twelve-Factor]] apps use), or some combination of a JSON or YAML file and a command-line flag.
 
-The important part is that this configurability allows you to run migrations independently and repeatably across many environments. You might have 2 copies of the db on each developers local machine (one for testing and one for development), one for staging, and one for production, and they can all be reliably updated
+The important part is that this configurability allows you to run migrations independently and repeatably across many environments. You might have 2 copies of the db on each developers local machine (one for testing and one for development), one for staging, and one for production, and they can all be reliably kept in sync.
 ** Migration Tooling Lay of the Land
-So where do we get one? There are a lot of tools out there, here is an incomplete listing of them.
+Ok, enough background, how do we get one? There are a lot of tools out there, here is an incomplete listing of them.
 *** ORM-Bundled Solutions
-https://edgeguides.rubyonrails.org/active_record_migrations.html
-Many full-featured ORM libraries include their own implementation of a Schema Migrator. Perhaps the most famous is [[https://edgeguides.rubyonrails.org/active_record_migrations.html][ActiveRecord]], the ORM (and migration tool) that ships with Ruby on Rails. ActiveRecord in particular popularized some of the quality-of-life features we have come to expect from these tools, like having a clean DSL (using Ruby in this case) for defining migrations, and including CLI commands for common operations.
+Many full-featured ORM libraries include their own implementation of a Schema Migrator.
+
+Perhaps the most famous is [[https://edgeguides.rubyonrails.org/active_record_migrations.html][ActiveRecord]], the ORM (and migration tool) that ships with Ruby on Rails. ActiveRecord in particular popularized some of the quality-of-life features we have come to expect from these tools, like having a clean DSL (using Ruby in this case) for defining migrations, and including CLI commands for common operations.
 
 [[https://docs.djangoproject.com/en/2.2/topics/migrations/][Django]] similarly includes a bundled migration solution along with its ORM. Django's implementation includes an interesting feature which can [[https://docs.djangoproject.com/en/2.2/topics/migrations/#workflow][infer]] necessary migrations by looking at changes in your model definitions:
 
@@ -147,69 +159,12 @@ However, you may not be using one of these larger tools, so it's nice to have st
 
  - [[https://flywaydb.org/][Flyway]] is a popular choice in the JVM ecosystem. It operates separately from any ORM or runtime database library, and has integrations with popular JVM build tools like Maven, Gradle, or SBT. This seems to be a popular option for people using Java-based persistence libraries like Hibernate or Spring.
  - In node.js, as is often the case, you have as many options as you are willing to spend time researching. [[https://github.com/db-migrate/node-db-migrate][node-db-migrate]], [[https://github.com/salsita/node-pg-migrate][node-pg-migrate]], and [[https://sequelize.readthedocs.io/en/latest/docs/migrations/][sequelize]] all seem like popular solutions (sequelize being included with a popular ORM framework as well).
- - [[https://github.com/jeremyevans/sequel/blob/master/doc/migration.rdoc][Ruby's Sequel]] and Python's [[https://www.sqlalchemy.org/][SQLAlchemy]] (in the form of [[https://pypi.org/project/alembic/][Alembic]]), both popular libraries for using SQL outside of the heavier Rails or Django-based tools also include migration options.
+ - [[https://github.com/jeremyevans/sequel/blob/master/doc/migration.rdoc][Ruby's Sequel]] and Python's [[https://www.sqlalchemy.org/][SQLAlchemy]] (in the form of [[https://pypi.org/project/alembic/][Alembic]]), both include migration options.
+**** A recent recommendation: dbmate
+Finally, a great option I have been enjoying lately is [[https://github.com/amacneil/dbmate][dbmate]].
 
-Finally, a great option I have been enjoying lately is [[https://github.com/amacneil/dbmate][dbmate]]: a standalone, library and language-independent migration tool. dbmate itself is written in Go, so it can be easily built as a standalone binary for many platforms (on Mac OS you can install it with =brew install dbmate=). It's designed to run as a separate tool from your runtime application process, which gives you a lot of flexibility in how you integrate it with your deployment process.
+This is a standalone, library and language-independent migration tool. *dbmate* itself is written in Go, so it can be easily built as a standalone binary for many platforms (on Mac OS you can install it with =brew install dbmate=). It's designed to run as a separate tool from your runtime application process, which gives you a lot of flexibility in how you integrate it with your deployment process.
 
 I like this option for data engineering projects in particular, since we often have unconventional deployment models. For example my "application" might be a collection of Airflow DAGs that manage ETL in and out of some database. Projects like these often don't revolve around a core framework or application server, so sometimes it can be simpler to just manage database migrations as an independent process. And this is where a standalone tool like dbmate can really shine.
 *** Postscript: What about non-SQL DBs?
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-In this post I'm going to talk a bit about the problems a migration tool can solve, and review some of the popular tools in this space.
-
-If you've never worked with database migrations before, the term "migration" can be a little misleading. You might reasonably assume that it implies moving a database from one location to another (perhaps we are moving between datacenters or service providers). However we are really talking about migrating the database from one configuration to another. 
-
-** Problem Overview
-In the data engineering and analysis world, we often use databases in an ad-hoc way for storing and analyzing various datasets. In contrast to a "production" database that serves transactional queries for live production traffic, our systems are often internal facing (e.g. used by other engineers and analysts) and used for storing and analyzing derived data that may be generated from other primary sources (as opposed to being directly entered by a user of a website, for example).
-
-Despite our best intentions, it's easy to let these considerations push us into a more cavalier approach toward database configuration and management. And by cavalier, we mostly mean "manual."
-
-** Example Workflow: Bad
-Consider a hypothetical workflow for configuring a new analytics database.
-
-An engineer determines they need to develop a system to store their pizza topping preferences.
-
-They are running postgres on their laptop, so they use a terminal command to create the new database:
-
-
-** Migration Benefits
-*** Reproducibility for Different Environments
-*** Documentation
-*** Easier Review Process for Discussing future Schema Changes
-*** Version Control
-*** Safe Transition Between DB States
-** Example Workflow: Good
-
-Characteristics:
-- Derived (e.g. data generated from other primary sources rather than directly entered by production users)
-- Internal facing
-
-terminology - "migration"
-- dev creates db
-- adds a table
-- adds an index
-- moves to production, repeats
-- teammate joins, repeats
-
-** Solution: Using a Migration Tool
-So you're on board with the idea of automating and centralizing the process of DB schema evolution. What do we need?
-Common patterns:
-
-collection of scripts for managing schema changes
-
+More to come!

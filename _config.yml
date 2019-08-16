@@ -5,8 +5,9 @@ permalink:           pretty
 title:               "Horace Williams"
 tagline:             kunderwammer
 url:                 http://worace.works
-paginate:            8
+paginate:            50
 baseurl:             ""
+# highlighter: rouge
 
 # Assets
 #
