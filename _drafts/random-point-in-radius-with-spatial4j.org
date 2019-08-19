@@ -3,7 +3,107 @@ title: "Random Point in Radius with Spatial4J"
 layout: post
 ---
 
-Recently I needed to generate random points within a given radius around a known point. I found it less obvious than I expected, so I decided to document the process here in case it helps anyone.
+Recently I needed to generate random points within a given radius around a point on a map.
+
+I found it less obvious than I expected, so I decided to document the process here in case it helps anyone.
+
+I'm using [[https://github.com/locationtech/spatial4j][Spatial4J]], a Java geospatial library which provides utilities for doing spatial operations in a geodesic context. In particular this contrasts with the also-popular [[https://github.com/locationtech/jts][Java Topology Suite]], which provides vector-oriented geometric utilities in a Cartesian context. For mapping-oriented work where you care about normal distance units like meters, Spatial4J is often what you need.
+
+For a real project, you'll obviously want to put this into a pom/sbt/lein/whatever config file, but for quick experimentation, you can download it from [[https://mvnrepository.com/artifact/org.locationtech.spatial4j/spatial4j/0.7][maven]]:
+
+
+#+BEGIN_SRC sh
+wget https://repo1.maven.org/maven2/org/locationtech/spatial4j/spatial4j/0.7/spatial4j-0.7.jar
+#+END_SRC
+
+Then in a scala repl, require it:
+
+
+#+BEGIN_SRC txt
+➸ scala
+Welcome to Scala 2.12.2 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_121).
+Type in expressions for evaluation. Or try :help.
+
+scala> :require spatial4j-0.7.jar
+Added '/private/tmp/spatial4j-0.7.jar' to classpath.
+#+END_SRC
+
+
+** Outline
+Here are the rough steps:
+
+1. Set up some imports
+2. Construct some basic s4j factory objects (it's not called 4J 4 nothing)
+3. Make an s4j point representing your desired center lat/lon
+4. Pick a random offset within your desired radius
+5. Pick a random angle (0 - 360 degrees) to offset your point
+6. Convert your distance (in meters) to an appropriate offset (in /degrees/) at your target lat/lon.
+7. Make your new random point
+** Imports
+First, set up some imports:
+
+#+BEGIN_SRC scala
+import org.locationtech.spatial4j.context.SpatialContext
+import org.locationtech.spatial4j.distance.DistanceUtils
+#+END_SRC
+
+** Factory Stuff
+Spatial4J uses a Factory object called a [[https://locationtech.github.io/spatial4j/apidocs/org/locationtech/spatial4j/context/SpatialContext.html][SpatialContext]] for many of its core APIs. There are a lot of different ways to configure this depending on your needs, but for the most common use-cases they include a static implementation under =SpatialContext.GEO=:
+
+
+#+BEGIN_SRC scala
+val context = org.locationtech.spatial4j.context.SpatialContext
+#+END_SRC
+
+** Make a point object out of your lat/lon
+We'll use another factory off of our =SpatialContext= to construct this. Remember Lon is X and Lat is Y in Geospatial tech:
+
+
+#+BEGIN_SRC scala
+val lat = 34.0
+val lon = -118.0
+val startPoint = context.getShapeFactory.pointXY(lon, lat)
+#+END_SRC
+
+** Pick your random distance offset
+
+#+BEGIN_SRC scala
+val radius = 1000
+val offsetMeters = scala.util.Random.nextDouble * radius
+#+END_SRC
+
+** Pick your random bearing
+
+#+BEGIN_SRC scala
+val bearingDegrees = scala.util.Random.nextDouble * 360
+#+END_SRC
+
+** Convert your linear distance to angular units (degrees)
+This is the kicker for working with geodesic libraries like Spatial4J. It operates in a polar context, dealing with radii and angles (lat/lon) from the earth, but a distance like 500 meters is cartesian, dealing with flat distances on the earth's surface.
+
+Fortunately there are ways to convert between the 2. In particular Spatial4J's [[https://locationtech.github.io/spatial4j/apidocs/org/locationtech/spatial4j/distance/DistanceUtils.html][DistanceUtils]] module includes some constants and utilities for this purpose:
+
+#+BEGIN_SRC scala
+val earthRadiusMeters = DistanceUtils.EARTH_MEAN_RADIUS_KM * 1000
+val offsetDegrees = DistanceUtils.dist2Degrees(offsetMeters, earthRadiusMeters)
+#+END_SRC
+
+
+** Get a new point
+
+Finally we can use another Spatial4J utility, =org.locationtech.spatial4j.distance.GeodesicSphereDistCalc=, to convert our start point, bearing, and offset to a new point.
+
+Note that this uses a very Java-ish API, where you first construct the Point object yourself using a placeholder lat/lon and then pass it in to be modified by the Distance Calculator.
+
+#+BEGIN_SRC scala
+import org.locationtech.spatial4j.distance.GeodesicSphereDistCalc
+val distCalc = new GeodesicSphereDistCalc.Vincenty
+
+val newPoint = context.getShapeFactory.pointXY(0,0)
+distCalc.pointOnBearing(startPoint, offsetDegrees, bearingDegrees, context, newPoint)
+println(newPoint)
+// Pt(x=-118.00099201867381,y=33.9950199965435)
+#+END_SRC
 
 This is using Spatial4J.
 
@@ -49,7 +149,6 @@ This is using Spatial4J.
                                 angle-degrees
                                 s4j-earth
                                 nil))
-
 #+END_SRC
 
 Producing a uniform distribution within the radius:
