@@ -52,16 +52,15 @@ Spatial4J uses a Factory object called a [[https://locationtech.github.io/spatia
 
 
 #+BEGIN_SRC scala
-val context = org.locationtech.spatial4j.context.SpatialContext
+val context = org.locationtech.spatial4j.context.SpatialContext.GEO
 #+END_SRC
 
 ** Make a point object out of your lat/lon
 We'll use another factory off of our =SpatialContext= to construct this. Remember Lon is X and Lat is Y in Geospatial tech:
 
-
 #+BEGIN_SRC scala
-val lat = 34.0
-val lon = -118.0
+val lat = 33.94
+val lon = -118.41
 val startPoint = context.getShapeFactory.pointXY(lon, lat)
 #+END_SRC
 
@@ -105,6 +104,107 @@ println(newPoint)
 // Pt(x=-118.00099201867381,y=33.9950199965435)
 #+END_SRC
 
+** All together
+
+Now that we've seen the pieces, we can assemble them into a nice utility function:
+
+#+BEGIN_SRC scala
+import org.locationtech.spatial4j.context.SpatialContext
+import org.locationtech.spatial4j.distance.{DistanceUtils, GeodesicSphereDistCalc}
+import org.locationtech.spatial4j.shape.Point
+
+object PointGenerator {
+  val context = org.locationtech.spatial4j.context.SpatialContext.GEO
+  val distCalc = new GeodesicSphereDistCalc.Vincenty
+  val earthRadiusMeters = DistanceUtils.EARTH_MEAN_RADIUS_KM * 1000
+
+  def randPointInRadius(lat: Double, lon: Double, radius: Double): Point = {
+    val startPoint = context.getShapeFactory.pointXY(lon, lat)
+    val offsetMeters = scala.util.Random.nextDouble * radius
+    val offsetDegrees = DistanceUtils.dist2Degrees(offsetMeters, earthRadiusMeters)
+    val bearingDegrees = scala.util.Random.nextDouble * 360
+    val newPoint = context.getShapeFactory.pointXY(0,0)
+    distCalc.pointOnBearing(startPoint, offsetDegrees, bearingDegrees, context, newPoint)
+    newPoint
+  }
+}
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+scala> PointGenerator.randPointInRadius(34.0,-118.0,500)
+res1: org.locationtech.spatial4j.shape.Point = Pt(x=-118.00141054557675,y=33.9971987911845)
+scala> PointGenerator.randPointInRadius(34.0,-118.0,500)
+res2: org.locationtech.spatial4j.shape.Point = Pt(x=-117.99966381772931,y=33.997181705450046)
+scala> PointGenerator.randPointInRadius(34.0,-118.0,500)
+res3: org.locationtech.spatial4j.shape.Point = Pt(x=-118.0008673083813,y=33.99933155556646)
+scala> PointGenerator.randPointInRadius(34.0,-118.0,500)
+res4: org.locationtech.spatial4j.shape.Point = Pt(x=-117.99862804930764,y=34.001770697901655)
+#+END_EXAMPLE
+
+** A catch on distributions
+This works great, but if we take a large sample and plot it on a map, we'll notice the points cluster tightly near the center:
+
+#+BEGIN_SRC scala
+(0 to 1000).map(_ => PointGenerator.randPointInRadius(33.94,-118.41,2000)).map(p => s"${p.getY},${p.getX}").foreach(println)
+// 33.93769610837791,-118.39618482618667
+// 33.944086950586815,-118.41270519841264
+// 33.938436141001375,-118.41187357399744
+// 33.93224346396654,-118.39866113148551
+// etc
+// Copy + paste | geoq map
+#+END_SRC
+
+It turns out that because of the way area and circles work, taking a random distance offset within our desired radius doesn't give a uniform distribution throughout the circle, but rather clusters the points toward the center.
+
+If we want a smooth distribution over the area described by our point and radius, we'll need to sample radii exponentially weighted toward the max radius. That is, we want:
+
+#+BEGIN_SRC scala
+val offsetMeters = scala.math.sqrt(scala.util.Random.nextDouble) * radius
+#+END_SRC
+
+We could even give our users an option to toggle between these choices when using the function:
+
+#+BEGIN_SRC scala
+import org.locationtech.spatial4j.context.SpatialContext
+import org.locationtech.spatial4j.distance.{DistanceUtils, GeodesicSphereDistCalc}
+import org.locationtech.spatial4j.shape.Point
+import scala.util.Random
+import scala.math
+
+object PointGenerator {
+  val context = org.locationtech.spatial4j.context.SpatialContext.GEO
+  val distCalc = new GeodesicSphereDistCalc.Vincenty
+  val earthRadiusMeters = DistanceUtils.EARTH_MEAN_RADIUS_KM * 1000
+
+  def randPointInRadius(lat: Double, lon: Double, radius: Double, evenDistribution: Boolean): Point = {
+    val startPoint = context.getShapeFactory.pointXY(lon, lat)
+    val offsetMeters = if (evenDistribution) {
+      math.sqrt(Random.nextDouble) * radius
+    } else {
+      Random.nextDouble * radius
+    }
+    val offsetDegrees = DistanceUtils.dist2Degrees(offsetMeters, earthRadiusMeters)
+    val bearingDegrees = Random.nextDouble * 360
+    val newPoint = context.getShapeFactory.pointXY(0,0)
+    distCalc.pointOnBearing(startPoint, offsetDegrees, bearingDegrees, context, newPoint)
+    newPoint
+  }
+}
+#+END_SRC
+
+#+BEGIN_SRC scala
+(0 to 1000).map(_ => PointGenerator.randPointInRadius(34.0,-118.0,2000, true)).map(p => s"${p.getY},${p.getX}").foreach(println)
+// 33.939640262698276,-118.43135364227057
+// 33.946446329758274,-118.4285590217258
+// 33.927846243486826,-118.40795788351743
+// 33.922739829504145,-118.41091483844558
+// 33.93132724358199,-118.41135336156653
+// 33.941905760094876,-118.42909622711291
+// 33.939879012731645,-118.39112410484391
+// etc...
+#+END_SRC
+
+** Clj
 This is using Spatial4J.
 
 #+BEGIN_SRC clojure
