@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Random Point in Radius with Spatial4J &middot; Horace Williams
+    
+  </title>
+  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+</head>
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-117025935-1"></script>
+<script>
+ window.dataLayer = window.dataLayer || [];
+ function gtag(){dataLayer.push(arguments);}
+ gtag('js', new Date());
+
+ gtag('config', 'UA-117025935-1');
+</script>
+
+
+
+  <body>
+
+    <div class="container content">
+      
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a href="https://github.com/worace">github</a></li>
+          <li><a href="http://twitter.com/worace">twitter</a></li>
+        </ul>
+      </header>
+      
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Random Point in Radius with Spatial4J</h1>
+  <time datetime="2019-08-22T00:00:00-07:00" class="post-date">22 Aug 2019</time>
+  <p>Recently I needed to generate random points within a given radius around a point on a map.</p>
+<p>I found it less obvious than I expected, so I decided to document the process here in case it helps anyone.</p>
+<p>I&#8217;m using <a href="https://github.com/locationtech/spatial4j">Spatial4J</a>, a Java geospatial library which provides utilities for doing spatial operations in a geodesic context. In particular this contrasts with the also-popular <a href="https://github.com/locationtech/jts">Java Topology Suite</a>, which provides vector-oriented geometric utilities in a Cartesian context.</p>
+<p>For mapping work where you care about normal surface-of-the-earth distance units like feet or meters, Spatial4J is often the tool you need. That said, if you&#8217;re not working on the JVM, other great tools like <a href="https://pypi.org/project/Shapely/">Shapely (Python)</a> and <a href="https://github.com/rgeo/rgeo">RGeo (Ruby)</a> provide similar utilities for other languages.</p>
+<h2>Deps / Repl setup</h2>
+<p>I&#8217;m going to show some code snippets in scala which can be used interactively in the scala REPL.</p>
+<p>For a real project, you&#8217;ll obviously want to put this into a pom/sbt/lein/whatever config file, but for quick experimentation, you can download the Spatial4J JAR from <a href="https://mvnrepository.com/artifact/org.locationtech.spatial4j/spatial4j/0.7">maven</a>:</p>
+<div class="highlight"><pre><span></span>wget https://repo1.maven.org/maven2/org/locationtech/spatial4j/spatial4j/0.7/spatial4j-0.7.jar
+</pre></div>
+<p>Then in a scala repl, require it:</p>
+<div class="highlight"><pre><span></span>➸ scala
+Welcome to Scala 2.12.2 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_121).
+Type in expressions for evaluation. Or try :help.
+
+scala&gt; :require spatial4j-0.7.jar
+Added &#39;/private/tmp/spatial4j-0.7.jar&#39; to classpath.
+</pre></div>
+<p>Now you&#8217;ll be able to import and work with Spatial4J&#8217;s classes in your REPL session.</p>
+<h2>Outline</h2>
+<p>We want to provide a center point (as a latitude and longitude) and a radius and get back a random point within the implied circle.</p>
+<p>Here are the rough steps we&#8217;ll follow:</p>
+<ol>
+  <li>Set up some imports</li>
+  <li>Construct some basic spatial4j factory objects (it doesn&#8217;t have &#8220;4J&#8221; in the name for nothing)</li>
+  <li>Make an s4j point representing our desired center lat/lon</li>
+  <li>Pick a random distance offset within the desired radius</li>
+  <li>Pick a random bearing (0 - 360 degrees) to shift our point</li>
+  <li><b>Convert our distance (in meters) to an appropriate offset (in /degrees/) at the target lat/lon.</b> We&#8217;ll get to this in a minute, but it turns out this has to be done in polar units like degrees rather than cartesian units like meters. Spatial4J provides a lot of utility here.</li>
+  <li>Victory! Get back our new random point.</li>
+</ol>
+<h2>Imports</h2>
+<p>First, set up some imports:</p>
+<div class="highlight"><pre><span></span><span class="k">import</span> <span class="nn">org.locationtech.spatial4j.context.SpatialContext</span>
+<span class="k">import</span> <span class="nn">org.locationtech.spatial4j.distance.DistanceUtils</span>
+</pre></div>
+<h2>Factory Stuff</h2>
+<p>Spatial4J uses a Factory object called a <a href="https://locationtech.github.io/spatial4j/apidocs/org/locationtech/spatial4j/context/SpatialContext.html">SpatialContext</a> for many of its core APIs. There are a lot of different ways to configure this depending on your needs, but for the most common use-cases they include a static implementation under <code>SpatialContext.GEO</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">val</span> <span class="n">context</span> <span class="k">=</span> <span class="n">org</span><span class="o">.</span><span class="n">locationtech</span><span class="o">.</span><span class="n">spatial4j</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="nc">SpatialContext</span><span class="o">.</span><span class="nc">GEO</span>
+</pre></div>
+<h2>Make a point object to represent the desired lat/lon</h2>
+<p>We&#8217;ll use another factory off of our <code>SpatialContext</code> to construct this. Remember in Geospatial tech longitude is X and latitude is Y:</p>
+<div class="highlight"><pre><span></span><span class="k">val</span> <span class="n">lat</span> <span class="k">=</span> <span class="mf">33.94</span>
+<span class="k">val</span> <span class="n">lon</span> <span class="k">=</span> <span class="o">-</span><span class="mf">118.41</span>
+<span class="k">val</span> <span class="n">startPoint</span> <span class="k">=</span> <span class="n">context</span><span class="o">.</span><span class="n">getShapeFactory</span><span class="o">.</span><span class="n">pointXY</span><span class="o">(</span><span class="n">lon</span><span class="o">,</span> <span class="n">lat</span><span class="o">)</span>
+</pre></div>
+<h2>Pick a random distance offset</h2>
+<div class="highlight"><pre><span></span><span class="k">val</span> <span class="n">radius</span> <span class="k">=</span> <span class="mi">1000</span>
+<span class="k">val</span> <span class="n">offsetMeters</span> <span class="k">=</span> <span class="n">scala</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">Random</span><span class="o">.</span><span class="n">nextDouble</span> <span class="o">*</span> <span class="n">radius</span>
+</pre></div>
+<h2>Pick a random bearing</h2>
+<div class="highlight"><pre><span></span><span class="k">val</span> <span class="n">bearingDegrees</span> <span class="k">=</span> <span class="n">scala</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">Random</span><span class="o">.</span><span class="n">nextDouble</span> <span class="o">*</span> <span class="mi">360</span>
+</pre></div>
+<h2>Convert the linear distance offset to angular units (degrees)</h2>
+<p>This is the kicker for working with geodesic libraries like Spatial4J. It operates in a polar context, dealing with radii and angles (lat/lon) from the earth, but a distance like 500 meters is cartesian, dealing with flat distances on the earth&#8217;s surface.</p>
+<p>Fortunately there are ways to convert between the 2. In particular Spatial4J&#8217;s <a href="https://locationtech.github.io/spatial4j/apidocs/org/locationtech/spatial4j/distance/DistanceUtils.html">DistanceUtils</a> module includes some constants and utilities for this purpose:</p>
+<div class="highlight"><pre><span></span><span class="k">val</span> <span class="n">earthRadiusMeters</span> <span class="k">=</span> <span class="nc">DistanceUtils</span><span class="o">.</span><span class="nc">EARTH_MEAN_RADIUS_KM</span> <span class="o">*</span> <span class="mi">1000</span>
+<span class="k">val</span> <span class="n">offsetDegrees</span> <span class="k">=</span> <span class="nc">DistanceUtils</span><span class="o">.</span><span class="n">dist2Degrees</span><span class="o">(</span><span class="n">offsetMeters</span><span class="o">,</span> <span class="n">earthRadiusMeters</span><span class="o">)</span>
+</pre></div>
+<p>You might notice we are using Earth&#8217;s &#8220;mean radius&#8221; here. Depending on the level of precision required by your application, there are more sophisticated ways to make this conversion more accurate. For example the earth isn&#8217;t truly spherical but rather slightly oval-shaped, and algorithms exist to find a more precise radius at a given latitude rather than simply taking the mean. In keeping with blog post tradition, we&#8217;ll leave researching this as an exercise for the reader.</p>
+<h2>Get a new point</h2>
+<p>We now have a starting point, a bearing, and an offset radius in degrees.</p>
+<p>Finally we can use another Spatial4J utility, <code>org.locationtech.spatial4j.distance.GeodesicSphereDistCalc</code>, to convert our start point, bearing, and offset to a new point.</p>
+<p>Note that this uses a very Java-ish API, where you first construct the Point object yourself using a placeholder lat/lon and then pass it in to be modified by the Distance Calculator.</p>
+<div class="highlight"><pre><span></span><span class="k">import</span> <span class="nn">org.locationtech.spatial4j.distance.GeodesicSphereDistCalc</span>
+<span class="k">val</span> <span class="n">distCalc</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">GeodesicSphereDistCalc</span><span class="o">.</span><span class="nc">Vincenty</span>
+
+<span class="k">val</span> <span class="n">newPoint</span> <span class="k">=</span> <span class="n">context</span><span class="o">.</span><span class="n">getShapeFactory</span><span class="o">.</span><span class="n">pointXY</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">)</span>
+<span class="n">distCalc</span><span class="o">.</span><span class="n">pointOnBearing</span><span class="o">(</span><span class="n">startPoint</span><span class="o">,</span> <span class="n">offsetDegrees</span><span class="o">,</span> <span class="n">bearingDegrees</span><span class="o">,</span> <span class="n">context</span><span class="o">,</span> <span class="n">newPoint</span><span class="o">)</span>
+<span class="n">println</span><span class="o">(</span><span class="n">newPoint</span><span class="o">)</span>
+<span class="c1">// Pt(x=-118.00099201867381,y=33.9950199965435)</span>
+</pre></div>
+<h2>All together</h2>
+<p>Now that we&#8217;ve seen the pieces, we can assemble them into a nice utility function:</p>
+<div class="highlight"><pre><span></span><span class="k">import</span> <span class="nn">org.locationtech.spatial4j.context.SpatialContext</span>
+<span class="k">import</span> <span class="nn">org.locationtech.spatial4j.distance.</span><span class="o">{</span><span class="nc">DistanceUtils</span><span class="o">,</span> <span class="nc">GeodesicSphereDistCalc</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">org.locationtech.spatial4j.shape.Point</span>
+
+<span class="k">object</span> <span class="nc">PointGenerator</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">context</span> <span class="k">=</span> <span class="n">org</span><span class="o">.</span><span class="n">locationtech</span><span class="o">.</span><span class="n">spatial4j</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="nc">SpatialContext</span><span class="o">.</span><span class="nc">GEO</span>
+  <span class="k">val</span> <span class="n">distCalc</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">GeodesicSphereDistCalc</span><span class="o">.</span><span class="nc">Vincenty</span>
+  <span class="k">val</span> <span class="n">earthRadiusMeters</span> <span class="k">=</span> <span class="nc">DistanceUtils</span><span class="o">.</span><span class="nc">EARTH_MEAN_RADIUS_KM</span> <span class="o">*</span> <span class="mi">1000</span>
+
+  <span class="k">def</span> <span class="n">randPointInRadius</span><span class="o">(</span><span class="n">lat</span><span class="k">:</span> <span class="kt">Double</span><span class="o">,</span> <span class="n">lon</span><span class="k">:</span> <span class="kt">Double</span><span class="o">,</span> <span class="n">radius</span><span class="k">:</span> <span class="kt">Double</span><span class="o">)</span><span class="k">:</span> <span class="kt">Point</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="n">startPoint</span> <span class="k">=</span> <span class="n">context</span><span class="o">.</span><span class="n">getShapeFactory</span><span class="o">.</span><span class="n">pointXY</span><span class="o">(</span><span class="n">lon</span><span class="o">,</span> <span class="n">lat</span><span class="o">)</span>
+    <span class="k">val</span> <span class="n">offsetMeters</span> <span class="k">=</span> <span class="n">scala</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">Random</span><span class="o">.</span><span class="n">nextDouble</span> <span class="o">*</span> <span class="n">radius</span>
+    <span class="k">val</span> <span class="n">offsetDegrees</span> <span class="k">=</span> <span class="nc">DistanceUtils</span><span class="o">.</span><span class="n">dist2Degrees</span><span class="o">(</span><span class="n">offsetMeters</span><span class="o">,</span> <span class="n">earthRadiusMeters</span><span class="o">)</span>
+    <span class="k">val</span> <span class="n">bearingDegrees</span> <span class="k">=</span> <span class="n">scala</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">Random</span><span class="o">.</span><span class="n">nextDouble</span> <span class="o">*</span> <span class="mi">360</span>
+    <span class="k">val</span> <span class="n">newPoint</span> <span class="k">=</span> <span class="n">context</span><span class="o">.</span><span class="n">getShapeFactory</span><span class="o">.</span><span class="n">pointXY</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">)</span>
+    <span class="n">distCalc</span><span class="o">.</span><span class="n">pointOnBearing</span><span class="o">(</span><span class="n">startPoint</span><span class="o">,</span> <span class="n">offsetDegrees</span><span class="o">,</span> <span class="n">bearingDegrees</span><span class="o">,</span> <span class="n">context</span><span class="o">,</span> <span class="n">newPoint</span><span class="o">)</span>
+    <span class="n">newPoint</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+<div class="highlight"><pre><span></span><span class="n">scala</span><span class="o">&gt;</span> <span class="nc">PointGenerator</span><span class="o">.</span><span class="n">randPointInRadius</span><span class="o">(</span><span class="mf">34.0</span><span class="o">,-</span><span class="mf">118.0</span><span class="o">,</span><span class="mi">500</span><span class="o">)</span>
+<span class="n">res1</span><span class="k">:</span> <span class="kt">org.locationtech.spatial4j.shape.Point</span> <span class="o">=</span> <span class="nc">Pt</span><span class="o">(</span><span class="n">x</span><span class="o">=-</span><span class="mf">118.00141054557675</span><span class="o">,</span><span class="n">y</span><span class="k">=</span><span class="mf">33.9971987911845</span><span class="o">)</span>
+<span class="n">scala</span><span class="o">&gt;</span> <span class="nc">PointGenerator</span><span class="o">.</span><span class="n">randPointInRadius</span><span class="o">(</span><span class="mf">34.0</span><span class="o">,-</span><span class="mf">118.0</span><span class="o">,</span><span class="mi">500</span><span class="o">)</span>
+<span class="n">res2</span><span class="k">:</span> <span class="kt">org.locationtech.spatial4j.shape.Point</span> <span class="o">=</span> <span class="nc">Pt</span><span class="o">(</span><span class="n">x</span><span class="o">=-</span><span class="mf">117.99966381772931</span><span class="o">,</span><span class="n">y</span><span class="k">=</span><span class="mf">33.997181705450046</span><span class="o">)</span>
+<span class="n">scala</span><span class="o">&gt;</span> <span class="nc">PointGenerator</span><span class="o">.</span><span class="n">randPointInRadius</span><span class="o">(</span><span class="mf">34.0</span><span class="o">,-</span><span class="mf">118.0</span><span class="o">,</span><span class="mi">500</span><span class="o">)</span>
+<span class="n">res3</span><span class="k">:</span> <span class="kt">org.locationtech.spatial4j.shape.Point</span> <span class="o">=</span> <span class="nc">Pt</span><span class="o">(</span><span class="n">x</span><span class="o">=-</span><span class="mf">118.0008673083813</span><span class="o">,</span><span class="n">y</span><span class="k">=</span><span class="mf">33.99933155556646</span><span class="o">)</span>
+<span class="n">scala</span><span class="o">&gt;</span> <span class="nc">PointGenerator</span><span class="o">.</span><span class="n">randPointInRadius</span><span class="o">(</span><span class="mf">34.0</span><span class="o">,-</span><span class="mf">118.0</span><span class="o">,</span><span class="mi">500</span><span class="o">)</span>
+<span class="n">res4</span><span class="k">:</span> <span class="kt">org.locationtech.spatial4j.shape.Point</span> <span class="o">=</span> <span class="nc">Pt</span><span class="o">(</span><span class="n">x</span><span class="o">=-</span><span class="mf">117.99862804930764</span><span class="o">,</span><span class="n">y</span><span class="k">=</span><span class="mf">34.001770697901655</span><span class="o">)</span>
+</pre></div>
+<h2>A catch regarding distributions</h2>
+<p>This works great, but if we take a large sample and plot it on a map, we&#8217;ll notice the points cluster tightly near the center:</p>
+<div class="highlight"><pre><span></span><span class="o">(</span><span class="mi">0</span> <span class="n">to</span> <span class="mi">1000</span><span class="o">).</span><span class="n">map</span><span class="o">(</span><span class="k">_</span> <span class="k">=&gt;</span> <span class="nc">PointGenerator</span><span class="o">.</span><span class="n">randPointInRadius</span><span class="o">(</span><span class="mf">33.94</span><span class="o">,-</span><span class="mf">118.41</span><span class="o">,</span><span class="mi">2000</span><span class="o">)).</span><span class="n">map</span><span class="o">(</span><span class="n">p</span> <span class="k">=&gt;</span> <span class="s">s&quot;</span><span class="si">${</span><span class="n">p</span><span class="o">.</span><span class="n">getY</span><span class="si">}</span><span class="s">,</span><span class="si">${</span><span class="n">p</span><span class="o">.</span><span class="n">getX</span><span class="si">}</span><span class="s">&quot;</span><span class="o">).</span><span class="n">foreach</span><span class="o">(</span><span class="n">println</span><span class="o">)</span>
+<span class="c1">// 33.93769610837791,-118.39618482618667</span>
+<span class="c1">// 33.944086950586815,-118.41270519841264</span>
+<span class="c1">// 33.938436141001375,-118.41187357399744</span>
+<span class="c1">// 33.93224346396654,-118.39866113148551</span>
+<span class="c1">// etc</span>
+<span class="c1">// Copy + paste | geoq map</span>
+</pre></div>
+<p><img src="/public/images/point_in_radius_clustered.png" alt="/public/images/point_in_radius_clustered.png" /></p>
+<p>It turns out that because of the way circles and area work, taking a random distance offset within our desired radius doesn&#8217;t give a uniform distribution throughout the circle, but rather clusters the points toward the center.</p>
+<p>If we want a smooth distribution over the area described by our point and radius, we&#8217;ll need to sample radii exponentially weighted toward the max radius. That is, we want:</p>
+<div class="highlight"><pre><span></span><span class="k">val</span> <span class="n">offsetMeters</span> <span class="k">=</span> <span class="n">scala</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="o">(</span><span class="n">scala</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">Random</span><span class="o">.</span><span class="n">nextDouble</span><span class="o">)</span> <span class="o">*</span> <span class="n">radius</span>
+</pre></div>
+<p>We could even give our users an option to toggle between these choices when using the function:</p>
+<div class="highlight"><pre><span></span><span class="k">import</span> <span class="nn">org.locationtech.spatial4j.context.SpatialContext</span>
+<span class="k">import</span> <span class="nn">org.locationtech.spatial4j.distance.</span><span class="o">{</span><span class="nc">DistanceUtils</span><span class="o">,</span> <span class="nc">GeodesicSphereDistCalc</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">org.locationtech.spatial4j.shape.Point</span>
+<span class="k">import</span> <span class="nn">scala.util.Random</span>
+<span class="k">import</span> <span class="nn">scala.math</span>
+
+<span class="k">object</span> <span class="nc">PointGenerator</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">context</span> <span class="k">=</span> <span class="n">org</span><span class="o">.</span><span class="n">locationtech</span><span class="o">.</span><span class="n">spatial4j</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="nc">SpatialContext</span><span class="o">.</span><span class="nc">GEO</span>
+  <span class="k">val</span> <span class="n">distCalc</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">GeodesicSphereDistCalc</span><span class="o">.</span><span class="nc">Vincenty</span>
+  <span class="k">val</span> <span class="n">earthRadiusMeters</span> <span class="k">=</span> <span class="nc">DistanceUtils</span><span class="o">.</span><span class="nc">EARTH_MEAN_RADIUS_KM</span> <span class="o">*</span> <span class="mi">1000</span>
+
+  <span class="k">def</span> <span class="n">randPointInRadius</span><span class="o">(</span><span class="n">lat</span><span class="k">:</span> <span class="kt">Double</span><span class="o">,</span> <span class="n">lon</span><span class="k">:</span> <span class="kt">Double</span><span class="o">,</span> <span class="n">radius</span><span class="k">:</span> <span class="kt">Double</span><span class="o">,</span> <span class="n">evenDistribution</span><span class="k">:</span> <span class="kt">Boolean</span><span class="o">)</span><span class="k">:</span> <span class="kt">Point</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="n">startPoint</span> <span class="k">=</span> <span class="n">context</span><span class="o">.</span><span class="n">getShapeFactory</span><span class="o">.</span><span class="n">pointXY</span><span class="o">(</span><span class="n">lon</span><span class="o">,</span> <span class="n">lat</span><span class="o">)</span>
+    <span class="k">val</span> <span class="n">offsetMeters</span> <span class="k">=</span> <span class="k">if</span> <span class="o">(</span><span class="n">evenDistribution</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="o">(</span><span class="nc">Random</span><span class="o">.</span><span class="n">nextDouble</span><span class="o">)</span> <span class="o">*</span> <span class="n">radius</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+      <span class="nc">Random</span><span class="o">.</span><span class="n">nextDouble</span> <span class="o">*</span> <span class="n">radius</span>
+    <span class="o">}</span>
+    <span class="k">val</span> <span class="n">offsetDegrees</span> <span class="k">=</span> <span class="nc">DistanceUtils</span><span class="o">.</span><span class="n">dist2Degrees</span><span class="o">(</span><span class="n">offsetMeters</span><span class="o">,</span> <span class="n">earthRadiusMeters</span><span class="o">)</span>
+    <span class="k">val</span> <span class="n">bearingDegrees</span> <span class="k">=</span> <span class="nc">Random</span><span class="o">.</span><span class="n">nextDouble</span> <span class="o">*</span> <span class="mi">360</span>
+    <span class="k">val</span> <span class="n">newPoint</span> <span class="k">=</span> <span class="n">context</span><span class="o">.</span><span class="n">getShapeFactory</span><span class="o">.</span><span class="n">pointXY</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">)</span>
+    <span class="n">distCalc</span><span class="o">.</span><span class="n">pointOnBearing</span><span class="o">(</span><span class="n">startPoint</span><span class="o">,</span> <span class="n">offsetDegrees</span><span class="o">,</span> <span class="n">bearingDegrees</span><span class="o">,</span> <span class="n">context</span><span class="o">,</span> <span class="n">newPoint</span><span class="o">)</span>
+    <span class="n">newPoint</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+<p>Sampling from this distribution gives us the smooth coverage we might have expected:</p>
+<div class="highlight"><pre><span></span><span class="o">(</span><span class="mi">0</span> <span class="n">to</span> <span class="mi">1000</span><span class="o">).</span><span class="n">map</span><span class="o">(</span><span class="k">_</span> <span class="k">=&gt;</span> <span class="nc">PointGenerator</span><span class="o">.</span><span class="n">randPointInRadius</span><span class="o">(</span><span class="mf">34.0</span><span class="o">,-</span><span class="mf">118.0</span><span class="o">,</span><span class="mi">2000</span><span class="o">,</span> <span class="kc">true</span><span class="o">)).</span><span class="n">map</span><span class="o">(</span><span class="n">p</span> <span class="k">=&gt;</span> <span class="s">s&quot;</span><span class="si">${</span><span class="n">p</span><span class="o">.</span><span class="n">getY</span><span class="si">}</span><span class="s">,</span><span class="si">${</span><span class="n">p</span><span class="o">.</span><span class="n">getX</span><span class="si">}</span><span class="s">&quot;</span><span class="o">).</span><span class="n">foreach</span><span class="o">(</span><span class="n">println</span><span class="o">)</span>
+<span class="c1">// 33.939640262698276,-118.43135364227057</span>
+<span class="c1">// 33.946446329758274,-118.4285590217258</span>
+<span class="c1">// 33.927846243486826,-118.40795788351743</span>
+<span class="c1">// 33.922739829504145,-118.41091483844558</span>
+<span class="c1">// 33.93132724358199,-118.41135336156653</span>
+<span class="c1">// 33.941905760094876,-118.42909622711291</span>
+<span class="c1">// 33.939879012731645,-118.39112410484391</span>
+<span class="c1">// etc...</span>
+</pre></div>
+<p><img src="/public/images/point_in_radius_uniform.png" alt="/public/images/point_in_radius_uniform.png" /></p>
+<p>And that&#8217;s it! A utility like this is helpful for applications like generating heatmaps, so hopefully it will be useful to you:</p>
+<p><img src="/public/images/point_in_radius_heatmap.png" alt="/public/images/point_in_radius_heatmap.png" /></p>
+<p>Finally, if you happen to be working in clojure, the great <a href="https://github.com/factual/geo">Factual/geo</a> library includes a utility exactly like this: <a href="http://factual.github.io/geo/2.1.1/geo.spatial.html#var-rand-point-in-radius">geo.spatial/rand-point-in-radius</a>.</p>
+
+</article>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>
