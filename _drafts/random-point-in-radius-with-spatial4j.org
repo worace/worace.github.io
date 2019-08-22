@@ -7,17 +7,20 @@ Recently I needed to generate random points within a given radius around a point
 
 I found it less obvious than I expected, so I decided to document the process here in case it helps anyone.
 
-I'm using [[https://github.com/locationtech/spatial4j][Spatial4J]], a Java geospatial library which provides utilities for doing spatial operations in a geodesic context. In particular this contrasts with the also-popular [[https://github.com/locationtech/jts][Java Topology Suite]], which provides vector-oriented geometric utilities in a Cartesian context. For mapping-oriented work where you care about normal distance units like meters, Spatial4J is often what you need.
+I'm using [[https://github.com/locationtech/spatial4j][Spatial4J]], a Java geospatial library which provides utilities for doing spatial operations in a geodesic context. In particular this contrasts with the also-popular [[https://github.com/locationtech/jts][Java Topology Suite]], which provides vector-oriented geometric utilities in a Cartesian context.
 
-For a real project, you'll obviously want to put this into a pom/sbt/lein/whatever config file, but for quick experimentation, you can download it from [[https://mvnrepository.com/artifact/org.locationtech.spatial4j/spatial4j/0.7][maven]]:
+For mapping work where you care about normal surface-of-the-earth distance units like feet or meters, Spatial4J is often the tool you need. That said, if you're not working on the JVM, other great tools like [[https://pypi.org/project/Shapely/][Shapely (Python)]] and [[https://github.com/rgeo/rgeo][RGeo (Ruby)]] provide similar utilities for other languages.
 
+** Deps / Repl setup
+I'm going to show some code snippets in scala which can be used interactively in the scala REPL.
+
+For a real project, you'll obviously want to put this into a pom/sbt/lein/whatever config file, but for quick experimentation, you can download the Spatial4J JAR from [[https://mvnrepository.com/artifact/org.locationtech.spatial4j/spatial4j/0.7][maven]]:
 
 #+BEGIN_SRC sh
 wget https://repo1.maven.org/maven2/org/locationtech/spatial4j/spatial4j/0.7/spatial4j-0.7.jar
 #+END_SRC
 
 Then in a scala repl, require it:
-
 
 #+BEGIN_SRC txt
 ➸ scala
@@ -28,17 +31,21 @@ scala> :require spatial4j-0.7.jar
 Added '/private/tmp/spatial4j-0.7.jar' to classpath.
 #+END_SRC
 
+Now you'll be able to import and work with Spatial4J's classes in your REPL session.
 
 ** Outline
-Here are the rough steps:
+We want to provide a center point (as a latitude and longitude) and a radius and get back a random point within the implied circle.
+
+Here are the rough steps we'll follow:
 
 1. Set up some imports
-2. Construct some basic s4j factory objects (it's not called 4J 4 nothing)
-3. Make an s4j point representing your desired center lat/lon
-4. Pick a random offset within your desired radius
-5. Pick a random angle (0 - 360 degrees) to offset your point
-6. Convert your distance (in meters) to an appropriate offset (in /degrees/) at your target lat/lon.
-7. Make your new random point
+2. Construct some basic spatial4j factory objects (it doesn't have "4J" in the name for nothing)
+3. Make an s4j point representing our desired center lat/lon
+4. Pick a random distance offset within the desired radius
+5. Pick a random bearing (0 - 360 degrees) to shift our point
+6. *Convert our distance (in meters) to an appropriate offset (in /degrees/) at the target lat/lon.* We'll get to this in a minute, but it turns out this has to be done in polar units like degrees rather than cartesian units like meters. Spatial4J provides a lot of utility here.
+7. Victory! Get back our new random point.
+
 ** Imports
 First, set up some imports:
 
@@ -50,13 +57,12 @@ import org.locationtech.spatial4j.distance.DistanceUtils
 ** Factory Stuff
 Spatial4J uses a Factory object called a [[https://locationtech.github.io/spatial4j/apidocs/org/locationtech/spatial4j/context/SpatialContext.html][SpatialContext]] for many of its core APIs. There are a lot of different ways to configure this depending on your needs, but for the most common use-cases they include a static implementation under =SpatialContext.GEO=:
 
-
 #+BEGIN_SRC scala
 val context = org.locationtech.spatial4j.context.SpatialContext.GEO
 #+END_SRC
 
-** Make a point object out of your lat/lon
-We'll use another factory off of our =SpatialContext= to construct this. Remember Lon is X and Lat is Y in Geospatial tech:
+** Make a point object to represent the desired lat/lon
+We'll use another factory off of our =SpatialContext= to construct this. Remember in Geospatial tech longitude is X and latitude is Y:
 
 #+BEGIN_SRC scala
 val lat = 33.94
@@ -64,20 +70,20 @@ val lon = -118.41
 val startPoint = context.getShapeFactory.pointXY(lon, lat)
 #+END_SRC
 
-** Pick your random distance offset
+** Pick a random distance offset
 
 #+BEGIN_SRC scala
 val radius = 1000
 val offsetMeters = scala.util.Random.nextDouble * radius
 #+END_SRC
 
-** Pick your random bearing
+** Pick a random bearing
 
 #+BEGIN_SRC scala
 val bearingDegrees = scala.util.Random.nextDouble * 360
 #+END_SRC
 
-** Convert your linear distance to angular units (degrees)
+** Convert the linear distance offset to angular units (degrees)
 This is the kicker for working with geodesic libraries like Spatial4J. It operates in a polar context, dealing with radii and angles (lat/lon) from the earth, but a distance like 500 meters is cartesian, dealing with flat distances on the earth's surface.
 
 Fortunately there are ways to convert between the 2. In particular Spatial4J's [[https://locationtech.github.io/spatial4j/apidocs/org/locationtech/spatial4j/distance/DistanceUtils.html][DistanceUtils]] module includes some constants and utilities for this purpose:
@@ -87,8 +93,10 @@ val earthRadiusMeters = DistanceUtils.EARTH_MEAN_RADIUS_KM * 1000
 val offsetDegrees = DistanceUtils.dist2Degrees(offsetMeters, earthRadiusMeters)
 #+END_SRC
 
+You might notice we are using Earth's "mean radius" here. Depending on the level of precision required by your application, there are more sophisticated ways to make this conversion more accurate. For example the earth isn't truly spherical but rather slightly oval-shaped, and algorithms exist to find a more precise radius at a given latitude rather than simply taking the mean. In keeping with blog post tradition, we'll leave researching this as an exercise for the reader.
 
 ** Get a new point
+We now have a starting point, a bearing, and an offset radius in degrees.
 
 Finally we can use another Spatial4J utility, =org.locationtech.spatial4j.distance.GeodesicSphereDistCalc=, to convert our start point, bearing, and offset to a new point.
 
@@ -130,7 +138,7 @@ object PointGenerator {
 }
 #+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC scala
 scala> PointGenerator.randPointInRadius(34.0,-118.0,500)
 res1: org.locationtech.spatial4j.shape.Point = Pt(x=-118.00141054557675,y=33.9971987911845)
 scala> PointGenerator.randPointInRadius(34.0,-118.0,500)
@@ -139,9 +147,9 @@ scala> PointGenerator.randPointInRadius(34.0,-118.0,500)
 res3: org.locationtech.spatial4j.shape.Point = Pt(x=-118.0008673083813,y=33.99933155556646)
 scala> PointGenerator.randPointInRadius(34.0,-118.0,500)
 res4: org.locationtech.spatial4j.shape.Point = Pt(x=-117.99862804930764,y=34.001770697901655)
-#+END_EXAMPLE
+#+END_SRC
 
-** A catch on distributions
+** A catch regarding distributions
 This works great, but if we take a large sample and plot it on a map, we'll notice the points cluster tightly near the center:
 
 #+BEGIN_SRC scala
@@ -154,7 +162,9 @@ This works great, but if we take a large sample and plot it on a map, we'll noti
 // Copy + paste | geoq map
 #+END_SRC
 
-It turns out that because of the way area and circles work, taking a random distance offset within our desired radius doesn't give a uniform distribution throughout the circle, but rather clusters the points toward the center.
+[[/public/images/point_in_radius_clustered.png]]
+
+It turns out that because of the way circles and area work, taking a random distance offset within our desired radius doesn't give a uniform distribution throughout the circle, but rather clusters the points toward the center.
 
 If we want a smooth distribution over the area described by our point and radius, we'll need to sample radii exponentially weighted toward the max radius. That is, we want:
 
@@ -192,6 +202,8 @@ object PointGenerator {
 }
 #+END_SRC
 
+Sampling from this distribution gives us the smooth coverage we might have expected:
+
 #+BEGIN_SRC scala
 (0 to 1000).map(_ => PointGenerator.randPointInRadius(34.0,-118.0,2000, true)).map(p => s"${p.getY},${p.getX}").foreach(println)
 // 33.939640262698276,-118.43135364227057
@@ -204,55 +216,10 @@ object PointGenerator {
 // etc...
 #+END_SRC
 
-** Clj
-This is using Spatial4J.
+[[/public/images/point_in_radius_uniform.png]]
 
-#+BEGIN_SRC clojure
-(import (org.locationtech.spatial4j.context SpatialContextFactory)
-        (org.locationtech.spatial4j.context.jts JtsSpatialContext)
-        (org.locationtech.spatial4j.distance DistanceUtils))
+And that's it! A utility like this is helpful for applications like generating heatmaps, so hopefully it will be useful to you:
 
-;; Setup
-;; create a spatial context based on Spatial4J's generic Earth model
-(def s4j-earth (SpatialContextFactory/makeSpatialContext
-            {"geo" "true"
-             "datelineRule" "width180"
-             "spatialContextFactory" "org.locationtech.spatial4j.context.jts.JtsSpatialContextFactory"
-             "distCalculator" "vincentySphere"}
-            (.getClassLoader JtsSpatialContext)))
-;; Create a distance calculator to use for generating offset points
-(def vincenty-distance-calculator (org.locationtech.spatial4j.distance.GeodesicSphereDistCalc$Vincenty.))
+[[/public/images/point_in_radius_heatmap.png]]
 
-(def radius 500) ;; meters
-(def lat 33.9103414)
-(def lon -118.428336)
-
-(def center-point (.makePoint s4j-earth lon lat))
-
-;; Generate a random offset within the given radius
-(def offset-meters (* (rand) radius))
-
-;; Spatial4J's pointOnBearing operates in angular rather than linear distance, so
-;; we need to convert the desired offset (in meters) to earth radius (in degrees)
-(def earth-radius (* 1000 DistanceUtils/EARTH_MEAN_RADIUS_KM))
-(def offset-radians (DistanceUtils/dist2Radians offset-meters earth-radius))
-(def offset-degrees (DistanceUtils/toDegrees offset-radians))
-
-;; Pick a random angle
-(def angle-degrees (rand 360))
-
-;; Generate a new point at the desired distance on the desired angle
-
-(def new-point (.pointOnBearing vincenty-distance-calculator
-                                center-point
-                                offset-degrees
-                                angle-degrees
-                                s4j-earth
-                                nil))
-#+END_SRC
-
-Producing a uniform distribution within the radius:
-
-#+BEGIN_SRC clojure
-(def offset-meters (* (Math/sqrt (rand)) radius))
-#+END_SRC
+Finally, if you happen to be working in clojure, the great [[https://github.com/factual/geo][Factual/geo]] library includes a utility exactly like this: [[http://factual.github.io/geo/2.1.1/geo.spatial.html#var-rand-point-in-radius][geo.spatial/rand-point-in-radius]].
