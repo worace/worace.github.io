@@ -1,0 +1,60 @@
+import { swiss } from 'mdx-deck/themes'
+import { Split } from 'mdx-deck'
+
+export const theme = swiss;
+
+# Working with GraphQL Queries
+
+---
+
+## Goals:
+
+* Dispell some myths
+* Build a mental model for working with GraphQL schemas
+* Practice writing queries
+* Practice reading GraphQL Docs
+* **Not focused on server-side tools + implementation today.**
+
+---
+
+## 1. Background
+
+#### [GraphQL: A Query Language for your API](https://graphql.org/)
+
+* GraphQL is a specification for a JSON-based data protocol
+* 2 parts:
+  * **Schema-Definition** (Server Side) -- Define a typed JSON document your server provides
+  * **Query Language** (Client Side** -- Request document fields and specify parameters
+
+---
+
+<Split>
+
+<div style={{textAlign: "left"}}>
+
+## 2. Myths + Fears
+
+* Graph**QL** != S**QL**
+* Despite having "Query Language" in the name, the query language is much simpler than something like SQL.
+
+</div>
+
+```json
+{
+    "viewer": {
+        "login": "worace",
+        "location": "Los Angeles, CA"
+    }
+}
+```
+
+</Split>
+
+
+---
+
+## 2. Type System
+
+* Returned data in GraphQL is all just JSON
+* Query Language enables selecting subsets of fields and providing arguments
+* "JSON Filtering and Parameterization DSL" would be a better name but does not sound as trendy
