@@ -39,7 +39,7 @@ export const theme = swiss;
 
 ##### because...
 
-* Server declares available fields (via a Schema**
+* Server declares available fields (via a Schema)
 * Clients can only request items from these available fields
 * No concepts like joins, unions, CTEs, etc etc
 * Doesn't really relate to Graph Databases either
@@ -87,8 +87,8 @@ select username from users where id = 1234;
 
 ## 3. JSON + HTTP under the hood
 
-* GraphQL request are still sent via HTTP
-* Queries are sent as strings and parsed by the server
+* GraphQL requests are sent via HTTP
+* Queries are sent as strings (usually via HTTP POST body) and parsed by the server
 * Returned data is sent as JSON
 * Query Language filters fields and provides arguments
 
@@ -172,13 +172,13 @@ query {
 
 ---
 
-<Split style={{textAlign: "left", alignItems: "flex-start", fontSize: "36px"}}>
+<Split style={{textAlign: "left", alignItems: "flex-start"}}>
 
 <div>
 
 ## Interlude: GQL Type System
 
-* Won't spend much time - better to just practice writing queries
+* GraphQL schemas are typed
 * Scalars:
   * Int
   * Float
@@ -219,11 +219,13 @@ GraphQL Schemas are represented as structured data, which makes sophisticated to
 * [Github V4 API Developer Playground](https://developer.github.com/v4/explorer/) (Uses GraphiQL)
 * [Apollo Client](https://www.apollographql.com/docs/react/)
 
-These things are not really part of the core GraphQL Spec (which focuses on query format, transport protocol, resolution logic, etc).
+Not technically part of core GraphQL (Spec describes query format, transport protocol, resolution logic, etc).
 
 But they are fairly ubiquitous and a common part of working with GraphQL.
 
-We will use the GitHub V4 API for examples and exercises in this tutorial.
+**Consuming GraphQL in practice = browsing interactive docs + writing queries**
+
+We will practice this using the GitHub V4 API Explorer.
 
 ---
 
@@ -269,17 +271,21 @@ Log in to GitHub explorer and query the `viewer` field to get your own:
 
 ## Next Step: Parameters
 
-* Basic syntax let's us read fields, but we also need to provide input data
+* Basic syntax lets us read fields, but we also need to **provide input data**
 * Parameters can be accepted at any field in a GQL query (remember it is **JSON Filtering and Parameterization DSL**)
 * Standard scalar types, or composites of these
 * Used very frequently, so good to get used to them
-  * Examples: Search, Filtering, Pagination (very common in GitHub's API)
+  * Examples: Search, Filtering, Pagination (very common in GitHub's API**
 
 ##### REST Comparison
 
 * Data that would go in a URL param or POST Body in a REST API goes in a parameter in GQL
 
-`/users/123/repositories?limit=5` **vs** `userId: 123, limit: 5`
+`/users/123/repositories?limit=5`
+
+**vs**
+
+`query { repositories(userId: 123, limit: 5) { name } }`
 
 </div>
 
@@ -302,6 +308,213 @@ query {
 }
 
 ```
+</div>
+
+</Split>
+
+---
+
+## Exercise 2: Queries with Parameters
+
+Now that we know how to send query parameters, we can access much more of the schema!
+
+1. Using the `user` field, look up your neighbor's github email, database ID, and the names of their first 10 repositories.
+2. Using the `organization` field, look up the name and login for the first 10 members of the Factual github org.
+3. Using the `organization` field, find Factual's 10 most-starred repositories
+
+
+---
+
+<Split style={{textAlign: "left", alignItems: "flex-start", fontSize: "36px"}}>
+
+<div>
+
+## Next Steps: Mutations
+
+* `mutation` is the second top-level field in a GQL schema (after `query`)
+* "Mutations" represent write operations (Create, Update, Delete)
+* Note that (like HTTP Verbs in REST) this is really just by convention
+* Syntax is the same
+* Mutations are also fields and can return values like normal queries
+* Note in the GitHub API, most mutations require an ID as input, so you may need to first run a query to get the ID of the subject you want to interact with
+
+</div>
+
+<div>
+
+#### Example:
+
+```
+mutation {
+  followUser(input:{userId:"MDQ6VXNlcjU3NzA2NjA="}) {
+    user {
+      viewerCanFollow
+      viewerIsFollowing
+    }
+  }
+}
+
+```
+
+```
+{
+  "data": {
+    "followUser": {
+      "user": {
+        "viewerCanFollow": true,
+        "viewerIsFollowing": true
+      }
+    }
+  }
+}
+```
+</div>
+
+</Split>
+
+
+---
+
+## Exercise 3: Mutations
+
+Use mutations in the GitHub API Explorer to:
+
+1. Star a Repo (you can use "worace/test-repo" if you don't want to use another one)
+2. Follow your neighbor
+3. Add a reaction to [this issue](https://github.com/worace/test-repo/issues/1)
+
+<div style={{fontSize: "24px"}}>
+
+Hint: Look up the ID using:
+
+```
+query {
+  repository(name:"test-repo", owner:"worace") {
+    issues(first:5){
+      nodes {
+        id
+        title
+      }
+    }
+  }
+}
+```
+
+</div>
+
+---
+
+### Named Queries and Variables
+
+As your queries become more complex, you may want to re-use a query with different parameters.
+
+GraphQL supports this with "named queries" and variables:
+
+<Split style={{textAlign: "left", fontSize: "32px", alignItems: "flex-start"}}>
+
+<div>
+
+```
+query IssuesForRepo($name: String!, $owner:String!){
+  repository(name:$name, owner:$owner){
+    issues(first:5){
+      nodes {
+        id
+        title
+      }
+    }
+  }
+}
+```
+
+with Variables:
+
+```
+{"name": "test-repo", "owner": "worace"}
+```
+
+</div>
+
+```
+{
+  "data": {
+    "repository": {
+      "issues": {
+        "nodes": [
+          {
+            "id": "MDU6SXNzdWU1MzYwMDU2MDc=",
+            "title": "Test Issue for Reactions"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+**Named Queries are great because they integrate well with...**
+
+</Split>
+
+
+---
+
+<Split style={{textAlign: "left", fontSize: "42px", alignItems: "flex-start"}}>
+
+<div>
+
+### Programmatic Clients
+
+Explorer UIs like GraphiQL are great for discovery and experimentation.
+
+But for production use, you'll likely want to use a programmatic GraphQL client:
+
+* [github/graphql-client](https://github.com/github/graphql-client) (Ruby)
+* [graphql-python/gql](https://github.com/graphql-python/gql) (Python)
+* [prisma-labs/graphql-request](https://github.com/prisma-labs/graphql-request) (JS)
+* [apollographql/apollo-client](https://github.com/apollographql/apollo-client) (JS)
+* [Jarlakxen/drunk](https://github.com/Jarlakxen/drunk) (Scala)
+* (Or just use an HTTP client and roll your own!)
+
+</div>
+
+<div style={{fontSize: "24px"}}>
+
+Python Example:
+
+```
+from gql import gql, Client
+from gql.transport.requests import RequestsHTTPTransport
+
+transport = RequestsHTTPTransport(
+  url='http://graph.prod.factual.com/graphql',
+  use_json=True
+)
+
+client = Client(
+  transport=transport,
+  fetch_schema_from_transport=True
+)
+
+query = gql(
+  '''
+  query($chain_id: String!) {
+    search(filters: {country: "us", chainId: $chain_id}) {
+      id
+      name
+    }
+  }
+  '''
+)
+
+vars = {'chain_id': "ab4a6b90-d68a-012e-5619-003048cad9da"}
+
+client.execute(
+  query,
+  variable_values = vars
+)
+```
+
 </div>
 
 </Split>
