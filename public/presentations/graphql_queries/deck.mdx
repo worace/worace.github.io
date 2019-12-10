@@ -23,38 +23,285 @@ export const theme = swiss;
 
 * GraphQL is a specification for a JSON-based data protocol
 * 2 parts:
-  * **Schema-Definition** (Server Side) -- Define a typed JSON document your server provides
-  * **Query Language** (Client Side** -- Request document fields and specify parameters
+  * **Schema-Definition** (Server Side): Define a typed schema for the JSON your server provides
+  * **Query Language** (Client Side): Request document fields and specify parameters
 
 ---
 
-<Split>
+<Split style={{textAlign: "left", fontSize: "42px", alignItems: "flex-start"}}>
 
 <div style={{textAlign: "left"}}>
 
-## 2. Myths + Fears
+## 2. Myths + Misconceptions
 
 * Graph**QL** != S**QL**
 * Despite having "Query Language" in the name, the query language is much simpler than something like SQL.
 
+##### because...
+
+* Server declares available fields (via a Schema**
+* Clients can only request items from these available fields
+* No concepts like joins, unions, CTEs, etc etc
+* Doesn't really relate to Graph Databases either
+
+**"JSON Filtering and Parameterization DSL" would be a better name but does not sound as trendy**
+
 </div>
 
-```json
-{
-    "viewer": {
-        "login": "worace",
-        "location": "Los Angeles, CA"
-    }
+<div style={{paddingLeft: '20px'}}>
+
+```gql
+type User {
+  login: String!
+  location: String
+  name: String
+}
+type Query {
+  viewer: User
+}
+
+
+query {
+  viewer {
+    login
+  }
 }
 ```
+
+**vs...**
+
+```sql
+select username from users where id = 1234;
+```
+
+</div>
 
 </Split>
 
 
 ---
 
-## 2. Type System
+<Split style={{textAlign: "left", fontSize: "42px", alignItems: "flex-start"}}>
 
-* Returned data in GraphQL is all just JSON
-* Query Language enables selecting subsets of fields and providing arguments
-* "JSON Filtering and Parameterization DSL" would be a better name but does not sound as trendy
+<div>
+
+## 3. JSON + HTTP under the hood
+
+* GraphQL request are still sent via HTTP
+* Queries are sent as strings and parsed by the server
+* Returned data is sent as JSON
+* Query Language filters fields and provides arguments
+
+</div>
+
+<div>
+
+```gql
+query {
+  viewer {
+    login
+  }
+}
+```
+
+Equals:
+
+```
+curl 'https://api.github.com/graphql
+  -H 'Content-Type: application/json'
+  --data '{"query":"query {viewer {login}}",
+           "variables":{}}}'
+
+(plus a bunch of headers)
+```
+
+And gets:
+
+```
+{"data": {"viewer": {"login": "worace"}}}
+```
+
+</div>
+
+</Split>
+
+---
+
+## 3. Query Syntax =~ JSON - Fields + Arguments
+
+<Split style={{textAlign: "left", alignItems: "flex-start", fontSize: "36px"}}>
+
+```
+query {
+  viewer {
+    login
+    location
+    name
+    repositories(first:2) {
+      nodes {
+        name
+      }
+    }
+  }
+}
+```
+
+```
+{
+  "data": {
+    "viewer": {
+      "login": "worace",
+      "location": "Los Angeles, CA",
+      "name": "Horace Williams",
+      "repositories": {
+        "nodes": [
+          {
+            "name": "geoq"
+          },
+          {
+            "name": "coque"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Split>
+
+---
+
+<Split style={{textAlign: "left", alignItems: "flex-start", fontSize: "36px"}}>
+
+<div>
+
+## Interlude: GQL Type System
+
+* Won't spend much time - better to just practice writing queries
+* Scalars:
+  * Int
+  * Float
+  * Boolean
+  * String
+  * ID (String but fancy)
+  * Custom Scalars (String but even fancier, e.g. Date, UUID)
+* Enums (Server-defined)
+* Lists
+* Fields can be nullable or not
+* Fields can reference scalars or other types
+
+</div>
+
+```
+type Place {
+  id: ID!
+  name: String!
+  address: String
+  categoryIds: [Int]!
+  latitude: Float!
+  longitude: Float!
+  highExistence: Boolean!
+  chain: Chain
+}
+```
+
+</Split>
+
+---
+
+## Interlude: Tooling
+
+GraphQL Schemas are represented as structured data, which makes sophisticated tooling possible.
+
+* [GraphiQL](https://github.com/graphql/graphiql)
+* [Prisma GraphQL Playground](https://github.com/prisma-labs/graphql-playground) (e.g. [Factual internal Graph API](http://graph.prod.factual.com/))
+* [Github V4 API Developer Playground](https://developer.github.com/v4/explorer/) (Uses GraphiQL)
+* [Apollo Client](https://www.apollographql.com/docs/react/)
+
+These things are not really part of the core GraphQL Spec (which focuses on query format, transport protocol, resolution logic, etc).
+
+But they are fairly ubiquitous and a common part of working with GraphQL.
+
+We will use the GitHub V4 API for examples and exercises in this tutorial.
+
+---
+
+# Workshop Time
+
+## Let's write some Queries
+
+---
+
+## GitHub V4 API
+
+* GitHub uses GraphQL for v4 of their developer API
+* Has an interactive Playground UI at https://developer.github.com/v4/explorer/
+* Go there and sign in
+
+![GitHub Playground](https://www.dropbox.com/s/gochtw5l8qlu69o/Screenshot-2019-12-10-11-13-06.png?dl=1)
+
+---
+
+### Playground Overview
+
+![GitHub Playground](https://www.dropbox.com/s/6vjubv1c1w8g1rc/Screenshot-2019-12-10-11-18-00.png?dl=1)
+
+---
+
+### Exercise 1: Basic Query, no parameters
+
+Log in to GitHub explorer and query the `viewer` field to get your own:
+
+* login
+* location
+* name
+* email
+* employee status
+* bio
+* avatarUrl
+
+---
+
+<Split style={{textAlign: "left", alignItems: "flex-start", fontSize: "36px"}}>
+
+<div>
+
+## Next Step: Parameters
+
+* Basic syntax let's us read fields, but we also need to provide input data
+* Parameters can be accepted at any field in a GQL query (remember it is **JSON Filtering and Parameterization DSL**)
+* Standard scalar types, or composites of these
+* Used very frequently, so good to get used to them
+  * Examples: Search, Filtering, Pagination (very common in GitHub's API)
+
+##### REST Comparison
+
+* Data that would go in a URL param or POST Body in a REST API goes in a parameter in GQL
+
+`/users/123/repositories?limit=5` **vs** `userId: 123, limit: 5`
+
+</div>
+
+<div>
+
+#### Parameter Syntax:
+
+```
+field(paramName: "Value")
+```
+
+```
+query {
+  viewer {
+    organization(login:"Factual"){
+      login
+      location
+    }
+  }
+}
+
+```
+</div>
+
+</Split>
