@@ -518,3 +518,25 @@ client.execute(
 </div>
 
 </Split>
+
+---
+
+### Further Research / Advanced Topics
+
+* [Query Aliases](https://graphql.org/learn/queries/#aliases) (use the same field multiple times in one request, e.g. fetch multiple users at a time)
+* [Fragments](https://graphql.org/learn/queries/#fragments) (Re-use shared query logic between multiple queries)
+* [Interfaces](https://graphql.org/learn/schema/#interfaces) (Polymorphism in GraphQL type system)
+* [Error Handling](https://www.youtube.com/watch?v=A5-H6MtTvqk) (Lots of ways; TL;DR errors can be returned at top level next to "data" and at sub-fields. Tries to return errors as values in the payload rather than giving HTTP 500).
+
+---
+
+### Closing - Go Play
+
+Keep experimenting with queries in the GitHub Explorer. Or, here are some other GraphQL APIs to try:
+
+* [Factual Graph API](http://graph.prod.factual.com/graphql)
+  * What's the place with highest placerank within 500m of the office (34.058679, -118.4165)
+  * How many Pizza Huts (Chain ID `ab4a6b90-d68a-012e-5619-003048cad9da`) are there in the world? In the US?
+* [Yelp](https://www.yelp.com/developers/graphiql)
+* [SWAPI](https://graphql.org/swapi-graphql/) (Example API using Star Wars data)
+* [Pokemon API](https://graphql-pokemon.now.sh/) (Ditto, but for Pokemon)
