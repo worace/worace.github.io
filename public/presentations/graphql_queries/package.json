@@ -3,10 +3,9 @@
   "version": "1.0.0",
   "scripts": {
     "start": "mdx-deck deck.mdx",
-    "build": "mdx-deck build deck.mdx"
+    "build": "mdx-deck build deck.mdx --basepath /public/presentations/graphql_queries/public"
   },
   "devDependencies": {
-    "mdx-deck": "3.0.7",
-    "gatsby": "2.18.4"
+    "mdx-deck": "3.0.13"
   }
 }
