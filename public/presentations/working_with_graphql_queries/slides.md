@@ -1,9 +1,3 @@
-import { Split } from 'mdx-deck'
-import { prism, book, swiss, highlight } from 'mdx-deck/themes'
-import theme from './theme';
-
-export const themes = [prism, theme];
-
 # Working with GraphQL Queries
 
 ---
@@ -31,10 +25,6 @@ export const themes = [prism, theme];
 
 ---
 
-<Split style={{textAlign: "left", alignItems: "flex-start"}}>
-
-<div style={{textAlign: "left"}}>
-
 ## 2. Myths + Misconceptions
 
 * Graph**QL** != S**QL**
@@ -48,10 +38,6 @@ export const themes = [prism, theme];
 * Doesn't really relate to Graph Databases either
 
 **"JSON Filtering and Parameterization DSL" would be a better name but does not sound as trendy**
-
-</div>
-
-<div style={{paddingLeft: '20px'}}>
 
 ```graphql
 type User {
@@ -76,11 +62,6 @@ query {
 ```sql
 select username from users where id = 1234;
 ```
-
-</div>
-
-</Split>
-
 
 ---
 
