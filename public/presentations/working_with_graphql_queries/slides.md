@@ -27,6 +27,7 @@
 
 ## 2. Myths + Misconceptions
 
+.pull-left[
 * Graph**QL** != S**QL**
 * Despite having "Query Language" in the name, the query language is much simpler than something like SQL.
 
@@ -38,7 +39,9 @@
 * Doesn't really relate to Graph Databases either
 
 **"JSON Filtering and Parameterization DSL" would be a better name but does not sound as trendy**
+]
 
+.pull-right[
 ```graphql
 type User {
   login: String!
@@ -62,23 +65,18 @@ query {
 ```sql
 select username from users where id = 1234;
 ```
+]
+
 
 ---
 
-<Split style={{textAlign: "left", alignItems: "flex-start"}}>
-
-<div>
-
 ## 3. JSON + HTTP under the hood
 
+.pull-left[
 * GraphQL requests are sent via HTTP
 * Queries are sent as strings (usually via HTTP POST body) and parsed by the server
 * Returned data is sent as JSON
 * Query Language filters fields and provides arguments
-
-</div>
-
-<div>
 
 ```graphql
 query {
@@ -87,6 +85,10 @@ query {
   }
 }
 ```
+
+]
+
+.pull-right[
 
 Equals:
 
@@ -105,18 +107,13 @@ And gets:
 {"data": {"viewer": {"login": "worace"}}}
 ```
 
-</div>
-
-</Split>
+]
 
 ---
 
 ## 4. Query Syntax =~ JSON - Fields + Arguments
 
-<Split style={{textAlign: "left", alignItems: "flex-start", fontSize: "22px"}}>
-
-<div style={{padding:"2em"}}>
-
+.pull-left[
 ```graphql
 query {
   viewer {
@@ -131,11 +128,9 @@ query {
   }
 }
 ```
+]
 
-</div>
-
-<div style={{padding:"2em"}}>
-
+.pull-right[
 ```json
 {
   "data": {
@@ -157,18 +152,13 @@ query {
   }
 }
 ```
-</div>
-
-</Split>
+]
 
 ---
 
-<Split style={{textAlign: "left", alignItems: "flex-start"}}>
-
-<div>
-
 ## 5. Interlude: GQL Type System
 
+.pull-left[
 * GraphQL schemas are typed
 * Scalars:
   * Int
@@ -181,10 +171,10 @@ query {
 * Lists
 * Fields can be nullable or not
 * Fields can reference scalars or other types
+]
 
-</div>
-
-```
+.pull-right[
+```graphql
 type Place {
   id: ID!
   name: String!
@@ -196,8 +186,7 @@ type Place {
   chain: Chain
 }
 ```
-
-</Split>
+]
 
 ---
 
@@ -232,13 +221,13 @@ We will practice this using the GitHub V4 API Explorer.
 * Has an interactive Playground UI at https://developer.github.com/v4/explorer/
 * Go there and sign in
 
-<img style="max-height: 75vh" src="https://www.dropbox.com/s/gochtw5l8qlu69o/Screenshot-2019-12-10-11-13-06.png?dl=1" />
+<img style="max-height: 40%; max-width: 80%;" src="https://www.dropbox.com/s/gochtw5l8qlu69o/Screenshot-2019-12-10-11-13-06.png?dl=1" />
 
 ---
 
 ### Playground Overview
 
-<img style="max-height: 75vh" src="https://www.dropbox.com/s/6vjubv1c1w8g1rc/Screenshot-2019-12-10-11-18-00.png?dl=1" />
+<img style="max-height: 75%; max-width: 80%" src="https://www.dropbox.com/s/6vjubv1c1w8g1rc/Screenshot-2019-12-10-11-18-00.png?dl=1" />
 
 ---
 
@@ -256,32 +245,18 @@ Log in to GitHub explorer and query the `viewer` field to get your own:
 
 ---
 
-<Split style={{textAlign: "left", alignItems: "flex-start"}}>
-
-<div>
-
 ## Next Step: Parameters
+
+.pull-left[
 
 * Basic syntax lets us read fields, but we also need to **provide input data**
 * Parameters can be accepted at any field in a GQL query (remember it is **JSON Filtering and Parameterization DSL**)
 * Standard scalar types, or composites of these
 * Used very frequently, so good to get used to them
   * Examples: Search, Filtering, Pagination (very common in GitHub's API)
+]
 
-#### REST Comparison
-
-* Data that would go in a URL param or POST Body in a REST API goes in a parameter in GQL
-
-`/users/123/repositories?limit=5`
-
-**vs**
-
-`query { repositories(userId: 123, limit: 5) { name } }`
-
-</div>
-
-<div>
-
+.pull-right[
 #### Parameter Syntax:
 
 ```
@@ -298,9 +273,15 @@ query {
   }
 }
 ```
-</div>
 
-</Split>
+**REST Comparison**
+
+* Data that would go in a URL param or POST Body in a REST API goes in a parameter in GQL
+
+`/users/123/repositories?limit=5` **vs**
+
+`query { repositories(userId: 123, limit: 5) { name } }`
+]
 
 ---
 
@@ -312,25 +293,20 @@ Now that we know how to send query parameters, we can access much more of the sc
 2. Using the `organization` field, look up the name and login for the first 10 members of the Factual github org.
 3. Using the `organization` field, find Factual's 10 most-starred repositories
 
-
 ---
-
-<Split style={{textAlign: "left", alignItems: "flex-start"}}>
-
-<div>
 
 ## Next Step: Mutations
 
+.pull-left[
 * `mutation` is the second top-level field in a GQL schema (after `query`)
 * "Mutations" represent write operations (Create, Update, Delete)
 * Note that (like HTTP Verbs in REST) this is really just by convention
 * Syntax is the same
 * Mutations are also fields and can return values like normal queries
 * Note in the GitHub API, most mutations require an ID as input, so you may need to first run a query to get the ID of the subject you want to interact with
+]
 
-</div>
-
-<div>
+.pull-right[
 
 #### Example:
 
@@ -357,10 +333,7 @@ mutation {
   }
 }
 ```
-</div>
-
-</Split>
-
+]
 
 ---
 
@@ -372,11 +345,9 @@ Use mutations in the GitHub API Explorer to:
 2. Follow your neighbor
 3. Add a reaction to [this issue](https://github.com/worace/test-repo/issues/1)
 
-<div style={{fontSize: "24px"}}>
+(Hint for number 3: Look up the ID using:)
 
-#### Hint: Look up the ID using:
-
-```
+```graphql
 query {
   repository(name:"test-repo", owner:"worace") {
     issues(first:5){
@@ -389,8 +360,6 @@ query {
 }
 ```
 
-</div>
-
 ---
 
 ### Named Queries and Variables
@@ -399,9 +368,7 @@ As your queries become more complex, you may want to re-use a query with differe
 
 GraphQL supports this with "named queries" and variables:
 
-<Split style={{textAlign: "left", alignItems: "flex-start"}}>
-
-<div style={{paddingRight: "10px"}}>
+.pull-left[
 
 ```graphql
 query IssuesForRepo($name: String!, $owner:String!){
@@ -421,11 +388,9 @@ with Variables:
 ```json
 {"name": "test-repo", "owner": "worace"}
 ```
+]
 
-</div>
-
-<div style={{paddingLeft: "10px"}}>
-
+.pull-right[
 ```json
 {
   "data": {
@@ -444,19 +409,14 @@ with Variables:
 ```
 
 **Named Queries are great because they integrate well with...**
-
-</div>
-
-</Split>
-
+]
 
 ---
 
-<Split style={{textAlign: "left", alignItems: "flex-start"}}>
-
-<div>
-
 ### Programmatic Clients
+
+.pull-left[
+
 
 Explorer UIs like GraphiQL are great for discovery and experimentation.
 
@@ -469,13 +429,12 @@ But for production use, you'll likely want to use a programmatic GraphQL client:
 * [Jarlakxen/drunk](https://github.com/Jarlakxen/drunk) (Scala)
 * (Or just use an HTTP client and roll your own!)
 
-</div>
+]
 
-<div style={{fontSize: "18px"}}>
-
+.pull-right.text-sm[
 Python Example:
 
-```
+```python
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 
@@ -507,14 +466,11 @@ client.execute(
   variable_values = vars
 )
 ```
-
-</div>
-
-</Split>
+]
 
 ---
 
-## Further Research / Advanced Topics
+### Further Research / Advanced Topics
 
 * [Query Aliases](https://graphql.org/learn/queries/#aliases) (use the same field multiple times in one request, e.g. fetch multiple users at a time)
 * [Fragments](https://graphql.org/learn/queries/#fragments) (Re-use shared query logic between multiple queries)
@@ -522,7 +478,7 @@ client.execute(
 * [Error Handling](https://www.youtube.com/watch?v=A5-H6MtTvqk) (Lots of ways; TL;DR errors can be returned at top level next to "data" and at sub-fields. Tries to return errors as values in the payload rather than giving HTTP 500).
 * [Subscriptions](https://github.com/graphql/graphql-spec/blob/master/rfcs/Subscriptions.md) (Stream graphql fields as real time events -- not finalized)
 
-## Broader Picture
+#### Broader Picture
 
 * GraphQL Benefits
   * Flexible field specific

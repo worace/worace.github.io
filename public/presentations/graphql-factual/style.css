@@ -11,6 +11,8 @@ h1, h2, h3 {
 .remark-slide-content h1 { font-size: 3em; }
 .remark-slide-content h2 { font-size: 2em; }
 .remark-slide-content h3 { font-size: 1.6em; }
+.text-sm { font-size: 0.75em; }
+.text-sm code { font-size: 0.75em; }
 
 .footnote {
   position: absolute;
