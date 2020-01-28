@@ -17,7 +17,7 @@ Software Engineer and teacher working at Turing School in Denver, CO. Previously
 *** Hungry Academy (at LivingSocial) (March 2012 – Aug 2012)
 5 month intensive programming and web development training, focusing on Ruby and Rails fundamentals for modern web applications.
 *** Wong Logan Architects, Berkeley, CA: Junior Architect (July 2011 – March 2012)
-*** Yale Daily News - Production & Design EditoR (2007 – 2009)
+*** Yale Daily News - Production & Design Editor (2007 – 2009)
 *** Yale Sustainable Food Project - Farm Manager and Webmaster (2007 – 2009)
 ** Recent Projects
  * Clarke Coin: Minimalist Peer-to-peer Cryptocurrency
