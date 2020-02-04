@@ -8,29 +8,30 @@ layout: default
 *** Factual - Software Engineer (Jan 2017 - Present)
 [[https://www.factual.com/][Factual]] makes a suite of location data products including a global Places (POI) dataset.
 
-I had always been interested in working on tech in the mapping or location space as well as doing more "Data Engineering" and Factual has given me a chance to do both.
+I had always been interested in working on tech in the mapping or location space as well as doing more Data Engineering work (previously I had worked mostly in the web space) and Factual has given me a chance to do both.
 
 It's a fast-moving place with more projects to go around than people, and I worked on quite a few projects:
 
- - Web-based "workbench" application for tuning a geospatial ML model. Included a pure PL/pgSQL-based port of C++ featurization logic to enable feature development with PostGIS rather than C++. Clojure, React, PostGIS, Mapbox GL JS.
+ - Model for optimizing POI location placement at scale. Included spatial scoring rules, tiling infrastructure, and a web-based workbench UI. I developed a rules-based version then helped a coworker convert it to a regression-based ML model. /Scala, Apache Spark, H3, JTS, Thrift, SKLearn, PostGIS, Mapbox GL JS/.
+ - Distributed tiling system for building spatial tilesets to serve mobile and API clients. Turned ~100G of GeoJSON into ~20G of binary tiles. I rewrote this system from Java and Hadoop MapReduce to Clojure and Spark. /Clojure, Spark, JTS, Thrift/.
+ - ETL pipeline for populating Factual's spatial data warehouse. /Ruby, PostGIS, OpenStreetMap, my own ruby shell scripting library, [[https://github.com/worace/coque][Coque]]/.
  - Android "Data Collection App" for gathering training data for spatial ML models
- - Web-based data moderation and annotation platform. 2 million annotations and growing. Rails, Postgres, React, GraphQL.
- - Distributed tiling system for building spatial tilesets to serve mobile and API clients. Turned ~100G of GeoJSON into ~20G of binary tiles. Clojure, Apache Spark, Thrift, JTS, Spatial4J. I rewrote this system from Java and Hadoop MapReduce to Clojure and Spark.
- - ETL pipeline for populating Factual's spatial data warehouse. Ruby, PostGIS, OpenStreetMap, my own ruby shell scripting library, [[https://github.com/worace/coque][Coque]].
- - Model for optimizing POI location placement at scale. Included spatial scoring rules, tiling infrastructure, and a web-based workbench UI. I developed a rules-based version then helped a coworker convert it to a regression-based ML model. Scala, Spark, H3, JTS, SKLearn, PostGIS, Mapbox GL JS.
-
-During this time I got really interested in geospatial and mapping tech, and committed to working on a few geo-related side projects, including:
- - [[https://contour.app/][contour.app]] - A web-based PostGIS console and GIS dataset storage tool.
- - [[github.com/worace/geoq][geoq]] - A streaming geospatial CLI for working with WKT, GeoJSON, and Geohashes.
+ - Web-based data moderation and annotation platform. 2 million annotations and growing. /Rails, Postgres, React, GraphQL/.
+ - Web-based workbench application for tuning a geospatial ML model. Included a pure PL/pgSQL-based port of C++ featurization logic to enable feature development with PostGIS rather than C++. /Clojure, React, PostGIS, Mapbox GL JS/.
+*** Personal Geo Projects (2017-present)
+During this time I got interested in geospatial and mapping tech, and committed to working on a few geo-related side projects, including:
+  - [[github.com/worace/geoq][geoq]] - A streaming geospatial CLI for working with WKT, GeoJSON, and Geohashes.
+  - [[https://contour.app/][contour.app]] - A web-based PostGIS console and GIS dataset storage tool.
+I also attended my first OpenStreetMap conference, a tradition I hope to continue!
 *** Hillary for America - Software Engineer (July - Nov 2016)
-4 month tenure on a campaign tech team. Surprisingly normal work environment, with a lot of industry veterans on leave from various "typical" tech jobs. But also 7 day work weeks. Lots of professional practice knowledge sharing thanks to team's diverse backgrounds.
+4 month tenure on a campaign tech team. This was a fast-moving environment largely populated by industry veterans on leave from various more typical tech jobs. I learned a lot from all of the knowledge sharing among this diverse group, and thanks to the bursty nature of campaign interactions the technology tended to be built for a surprising amount of scale.
 
 I worked on a series of full-stack and backend web projects including:
 
- - A form-builder application for soliciting donations and list signups. Rails, RDS, SQS
- - Improvements to polling place lookup API. Golang, Melissa Address Data
- - A service for managing bulk SMS-based donation campaigns. Python, Flask, SQS
- - A vanity site for subscribing to automated donations in response to Trump tweets. Node, Express, Knex, RDS, SQS
+ - A form-builder application for soliciting donations and list signups. /Rails, RDS, SQS/
+ - Improvements to polling place lookup API. /Golang, Melissa Address Data/
+ - A service for managing bulk SMS-based donation campaigns. /Python, Flask, SQS/
+ - A vanity site for subscribing to automated donations in response to Trump tweets. /Node, Express, Knex, RDS, SQS/
 
 *** Turing School of Software and Design - Instructor (Oct 2014 - May 2016)
 Instructor for daily full-group, in-person class sessions on CS fundamentals, Object Oriented Programming and Design, and Web Development at a non-profit code school.
@@ -40,9 +41,8 @@ Lots of time spent teaching and working with new developers, writing detailed le
 *** LivingSocial - Software Apprentice and Engineer (Mar 2012 - Oct. 2014)
 Joined as a student at an in-house code bootcamp called Hungry Academy, then worked on the main consumer web team as a Junior Software Engineer.
 
-Worked on the company's main Rails application. Lots of performance optimization and monolith to microservice migration. Ruby, JS, Redis, Memcached. Lots of migrating synchronous web-based processes to asynchronous queue-based ones.
+Worked on the company's main Rails application. Lots of performance optimization and monolith to microservice migration. /Ruby, JS, Redis, Memcached/. Lots of migrating synchronous web-based processes to asynchronous queue-based ones.
 
 *** Marcy Wong Donn Logan Architects - Architectural Minion (July 2011 - Apr 2012)
-Abortive architectural career. Worked at a small firm in Berkeley, CA and realized that architecture school is much more fun than architecture job. Helped me decide to pursue technology more aggressively.
+Worked at a small firm in Berkeley, CA doing various entry-level design, drawing, and presentation tasks.
 *** Yale University - B.A., Architecture (2011)
-Did lots of goofy design projects in Architecture studios. Worked on the Yale Daily News. Took a few CS classes.
