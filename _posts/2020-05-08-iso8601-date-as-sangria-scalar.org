@@ -17,6 +17,7 @@ import sangria.validation.ValueCoercionViolation
 import sangria.schema._
 import sangria.ast._
 
+// Helper object for doing the decoding. I put this in a utils package
 object ISO8601 {
   val tz = TimeZone.getTimeZone("UTC").toZoneId
   val formatter = DateTimeFormatter.ISO_INSTANT.withZone(tz)
@@ -37,7 +38,10 @@ object Scalars {
     ISO8601.parse(dt).toOption.toRight(InvalidDateTimeViolation)
   }
 
-  case object InvalidDateTimeViolation extends ValueCoercionViolation("Input is not valid Date.")
+  case object InvalidDateTimeViolation
+    extends ValueCoercionViolation("Input is not valid Date.")
+  // The actual Scalar definition. Import this implicit when defining your schema
+  // to be enable Sangria to infer schemas for case classes that have Date memebers
   implicit val DateType = ScalarType[Date](
     "Date",
     coerceOutput = (date, _) => ISO8601.encode(date),
