@@ -1,0 +1,55 @@
+---
+title: "Sangria Scalar for ISO 8601 Dates"
+layout: post
+---
+
+Today I had to figure out how to encode a =java.util.Date= as a GraphQL Scalar using [[https://sangria-graphql.org/][Sangria]]. [[https://graphql.org/learn/schema/#scalar-types][Scalars]] in GraphQL are basically fancy strings that let you encode custom data types. This one reads and writes a =java.util.Date= as an [[https://en.wikipedia.org/wiki/ISO_8601][ISO 8601]]-formatted string, which looks like "2020-05-09T03:20:28Z." If your dates are not in UTC you may have a bad time, so don't do that.
+
+Here it is!
+
+
+#+BEGIN_SRC scala
+import scala.util.Try
+import java.time.format.DateTimeFormatter
+import java.time.Instant
+import java.util.{Date, TimeZone}
+import sangria.validation.ValueCoercionViolation
+import sangria.schema._
+import sangria.ast._
+
+object ISO8601 {
+  val tz = TimeZone.getTimeZone("UTC").toZoneId
+  val formatter = DateTimeFormatter.ISO_INSTANT.withZone(tz)
+  def parse(s: String): Try[Date] = Try {
+    val temporalAccessor  = formatter.parse(s)
+    val instant = Instant.from(temporalAccessor)
+    Date.from(instant)
+  }
+
+  def encode(date: Date): String = {
+    val localDateTime = date.toInstant.atZone(tz).toLocalDateTime
+    formatter.format(localDateTime)
+  }
+}
+
+object Scalars {
+  private def parseDate(dt: String): Either[ValueCoercionViolation, Date] = {
+    ISO8601.parse(dt).toOption.toRight(InvalidDateTimeViolation)
+  }
+
+  case object InvalidDateTimeViolation extends ValueCoercionViolation("Input is not valid Date.")
+  implicit val DateType = ScalarType[Date](
+    "Date",
+    coerceOutput = (date, _) => ISO8601.encode(date),
+    coerceInput = {
+      case StringValue(dt, _, _ , _, _) => parseDate(dt)
+      case _ => Left(InvalidDateTimeViolation)
+    },
+    coerceUserInput = {
+      case s: String => parseDate(s)
+      case _ => Left(InvalidDateTimeViolation)
+    }
+  )
+}
+#+END_SRC
+
