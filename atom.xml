@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-02-25T19:02:56-08:00</updated>
+ <updated>2021-02-25T19:04:32-08:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -22,6 +22,8 @@
 &lt;h2 id=&quot;context&quot;&gt;Context&lt;/h2&gt;
 
 &lt;p&gt;This is one approach to isolating database-dependent tests so state from one test doesn’t bleed into the next. The idea is to wrap each test (and all of its database interactions) in a single top-level transaction which never commits. Then in your test teardown, you simply rollback the transaction which reverts the DB to its pristine state. This is the default testing setup in many full-stack web frameworks like Rails or &lt;a href=&quot;https://hexdocs.pm/ecto_sql/Ecto.Adapters.SQL.Sandbox.html&quot;&gt;Phoenix&lt;/a&gt;, and while it can have some drawbacks in certain scenarios it’s overall a great experience.&lt;/p&gt;
+
+&lt;p&gt;One benefit in particular is this allows your database-dependent tests in parallel, without having to manage a bunch of separate ad-hoc test DB instances (you just use a single shared, persistent test instance, which never actually gets any data written to it).&lt;/p&gt;
 
 &lt;h2 id=&quot;transaction-based-tests-with-doobie&quot;&gt;Transaction-based Tests with Doobie&lt;/h2&gt;
 
