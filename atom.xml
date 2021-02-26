@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-02-25T19:00:09-08:00</updated>
+ <updated>2021-02-25T19:02:56-08:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -13,10 +13,10 @@
 
  
  <entry>
-   <title>Transactional Testing with Doobie - MD</title>
-   <link href="http://worace.works/2021/02/25/transactional-testing-with-doobie/"/>
+   <title>Transactional Sandbox Testing with Doobie</title>
+   <link href="http://worace.works/2021/02/25/transactional-sandbox-testing-with-doobie/"/>
    <updated>2021-02-25T00:00:00-08:00</updated>
-   <id>http://worace.works/2021/02/25/transactional-testing-with-doobie</id>
+   <id>http://worace.works/2021/02/25/transactional-sandbox-testing-with-doobie</id>
    <content type="html">&lt;p&gt;Lately I’ve been working a lot with Rob Norris’ excellent &lt;a href=&quot;https://github.com/tpolecat/doobie&quot;&gt;doobie&lt;/a&gt; library for managing database queries in Scala. Here are a few notes on how I set up my test suite to cleanup state for tests that used the DB via doobie.&lt;/p&gt;
 
 &lt;h2 id=&quot;context&quot;&gt;Context&lt;/h2&gt;
