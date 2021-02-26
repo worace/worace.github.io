@@ -20,13 +20,8 @@ So I wired up a base `SandboxTest` which provides this functionality by manipula
 ```scala
 // Base test for providing non-commiting Transactor[IO] as an munit Fixture
 abstract class SandboxTest extends munit.CatsEffectSuite {
-  // cats effect setup
-  implicit val contextShift = cats.effect.IO.contextShift(ExecutionContext.global)
-  val blocker = cats.effect.Blocker.liftExecutionContext(doobie.util.ExecutionContexts.synchronous)
-
   // set up a connection pool to your test DB like normal
   def startPool: HikariDataSource = ???
-
   // munit Suite-level fixtures for holding the connection pool
   // this happens once for each test class
   private var pool: HikariDataSource = null
@@ -44,7 +39,10 @@ abstract class SandboxTest extends munit.CatsEffectSuite {
       // Prevent the connection from committing early on your behalf
       conn.setAutoCommit(false)
       // Make a transactor wrapping this single connection instance, rather than the whole pool
-      val xa = Transactor.fromConnection[IO](conn, blocker)
+      val xa = Transactor.fromConnection[IO](
+        conn,
+        Blocker.liftExecutionContext(doobie.util.ExecutionContexts.synchronous)
+      )
       val rollbackXa: Transactor[IO] = Transactor.strategy.set(
         xa,
         // Disable Doobie's default commit behavior
