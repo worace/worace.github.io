@@ -1,5 +1,5 @@
 ---
-title: "Transactional Testing with Doobie - MD"
+title: "Transactional Sandbox Testing with Doobie"
 layout: post
 ---
 
