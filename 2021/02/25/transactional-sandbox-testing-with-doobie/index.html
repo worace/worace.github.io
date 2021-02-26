@@ -64,19 +64,12 @@
 
 <p>Doobie does provide an API (<a href="https://javadoc.io/doc/org.tpolecat/doobie-core_2.12/latest/doobie/util/transactor$$Transactor$.html">Transactor.after.set</a>) for disabling the default “commit after transact” behavior temporarily. However I found this to be a little finicky, especially if I had tests that involved multiple <code class="highlighter-rouge">ConnectionIO</code>s which might get committed separately. There’s <a href="https://github.com/tpolecat/doobie/issues/535#issuecomment-311202214">a bit of discussion in this issue</a>, but in my case I wanted to be able to run a “full slice” of my application, which might involve many different <code class="highlighter-rouge">ConnectionIO</code>s as well as some invocations of my application-level effect, which in this case is <code class="highlighter-rouge">cats.effect.IO</code>.</p>
 
-<p>Maybe this is a sign that the tests I’m writing fall more into the category of integration tests than unit tests, but I don’t really care. I just want to be able to write tests that use my db, have them be fast, and not have to worry about cleanup code.</p>
-
 <p>So I wired up a base <code class="highlighter-rouge">SandboxTest</code> which provides this functionality by manipulating a setting on a JDBC connection before passing it off to doobie. Note that I’m also using <a href="https://github.com/typelevel/munit-cats-effect">munit-cats-effect</a> here which allows tests to return <code class="highlighter-rouge">IO[Assertion]</code>.</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Base test for providing non-commiting Transactor[IO] as an munit Fixture
 </span><span class="k">abstract</span> <span class="k">class</span> <span class="nc">SandboxTest</span> <span class="k">extends</span> <span class="n">munit</span><span class="o">.</span><span class="nc">CatsEffectSuite</span> <span class="o">{</span>
-  <span class="c1">// cats effect setup
-</span>  <span class="k">implicit</span> <span class="k">val</span> <span class="n">contextShift</span> <span class="k">=</span> <span class="n">cats</span><span class="o">.</span><span class="n">effect</span><span class="o">.</span><span class="nc">IO</span><span class="o">.</span><span class="n">contextShift</span><span class="o">(</span><span class="nc">ExecutionContext</span><span class="o">.</span><span class="n">global</span><span class="o">)</span>
-  <span class="k">val</span> <span class="n">blocker</span> <span class="k">=</span> <span class="n">cats</span><span class="o">.</span><span class="n">effect</span><span class="o">.</span><span class="nc">Blocker</span><span class="o">.</span><span class="n">liftExecutionContext</span><span class="o">(</span><span class="n">doobie</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">ExecutionContexts</span><span class="o">.</span><span class="n">synchronous</span><span class="o">)</span>
-
   <span class="c1">// set up a connection pool to your test DB like normal
 </span>  <span class="k">def</span> <span class="n">startPool</span><span class="k">:</span> <span class="kt">HikariDataSource</span> <span class="o">=</span> <span class="o">???</span>
-
   <span class="c1">// munit Suite-level fixtures for holding the connection pool
 </span>  <span class="c1">// this happens once for each test class
 </span>  <span class="k">private</span> <span class="k">var</span> <span class="n">pool</span><span class="k">:</span> <span class="kt">HikariDataSource</span> <span class="o">=</span> <span class="kc">null</span>
@@ -94,7 +87,10 @@
       <span class="c1">// Prevent the connection from committing early on your behalf
 </span>      <span class="n">conn</span><span class="o">.</span><span class="n">setAutoCommit</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
       <span class="c1">// Make a transactor wrapping this single connection instance, rather than the whole pool
-</span>      <span class="k">val</span> <span class="n">xa</span> <span class="k">=</span> <span class="nc">Transactor</span><span class="o">.</span><span class="n">fromConnection</span><span class="o">[</span><span class="kt">IO</span><span class="o">](</span><span class="n">conn</span><span class="o">,</span> <span class="n">blocker</span><span class="o">)</span>
+</span>      <span class="k">val</span> <span class="n">xa</span> <span class="k">=</span> <span class="nc">Transactor</span><span class="o">.</span><span class="n">fromConnection</span><span class="o">[</span><span class="kt">IO</span><span class="o">](</span>
+        <span class="n">conn</span><span class="o">,</span>
+        <span class="nc">Blocker</span><span class="o">.</span><span class="n">liftExecutionContext</span><span class="o">(</span><span class="n">doobie</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">ExecutionContexts</span><span class="o">.</span><span class="n">synchronous</span><span class="o">)</span>
+      <span class="o">)</span>
       <span class="k">val</span> <span class="n">rollbackXa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Transactor</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">set</span><span class="o">(</span>
         <span class="n">xa</span><span class="o">,</span>
         <span class="c1">// Disable Doobie's default commit behavior
