@@ -15,8 +15,6 @@ One benefit in particular is this allows your database-dependent tests in parall
 
 Doobie does provide an API ([Transactor.after.set](https://javadoc.io/doc/org.tpolecat/doobie-core_2.12/latest/doobie/util/transactor$$Transactor$.html)) for disabling the default "commit after transact" behavior temporarily. However I found this to be a little finicky, especially if I had tests that involved multiple `ConnectionIO`s which might get committed separately. There's [a bit of discussion in this issue](https://github.com/tpolecat/doobie/issues/535#issuecomment-311202214), but in my case I wanted to be able to run a "full slice" of my application, which might involve many different `ConnectionIO`s as well as some invocations of my application-level effect, which in this case is `cats.effect.IO`.
 
-Maybe this is a sign that the tests I'm writing fall more into the category of integration tests than unit tests, but I don't really care. I just want to be able to write tests that use my db, have them be fast, and not have to worry about cleanup code.
-
 So I wired up a base `SandboxTest` which provides this functionality by manipulating a setting on a JDBC connection before passing it off to doobie. Note that I'm also using [munit-cats-effect](https://github.com/typelevel/munit-cats-effect) here which allows tests to return `IO[Assertion]`.
 
 ```scala
