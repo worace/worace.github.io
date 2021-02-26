@@ -3,23 +3,23 @@ title: "Transactional Testing with Doobie - MD"
 layout: post
 ---
 
-Lately I've been working a lot with Rob Norris' excellent [doobie](https://github.com/tpolecat/doobie) library for managing database queries in Scala.
-
-Doobie is great, and you should definitely check it out. However it did take me a bit of time to figure out the best way to manage state cleanup for my database tests, so I'm going to describe my approach here in case it helps anyone.
+Lately I've been working a lot with Rob Norris' excellent [doobie](https://github.com/tpolecat/doobie) library for managing database queries in Scala. Here are a few notes on how I set up my test suite to cleanup state for tests that used the DB via doobie.
 
 ## Context
 
-This is one approach to isolating database-dependent tests so state from one test doesn't bleed into the next. The idea is to wrap all database interactions within each test in a single top-level transaction which never commits. Then in your test teardown, you simply rollback the transaction which reverts the DB to its pristine state. This is the default testing setup in many full-stack web frameworks like Rails or Phoenix, and while it can have some drawbacks in certain scenarios its overall a great experience.
+This is one approach to isolating database-dependent tests so state from one test doesn't bleed into the next. The idea is to wrap each test (and all of its database interactions) in a single top-level transaction which never commits. Then in your test teardown, you simply rollback the transaction which reverts the DB to its pristine state. This is the default testing setup in many full-stack web frameworks like Rails or [Phoenix](https://hexdocs.pm/ecto_sql/Ecto.Adapters.SQL.Sandbox.html), and while it can have some drawbacks in certain scenarios it's overall a great experience.
 
 ## Transaction-based Tests with Doobie
 
 Doobie does provide an API ([Transactor.after.set](https://javadoc.io/doc/org.tpolecat/doobie-core_2.12/latest/doobie/util/transactor$$Transactor$.html)) for disabling the default "commit after transact" behavior temporarily. However I found this to be a little finicky, especially if I had tests that involved multiple `ConnectionIO`s which might get committed separately. There's [a bit of discussion in this issue](https://github.com/tpolecat/doobie/issues/535#issuecomment-311202214), but in my case I wanted to be able to run a "full slice" of my application, which might involve many different `ConnectionIO`s as well as some invocations of my application-level effect, which in this case is `cats.effect.IO`.
 
+Maybe this is a sign that the tests I'm writing fall more into the category of integration tests than unit tests, but I don't really care. I just want to be able to write tests that use my db, have them be fast, and not have to worry about cleanup code.
+
 So I wired up a base `SandboxTest` which provides this functionality by manipulating a setting on a JDBC connection before passing it off to doobie. Note that I'm also using [munit-cats-effect](https://github.com/typelevel/munit-cats-effect) here which allows tests to return `IO[Assertion]`.
 
 ```scala
 // Base test for providing non-commiting Transactor[IO] as an munit Fixture
-class SandboxTest extends munit.CatsEffectSuite {
+abstract class SandboxTest extends munit.CatsEffectSuite {
   // cats effect setup
   implicit val contextShift = cats.effect.IO.contextShift(ExecutionContext.global)
   val blocker = cats.effect.Blocker.liftExecutionContext(doobie.util.ExecutionContexts.synchronous)
@@ -84,7 +84,7 @@ class TransactionalExampleTest extends SandboxTest {
 
 For brevity I've omitted the imports from these snippets but you can see the fully worked example in this [github repo](https://github.com/worace/doobie-transactional-tests).
 
-## In More Detail: Other Approaches
+## Other Approaches
 
 ### Explicit Truncation
 
@@ -120,7 +120,7 @@ Here's an example of what it looks like in munit:
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.dimafeng.testcontainers.munit.TestContainerForEach
 
-class TestContainersExampleTest extends IOSuite with TestContainerForEach {
+class TestContainersExampleTest extends munit.FunSuite with TestContainerForEach {
   override val containerDef = PostgreSQLContainer.Def()
 
   test("test postgres with testcontainer") {
