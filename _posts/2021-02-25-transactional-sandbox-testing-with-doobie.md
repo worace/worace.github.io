@@ -9,6 +9,8 @@ Lately I've been working a lot with Rob Norris' excellent [doobie](https://githu
 
 This is one approach to isolating database-dependent tests so state from one test doesn't bleed into the next. The idea is to wrap each test (and all of its database interactions) in a single top-level transaction which never commits. Then in your test teardown, you simply rollback the transaction which reverts the DB to its pristine state. This is the default testing setup in many full-stack web frameworks like Rails or [Phoenix](https://hexdocs.pm/ecto_sql/Ecto.Adapters.SQL.Sandbox.html), and while it can have some drawbacks in certain scenarios it's overall a great experience.
 
+One benefit in particular is this allows your database-dependent tests in parallel, without having to manage a bunch of separate ad-hoc test DB instances (you just use a single shared, persistent test instance, which never actually gets any data written to it).
+
 ## Transaction-based Tests with Doobie
 
 Doobie does provide an API ([Transactor.after.set](https://javadoc.io/doc/org.tpolecat/doobie-core_2.12/latest/doobie/util/transactor$$Transactor$.html)) for disabling the default "commit after transact" behavior temporarily. However I found this to be a little finicky, especially if I had tests that involved multiple `ConnectionIO`s which might get committed separately. There's [a bit of discussion in this issue](https://github.com/tpolecat/doobie/issues/535#issuecomment-311202214), but in my case I wanted to be able to run a "full slice" of my application, which might involve many different `ConnectionIO`s as well as some invocations of my application-level effect, which in this case is `cats.effect.IO`.
