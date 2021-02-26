@@ -64,6 +64,18 @@ tbody tr:nth-child(odd) th {
 
 ol, ul {
   list-style-position: inside;
+  padding: 0rem 1rem;
+}
+
+ol {
+    counter-reset: item;
+}
+ol li { display: block }
+
+ol li:before {
+    content: counter(item) ". ";
+    counter-increment: item;
+    font-weight: bold;
 }
 
 ::selection {
