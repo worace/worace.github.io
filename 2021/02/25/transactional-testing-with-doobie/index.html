@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Transactional Testing with Doobie - MD &middot; Horace Williams
+    
+  </title>
+  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+</head>
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-117025935-1"></script>
+<script>
+ window.dataLayer = window.dataLayer || [];
+ function gtag(){dataLayer.push(arguments);}
+ gtag('js', new Date());
+
+ gtag('config', 'UA-117025935-1');
+</script>
+
+
+
+  <body>
+
+    <div class="container content">
+      
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a href="https://github.com/worace">github</a></li>
+          <li><a href="http://twitter.com/worace">twitter</a></li>
+        </ul>
+      </header>
+      
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Transactional Testing with Doobie - MD</h1>
+  <time datetime="2021-02-25T00:00:00-08:00" class="post-date">25 Feb 2021</time>
+  <p>Lately I’ve been working a lot with Rob Norris’ excellent <a href="https://github.com/tpolecat/doobie">doobie</a> library for managing database queries in Scala. Here are a few notes on how I set up my test suite to cleanup state for tests that used the DB via doobie.</p>
+
+<h2 id="context">Context</h2>
+
+<p>This is one approach to isolating database-dependent tests so state from one test doesn’t bleed into the next. The idea is to wrap each test (and all of its database interactions) in a single top-level transaction which never commits. Then in your test teardown, you simply rollback the transaction which reverts the DB to its pristine state. This is the default testing setup in many full-stack web frameworks like Rails or <a href="https://hexdocs.pm/ecto_sql/Ecto.Adapters.SQL.Sandbox.html">Phoenix</a>, and while it can have some drawbacks in certain scenarios it’s overall a great experience.</p>
+
+<h2 id="transaction-based-tests-with-doobie">Transaction-based Tests with Doobie</h2>
+
+<p>Doobie does provide an API (<a href="https://javadoc.io/doc/org.tpolecat/doobie-core_2.12/latest/doobie/util/transactor$$Transactor$.html">Transactor.after.set</a>) for disabling the default “commit after transact” behavior temporarily. However I found this to be a little finicky, especially if I had tests that involved multiple <code class="highlighter-rouge">ConnectionIO</code>s which might get committed separately. There’s <a href="https://github.com/tpolecat/doobie/issues/535#issuecomment-311202214">a bit of discussion in this issue</a>, but in my case I wanted to be able to run a “full slice” of my application, which might involve many different <code class="highlighter-rouge">ConnectionIO</code>s as well as some invocations of my application-level effect, which in this case is <code class="highlighter-rouge">cats.effect.IO</code>.</p>
+
+<p>Maybe this is a sign that the tests I’m writing fall more into the category of integration tests than unit tests, but I don’t really care. I just want to be able to write tests that use my db, have them be fast, and not have to worry about cleanup code.</p>
+
+<p>So I wired up a base <code class="highlighter-rouge">SandboxTest</code> which provides this functionality by manipulating a setting on a JDBC connection before passing it off to doobie. Note that I’m also using <a href="https://github.com/typelevel/munit-cats-effect">munit-cats-effect</a> here which allows tests to return <code class="highlighter-rouge">IO[Assertion]</code>.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Base test for providing non-commiting Transactor[IO] as an munit Fixture
+</span><span class="k">abstract</span> <span class="k">class</span> <span class="nc">SandboxTest</span> <span class="k">extends</span> <span class="n">munit</span><span class="o">.</span><span class="nc">CatsEffectSuite</span> <span class="o">{</span>
+  <span class="c1">// cats effect setup
+</span>  <span class="k">implicit</span> <span class="k">val</span> <span class="n">contextShift</span> <span class="k">=</span> <span class="n">cats</span><span class="o">.</span><span class="n">effect</span><span class="o">.</span><span class="nc">IO</span><span class="o">.</span><span class="n">contextShift</span><span class="o">(</span><span class="nc">ExecutionContext</span><span class="o">.</span><span class="n">global</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">blocker</span> <span class="k">=</span> <span class="n">cats</span><span class="o">.</span><span class="n">effect</span><span class="o">.</span><span class="nc">Blocker</span><span class="o">.</span><span class="n">liftExecutionContext</span><span class="o">(</span><span class="n">doobie</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">ExecutionContexts</span><span class="o">.</span><span class="n">synchronous</span><span class="o">)</span>
+
+  <span class="c1">// set up a connection pool to your test DB like normal
+</span>  <span class="k">def</span> <span class="n">startPool</span><span class="k">:</span> <span class="kt">HikariDataSource</span> <span class="o">=</span> <span class="o">???</span>
+
+  <span class="c1">// munit Suite-level fixtures for holding the connection pool
+</span>  <span class="c1">// this happens once for each test class
+</span>  <span class="k">private</span> <span class="k">var</span> <span class="n">pool</span><span class="k">:</span> <span class="kt">HikariDataSource</span> <span class="o">=</span> <span class="kc">null</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="n">beforeAll</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span> <span class="n">pool</span> <span class="k">=</span> <span class="n">startPool</span> <span class="o">}</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="n">afterAll</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="o">()</span>
+
+  <span class="c1">// Context to provide into the individual tests as a scenario
+</span>  <span class="c1">// This can be expanded to include an instance of your application,
+</span>  <span class="c1">// some custom fixture instances, or whatever else you need to support your test examples
+</span>  <span class="c1">// Note the connection itself must be passed through so it's available in teardown
+</span>  <span class="k">case</span> <span class="k">class</span> <span class="nc">Context</span><span class="o">(</span><span class="n">conn</span><span class="k">:</span> <span class="kt">Connection</span><span class="o">,</span> <span class="n">xa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">])</span>
+  <span class="k">val</span> <span class="n">fixture</span> <span class="k">=</span> <span class="nc">FunFixture</span><span class="o">[</span><span class="kt">Context</span><span class="o">](</span>
+    <span class="n">setup</span> <span class="k">=</span> <span class="o">{</span> <span class="n">test</span> <span class="k">=&gt;</span>
+      <span class="k">val</span> <span class="n">conn</span> <span class="k">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">getConnection</span><span class="o">()</span>
+      <span class="c1">// Prevent the connection from committing early on your behalf
+</span>      <span class="n">conn</span><span class="o">.</span><span class="n">setAutoCommit</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+      <span class="c1">// Make a transactor wrapping this single connection instance, rather than the whole pool
+</span>      <span class="k">val</span> <span class="n">xa</span> <span class="k">=</span> <span class="nc">Transactor</span><span class="o">.</span><span class="n">fromConnection</span><span class="o">[</span><span class="kt">IO</span><span class="o">](</span><span class="n">conn</span><span class="o">,</span> <span class="n">blocker</span><span class="o">)</span>
+      <span class="k">val</span> <span class="n">rollbackXa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Transactor</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">set</span><span class="o">(</span>
+        <span class="n">xa</span><span class="o">,</span>
+        <span class="c1">// Disable Doobie's default commit behavior
+</span>        <span class="nc">Strategy</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">copy</span><span class="o">(</span><span class="n">after</span> <span class="k">=</span> <span class="nc">DoNothing</span><span class="o">,</span> <span class="n">oops</span> <span class="k">=</span> <span class="nc">DoNothing</span><span class="o">,</span> <span class="n">always</span> <span class="k">=</span> <span class="nc">DoNothing</span><span class="o">)</span>
+      <span class="o">)</span>
+      <span class="nc">Context</span><span class="o">(</span><span class="n">conn</span><span class="o">,</span> <span class="n">rollbackXa</span><span class="o">)</span>
+    <span class="o">},</span>
+    <span class="n">teardown</span> <span class="k">=</span> <span class="o">{</span> <span class="n">ctx</span> <span class="k">=&gt;</span>
+      <span class="c1">// After the test, rollback and close the connection
+</span>      <span class="c1">// This cleans up any changes you made to the DB during your test
+</span>      <span class="n">ctx</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">rollback</span>
+      <span class="k">if</span> <span class="o">(!</span><span class="n">ctx</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">isClosed</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="o">()</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>Now each test class that uses this base can use its fixture to get a wrapped doobie transactor:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TransactionalExampleTest</span> <span class="k">extends</span> <span class="nc">SandboxTest</span> <span class="o">{</span>
+  <span class="n">fixture</span><span class="o">.</span><span class="n">test</span><span class="o">(</span><span class="s">"transactional test"</span><span class="o">)</span> <span class="o">{</span> <span class="n">ctx</span><span class="k">:</span> <span class="kt">Context</span> <span class="o">=&gt;</span>
+    <span class="k">val</span> <span class="n">xa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">]</span>
+    <span class="k">for</span> <span class="o">{</span>
+      <span class="c1">// these queries will actually run against your database and yield real results
+</span>      <span class="c1">// but any changes they make will be cleaned up at the end of the test
+</span>      <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">sql</span><span class="s">"insert into foods (name) values ('pizza')"</span><span class="o">.</span><span class="n">update</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="n">transact</span><span class="o">(</span><span class="n">xa</span><span class="o">)</span>
+      <span class="n">names</span> <span class="k">&lt;-</span> <span class="n">sql</span><span class="s">"select name from foods"</span><span class="o">.</span><span class="n">query</span><span class="o">[</span><span class="kt">String</span><span class="o">].</span><span class="n">to</span><span class="o">[</span><span class="kt">Vector</span><span class="o">].</span><span class="n">transact</span><span class="o">(</span><span class="n">xa</span><span class="o">)</span>
+    <span class="o">}</span> <span class="k">yield</span> <span class="o">{</span>
+      <span class="n">assertEquals</span><span class="o">(</span><span class="n">names</span><span class="o">,</span> <span class="nc">Vector</span><span class="o">(</span><span class="s">"pizza"</span><span class="o">))</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>For brevity I’ve omitted the imports from these snippets but you can see the fully worked example in this <a href="https://github.com/worace/doobie-transactional-tests">github repo</a>.</p>
+
+<h2 id="other-approaches">Other Approaches</h2>
+
+<h3 id="explicit-truncation">Explicit Truncation</h3>
+
+<p>You can of course handle the db state problem manually, by explicitly re-setting the state of your db between each example. This could be done either by truncating all of your tables 1 by 1, or dropping the whole schema and re-migrating it.</p>
+
+<p>This isn’t the worst, but dropping and re-creating schemas can be slow, and truncating often requires you to keep your test truncation code up to date as you evolve your schema. And perhaps the biggest issue is this strategy limits your ability to run db-reliant tests in parallel, since they aren’t isolated from one another in a transaction.</p>
+
+<h3 id="temp-or-in-memory-db-eg-h2-or-sqlite">Temp or In-Memory DB (e.g. H2 or SQLite)</h3>
+
+<p>You can also use a temporary (often in-memory) DB for your tests. SQLite and the pure-Java H2 database are popular choices for this, as they can be run locally as libraries (don’t have to shell out to manage them) and have an in-memory mode that discards data at the end of your test runs.</p>
+
+<p>These DBs are fast and cheap to create, so you can afford to spin up an entirely new DB for every single test run, which gives great isolation between tests while still keeping things pretty fast.</p>
+
+<p>However unless you’re actually running SQLite or H2 in production, you’ll be using a different DB between your test and prod environments. Which at best is kind of sketchy, because you’ll likely paper over problems that won’t reveal themselves until you deploy to prod.</p>
+
+<p>But more likely it’s just not viable, because you’re probably leveraging DB-specific features (PostGIS, anyone?) which won’t exist in something like H2 or SQLite.</p>
+
+<p>Several years ago there seemed to be a trend toward treating SQL DBs as interchangeable boxes that your ORM’s SQL interface (AcitveRecord, Hibernate, etc) would paper over as needed.</p>
+
+<p>But nowadays we’re more happy to rely on our DBs as processing tools and not just generic relational stores. Which is great IMO – Postgres in particular is super powerful and we should leverage it – but it means you probably don’t want to try to use something different for testing.</p>
+
+<h3 id="testcontainers">TestContainers</h3>
+
+<p>Another approach that has been gaining a lot of popularity is using Docker containers to run dedicated test db instances. This lets you get a real Postgres or MySQL instance that can still be easily thrown away so you don’t deal with tainted state between tests.</p>
+
+<p>And in recent years the <a href="https://www.testcontainers.org/">TestContainers</a> project has made this strategy much easier by providing high quality library bindings for programmatically manipulating containers, so you can integrate the container lifecycle with your test framework without relying external tools like docker-compose.</p>
+
+<p>There’s also a great library for integrating it with popular Scala test frameworks like Scalatest and Munit: <a href="https://github.com/testcontainers/testcontainers-scala">testcontainers-scala</a>.</p>
+
+<p>Here’s an example of what it looks like in munit:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">com.dimafeng.testcontainers.PostgreSQLContainer</span>
+<span class="k">import</span> <span class="nn">com.dimafeng.testcontainers.munit.TestContainerForEach</span>
+
+<span class="k">class</span> <span class="nc">TestContainersExampleTest</span> <span class="k">extends</span> <span class="n">munit</span><span class="o">.</span><span class="nc">FunSuite</span> <span class="k">with</span> <span class="nc">TestContainerForEach</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">val</span> <span class="n">containerDef</span> <span class="k">=</span> <span class="nc">PostgreSQLContainer</span><span class="o">.</span><span class="nc">Def</span><span class="o">()</span>
+
+  <span class="n">test</span><span class="o">(</span><span class="s">"test postgres with testcontainer"</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">withContainers</span> <span class="o">{</span> <span class="n">postgresContainer</span> <span class="k">=&gt;</span>
+      <span class="o">???</span> <span class="c1">// Do stuff with postgres
+</span>    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>So overall this is pretty nice, and it can be configured in a lot of different ways. You can achieve various configurations like 1 container per test, 1 per suite, a mix of multiple containers at once, etc.</p>
+
+<p>However the biggest downside IMHO is that it can be pretty slow. Especially if you want to rely on containers for providing state isolation, you’ll need a fresh one for each test, which can take sevral seconds. You also have to apply schema migrations to those fresh containers to get them ready to use.</p>
+
+<p>Here’s a gif showing a comparison from the example repo linked above:</p>
+
+<p><img src="/public/images/transactional_vs_testcontainers.gif" alt="TestContainers vs. Transactional Tests" /></p>
+
+<p>The DB interactions in these tests are admittedly pretty simplistic, but as you can see that’s running 100 transaction/rollback tests (which actually insert and read data) before the first test container can even get booted.</p>
+
+<p>I think a lot of people that use this approach rely on it for a relatively small number of integration tests where you’re extensively exercising the system in a few complex scenarios. Then they rely on a mix of IO-less unit tests and/or mocking to test the rest of the system without the DB at all. So if that fits the profile of your application, it’s probably a good way to go.</p>
+
+<p>Unfortunately in many of the applications I work on, the RDBMS is a significant part of the application logic, so most of the things that would be meaningful for me to test need to rely on it. So in these cases its more beneficial to me to have fast transactional tests than more isolated container-based tests. But as always YMMV.</p>
+
+<p>And of course there are some cases where the transaction/rollback approach doesn’t work well:</p>
+
+<ul>
+  <li>Your application actually needs to do tricky stuff of its own with transaction boundaries, so having them managed by the test suite is problematic</li>
+  <li>You need an external process to see the results of your db operations, in which case transaction isolation won’t work. This is common when running something like a browser-driven acceptance test, where an external process like selenium needs to connect to a live instance of your app and drive it.</li>
+</ul>
+
+<p>So in these cases its great to have the TestContainers approach to fall back on.</p>
+
+</article>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>
