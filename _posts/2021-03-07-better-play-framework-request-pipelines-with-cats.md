@@ -3,7 +3,7 @@ title: "Play! Nice: Better Play Framework Pipelines with Cats"
 layout: post
 ---
 
-In the last few months I've been doing a lot of work on a growing Play Framework project in Scala. I'll have to cover this in more detail in another post, but overall I think Play is pretty great. It seems to have fallen slightly in the hype cycle, but as far as statically typed full-stack web dev goes it's one of the better options available in any language.
+In the last few months I've been doing some work on a growing Play Framework project in Scala. I'll have to cover the overall experience in more detail in another post, but I think Play is pretty great. It seems to have fallen slightly in the hype cycle, but as far as statically typed full-stack web dev goes it's one of the better options available in any language.
 
 Here's a super abbreviated list of some of the good parts:
 
@@ -12,7 +12,7 @@ Here's a super abbreviated list of some of the good parts:
 * Statically typed routing + parameter handling -- Seriously, if you forget a route or mis-match a parameter between your routes and your controller, your app won't compile
 * Statically typed web templates -- No more `ActionView::TemplateError` b/c you mis-named an instance variable in your template
 * Helpers and Plugins for common web tasks like asset digesting
-* Fast Enough (TM) for most use-cases, as long as you don't get too sloppy with blocking threads
+* Fast Enough (TM) for most use-cases, as long as you don't get too sloppy blocking threads when you shouldn't
 
 So all that stuff is great, and makes for a pretty productive dev experience. Especially given the recent "SPA Backlash" and resurgence of interest in traditional web apps with boring old server-side rendering (see e.g. [HotWire](https://hotwire.dev/), [Phoenix](https://phoenixframework.org/) and [Phoenix LiveView](https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html), [Help! None of my projects want to be SPAs](https://whatisjasongoldstein.com/writing/help-none-of-my-projects-want-to-be-spas/)), maybe we'll see some revived interest in Play. Who knows -- maybe there could even be a Play variant of the HotWire/LiveView style of server-based dynamic rendering at some point.
 
@@ -20,7 +20,7 @@ But, there are still 2 (well maybe 2 and a half?) big areas that I think Play fa
 
 ### Annoyance 1: Don't let the framework take over
 
-Like any big framework, it's easy for Play's APIs and machinery to seep deeply into your domain model. This is maybe even more annoying in Play, since it's also fairly "unopinionated" when it comes to model + persistence layer logic, so you're not getting as much in exchange for your ecosystem lock-in as you do in something like Rails.
+Like any big framework, it's easy for Play's APIs and machinery to seep deeply into your domain model. This is maybe even more annoying in Play, since it's also fairly "unopinionated" when it comes to model + persistence logic, so you're not getting as much in exchange for your ecosystem lock-in as you do in something like Rails.
 
 #### Solution
 
@@ -34,46 +34,44 @@ I have one project **"core"**, which contains the domain (including persistence 
 
 Then I have a separate **"web"** project which depends on the core one. In my application Loader I initialize an instance of the core application, and pass it through as a dependency to the various web components that need it, just like I would any other 3rd party library. It's a first party library!
 
-I'm happy with Play at the moment, but maybe in the future I'll change my mind and want to move to another web framework. Following this design approach means doing this would be inconvenient but not a catastrophic overhaul.
+### Annoyance 1.5: All the Java + DI stuff
 
-### Annoyance 1.5: All the Java + DI stuff is kind of lame
-
-I'm not really aware of the history here but IMO the decision to add dedicated Java APIs and move to things like Guice weakened the APIs and dev experience for Scala users. And it's hard to imagine this has led to a ton of success in reaching out to the enterprise-y Java crowd -- seriously who is going to use Play in Java when there are so many more mainstream options like Spring Boot, Micronaut, etc? So it feels like a bit of a misstep to me.
+I'm not really aware of the history here but IMO the decision to add dedicated Java APIs and move to things like Guice weakened the APIs and dev experience for Scala users. And it's hard to imagine this has led to a ton of success in reaching out to the enterprise-y Java crowd. Are people really using Play in Java when there are so many more mainstream options like Spring Boot, Micronaut, etc? It feels like a bit of a misstep to me.
 
 #### Solution
 
-Luckily this one is pretty easy to avoid as well: just don't use Guice and all the DI stuff. I don't use it in my web code, and I would _definitely_ not let it into my core domain code. I personally just construct my controller instances in my app loader manually. Seriously, I just have a bunch of lines like:
+Luckily this one is pretty easy to avoid as well: just don't use Guice and all the DI stuff. I don't use it in my web code, and I would _definitely_ not let it into my core domain code.
+
+I personally just construct my controller instances in my app loader manually. It's OK. You are allowed to pass arguments without involving a huge enterprise framework.
 
 ```scala
-  lazy val collectionController = new _root_.controllers.CollectionController(controllerComponents, actorSystem)
-  lazy val authController = new _root_.controllers.AuthController(oauth, myApp, controllerComponents)
-  lazy val apiController = new _root_.controllers.ApiController(cc, assets)
-  // etc...
-  lazy val router: Router = new _root_.router.Routes(
-    httpErrorHandler,
-    collectionController,
-    collectionSettingsController,
-    // etc...
-  )
+// Just wiring up my stuff...
+val collectionController = new CollectionController(controllerComponents, actorSystem)
+val authController = new AuthController(oauth, myApp, controllerComponents)
+val apiController = new ApiController(cc, assets)
+// Note that the order these are passed is determined by the order they appear in your routes file
+val router: Router = new router.Routes(
+  httpErrorHandler,
+  collectionController,
+  collectionSettingsController
+)
 ```
 
-It's not that bad. If you find this intolerable, look into [macwire](https://github.com/softwaremill/macwire), which also seems to be pretty popular for this use-case.
+If you find this intolerable, look into [macwire](https://github.com/softwaremill/macwire), which also seems to be pretty popular for this use-case.
 
-## The Big One: Play's Action Builder / Action Composition Mechanism Could be Improved
+## The Big One: Action Composition and Request Pipeline Abstraction in Play
 
-My biggest day to day issues working with the framework have stemmed from the [Action Builder](https://www.playframework.com/documentation/2.8.x/ScalaActionsComposition) API. This seems somewhat niche -- it's only one portion of Play's API, meriting a single page in the documentation.
-
-But it's actually pretty fundamental to the common problems you encounter constructing server-side web request pipelines, and my issues using the provided tools led me to eschew them in favor of my own custom abstractions.
+My biggest day to day issues working with the framework have stemmed from the [Action Builder](https://www.playframework.com/documentation/2.8.x/ScalaActionsComposition) API. These abstractions are intended to help you generalize common patterns in request handling, and while it's a fairly narrow section of Play's toolkit, the problems they solve are pretty fundamental to managing complexity in a web app.
 
 ### The Problem
 
 Web applications take in an HTTP Request and, through a series of developer-defined steps, generate a corresponding HTTP Response.
 
-A common pattern in many web frameworks is to model this using some sort of "pipeline" abstraction. You start with a request, then you have some API for adding pipeline "steps". Each step can either modify the working context and continue the pipeline (e.g. loading the current user based on Session info), or abort the pipeline by providing an HTTP response.
+A common pattern in many web frameworks is to model this using some sort of "pipeline" abstraction. You start with a request, then you have an API for adding pipeline "steps". Each step can either modify the working context and continue the pipeline (loading the current user is a classic example), or abort the pipeline by providing an HTTP response.
 
-The "abort and provide a response" path often represents an error state: for example this pipeline requires an authenticated user, but there was none, so our response is an HTTP redirect to the `/login` path. This pattern exists outside the context of web development as well, and is sometimes called [Railway Oriented Programming](https://fsharpforfunandprofit.com/rop/).
+The "abort and provide a response" path often represents an error state: for example a pipeline requiring an authenticated user might abort and redirect to the `/login` path if there was none. This pattern exists outside the context of web development as well, and is sometimes called [Railway Oriented Programming](https://fsharpforfunandprofit.com/rop/).
 
-Different web frameworks have different approaches to modeling request pipelines. In Rails you have [filters](https://guides.rubyonrails.org/action_controller_overview.html#filters) which can modify the current context (an instance of a controller class) by manipulating instance variables. Elixir's Phoenix has a well-developed API for defining [pipelines](https://hexdocs.pm/phoenix/routing.html#pipelines) consisting of [plugs](https://hexdocs.pm/phoenix/plug.html). Django follows the Python pattern of using method [decorators](https://docs.djangoproject.com/en/3.1/topics/http/decorators/) to wrap request handlers in re-usable pipeline logic. Http4s, another popular Scala web library, takes a type-driven approach and models [middleware](https://http4s.org/v0.18/middleware/) using [Kleisli](https://typelevel.org/cats/datatypes/kleisli.html) + [OptionT](https://typelevel.org/cats/datatypes/optiont.html).
+Different web frameworks have different approaches to modeling request pipelines. In Rails you have [filters](https://guides.rubyonrails.org/action_controller_overview.html#filters) which can modify request context by manipulating the current controller instance state. Elixir's Phoenix has a well-developed API for defining [pipelines](https://hexdocs.pm/phoenix/routing.html#pipelines) consisting of [plugs](https://hexdocs.pm/phoenix/plug.html). Django follows the Python pattern of using method [decorators](https://docs.djangoproject.com/en/3.1/topics/http/decorators/) to wrap request handlers in re-usable pipeline logic. Http4s, another popular Scala web library, takes a heavily functional and type-driven approach by modeling [middleware](https://http4s.org/v0.18/middleware/) using [Kleisli](https://typelevel.org/cats/datatypes/kleisli.html) + [OptionT](https://typelevel.org/cats/datatypes/optiont.html).
 
 Some frameworks also provide a separate abstraction for adding global wrappers, as opposed to the more composable, ad-hoc ones used for application-level pipeline composition. For example in Rails you can also tap into the underlying [Rack](https://github.com/rack/rack) networking layer to add global [middleware](https://guides.rubyonrails.org/rails_on_rack.html). However these interfaces tend to cater to global concerns like logging and instrumentation and can often be configured once and forgotten. I've used Play's equivalent, [Filters](https://www.playframework.com/documentation/2.8.x/Filters) several times and not had any difficulty.
 
@@ -82,7 +80,7 @@ Reasons you'd want to use these pipeline-oriented abstractions range widely, but
 * Loading the current user
 * Requiring authentication
 * Checking permissions
-* DRY up some of your resource-loading code by moving a common DB lookup into a pipeline stage
+* DRY up resource-loading code by moving common DB lookups into pipeline stages
 
 You can of course just do all these things inline in your request handlers. But having a standard way to define and re-use them helps keep your handler implementations short and focused on what is specific to that particular route.
 
