@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-03-08T22:44:08-08:00</updated>
+ <updated>2021-03-08T22:51:29-08:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -19,7 +19,7 @@
    <id>http://worace.works/2021/03/07/better-play-framework-request-pipelines-with-cats</id>
    <content type="html">&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;/h2&gt;
 
-&lt;p&gt;Play is mostly pretty good but the built-in &lt;a href=&quot;https://www.playframework.com/documentation/2.8.x/ScalaActionsComposition&quot;&gt;Action Composition&lt;/a&gt; helpers can be hard to use.&lt;/p&gt;
+&lt;p&gt;TL;DR: Play is mostly pretty good but the built-in &lt;a href=&quot;https://www.playframework.com/documentation/2.8.x/ScalaActionsComposition&quot;&gt;Action Composition&lt;/a&gt; helpers can be hard to use.&lt;/p&gt;
 
 &lt;p&gt;Instead, roll your own, using cats-effect to model a web request pipeline:&lt;/p&gt;
 
