@@ -5,7 +5,7 @@ layout: post
 
 ## Summary
 
-Play is mostly pretty good but the built-in [Action Composition](https://www.playframework.com/documentation/2.8.x/ScalaActionsComposition) helpers can be hard to use.
+TL;DR: Play is mostly pretty good but the built-in [Action Composition](https://www.playframework.com/documentation/2.8.x/ScalaActionsComposition) helpers can be hard to use.
 
 Instead, roll your own, using cats-effect to model a web request pipeline:
 
