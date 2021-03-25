@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Using Cats Effect Resource in Non-Functional Contexts &middot; Horace Williams
+    
+  </title>
+  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+</head>
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-117025935-1"></script>
+<script>
+ window.dataLayer = window.dataLayer || [];
+ function gtag(){dataLayer.push(arguments);}
+ gtag('js', new Date());
+
+ gtag('config', 'UA-117025935-1');
+</script>
+
+
+
+  <body>
+
+    <div class="container content">
+      
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a href="https://github.com/worace">github</a></li>
+          <li><a href="http://twitter.com/worace">twitter</a></li>
+        </ul>
+      </header>
+      
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Using Cats Effect Resource in Non-Functional Contexts</h1>
+  <time datetime="2021-03-25T00:00:00-07:00" class="post-date">25 Mar 2021</time>
+  <h3 id="summary--tldr">Summary / TL;DR</h3>
+
+<p>Use <a href="https://typelevel.org/cats-effect/api/cats/effect/Resource.html#allocated[G[x]%3E:F[x],B%3E:A](implicitF:cats.effect.BracketThrow[G]):G[(B,G[Unit])]">Resource.allocated</a> to integrate <code class="highlighter-rouge">cats.effect.Resource</code> into non-FP contexts such as a test framework setup/teardown methods or traditional callback-driven APIs. But be cautious in doing so, as it’s now your responsibility to make sure the provided finalizer gets called at the appropriate time.</p>
+
+<h3 id="background">Background</h3>
+
+<p><a href="https://typelevel.org/cats-effect/datatypes/resource.html">Cats Effect Resource</a> is an excellent tool for managing resource lifecycles in Scala. It provides something similar to Python’s <a href="https://docs.python.org/3/reference/compound_stmts.html#the-with-statement">‘with’ helper</a> or Java’s <a href="https://www.baeldung.com/java-try-with-resources">Try With Resources</a> but in a functional API that plays nice with <code class="highlighter-rouge">cats.effect.IO</code> or other pure effect types in Scala.</p>
+
+<p>There are several ways to define a <code class="highlighter-rouge">Resource</code> but my preference is using <code class="highlighter-rouge">Resource.make</code>, which follows a familiar “acquire” / “release” pattern:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">cats.effect.IO</span>
+<span class="k">import</span> <span class="nn">java.io.FileWriter</span>
+
+<span class="c1">// Resource's signature is Resource[+F[_], +A], containing 2 type parameters:
+// an effect F (e.g. cats.effect.IO)
+// and the resource type A
+</span><span class="k">val</span> <span class="n">myFile</span><span class="k">:</span> <span class="kt">Resource</span><span class="o">[</span><span class="kt">IO</span>, <span class="kt">FileWriter</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Resource</span><span class="o">.</span><span class="n">make</span> <span class="o">{</span>
+  <span class="c1">// acquire the resource by providing an IO[A] which generates it
+</span>  <span class="nc">IO</span><span class="o">(</span><span class="k">new</span> <span class="nc">FileWriter</span><span class="o">(</span><span class="s">"pizza.txt"</span><span class="o">))</span>
+<span class="o">}</span> <span class="o">{</span> <span class="n">file</span><span class="k">:</span> <span class="kt">FileWriter</span> <span class="o">=&gt;</span>
+  <span class="c1">// release the resource by providing an IO[Unit] which closes it
+</span>  <span class="c1">// Note that this block receives the resource as a parameter
+</span>  <span class="nc">IO</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="n">close</span><span class="o">())</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>This “double block” syntax can be unfamiliar at first, but it’s simply exploiting Scala’s <a href="https://docs.scala-lang.org/tour/multiple-parameter-lists.html">multiple parameter lists</a> to accept the acquire and release args in sequence without wrapping parentheses.</p>
+
+<p>Once you’ve constructed a resource (or rather, defined the logic for constructing it, as the actual construction is deferred), you can access it via the <code class="highlighter-rouge">use</code> method:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">val</span> <span class="n">myFile</span><span class="k">:</span> <span class="kt">Resource</span><span class="o">[</span><span class="kt">IO</span>, <span class="kt">FileWriter</span><span class="o">]</span> <span class="k">=</span> <span class="o">???</span>
+<span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="n">myFile</span><span class="o">.</span><span class="n">use</span> <span class="o">{</span> <span class="n">file</span> <span class="k">=&gt;</span>
+  <span class="nc">IO</span><span class="o">(</span><span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="o">(</span><span class="s">"pepperoni"</span><span class="o">))</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h2 id="integrating-resource-into-an-app">Integrating Resource into an App</h2>
+
+<p>Note that the block provided to <code class="highlighter-rouge">use</code> also expects an <code class="highlighter-rouge">IO</code> (its signature is <code class="highlighter-rouge">(f: (A) =&gt; G[B])</code>) and yields an <code class="highlighter-rouge">IO[B]</code>. <code class="highlighter-rouge">Resource</code>’s machinery folds the effectful acquire/release operations into the rest of your program so the whole thing distills into a single <code class="highlighter-rouge">IO[Blah]</code>.</p>
+
+<p>This works especially smoothly in contexts where you can put the resource-management on the “outside” of your program, such as in <a href="https://typelevel.org/cats-effect/datatypes/ioapp.html">IOApp</a>. It’s very common to see <code class="highlighter-rouge">IOApp</code> used along this pattern:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">cats.effect._</span>
+
+<span class="k">object</span> <span class="nc">Main</span> <span class="k">extends</span> <span class="nc">IOApp</span> <span class="o">{</span>
+  <span class="k">def</span> <span class="n">context</span><span class="k">:</span> <span class="kt">Resource</span><span class="o">[</span><span class="kt">IO</span>, <span class="kt">MyApp</span><span class="o">]</span> <span class="k">=</span> <span class="o">???</span>
+  <span class="k">def</span> <span class="n">run</span><span class="o">(</span><span class="n">args</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">ExitCode</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">use</span> <span class="o">{</span> <span class="n">app</span> <span class="k">=&gt;</span>
+      <span class="k">val</span> <span class="n">res</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="n">app</span><span class="o">.</span><span class="n">doStuff</span>
+      <span class="n">res</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span> <span class="k">=&gt;</span> <span class="nc">ExitCode</span><span class="o">.</span><span class="nc">Success</span><span class="o">)</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h3 id="resource-in-less-friendly-contexts">Resource in less friendly contexts</h3>
+
+<p>However, sometimes we don’t have total control over the layering of a program, and instead have to fit a functional core, which may be heavily IO-based, into an imperative shell, which is not. This comes up commonly in scenarious such as:</p>
+
+<ul>
+  <li>Test frameworks, which often use an imperative, stateful API for defining fixtures via a <code class="highlighter-rouge">setup</code> / <code class="highlighter-rouge">teardown</code> protocol.</li>
+  <li>Traditional hook-driven APIs, such as web frameworks that provide their own lifecycle methods. For example, I ran into this recently trying to integrate <code class="highlighter-rouge">cats.effect.Resource</code> into the <a href="https://www.playframework.com/documentation/2.8.x/api/scala/play/api/inject/ApplicationLifecycle.html#addStopHook(hook:()=%3Escala.concurrent.Future[_]):Unit">ApplicationLifecycle</a> of a Play application.</li>
+</ul>
+
+<p>Luckily, Resource does provide an escape hatch for these situations: <a href="https://typelevel.org/cats-effect/api/cats/effect/Resource.html#allocated[G[x]%3E:F[x],B%3E:A](implicitF:cats.effect.BracketThrow[G]):G[(B,G[Unit])]">Resource.allocated</a>.</p>
+
+<p><code class="highlighter-rouge">Resource.allocated</code> basically provides an unsafe method for “unnesting” the typical resource management flow. Instead of <code class="highlighter-rouge">use</code>-ing your resource by providing an inner IO, you retrieve the value of it immediately, along with a callback which you are responsible for invoking to trigger the necessary release steps:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">val</span> <span class="n">appResource</span><span class="k">:</span> <span class="kt">Resource</span><span class="o">[</span><span class="kt">IO</span>, <span class="kt">MyApp</span><span class="o">]</span> <span class="k">=</span> <span class="o">???</span>
+<span class="c1">// this IO[Unit] is your deferred finalizer
+</span><span class="k">val</span> <span class="n">appLauncher</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[(</span><span class="kt">MyApp</span>, <span class="kt">IO</span><span class="o">[</span><span class="kt">Unit</span><span class="o">])]</span> <span class="k">=</span> <span class="n">appResource</span><span class="o">.</span><span class="n">allocated</span>
+<span class="k">val</span> <span class="o">(</span><span class="n">app</span><span class="o">,</span> <span class="n">shutdownHook</span><span class="o">)</span><span class="k">:</span> <span class="o">(</span><span class="kt">MyApp</span><span class="o">,</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">Unit</span><span class="o">])</span> <span class="k">=</span> <span class="n">impLauncher</span><span class="o">.</span><span class="n">unsafeRunSync</span><span class="o">()</span>
+
+<span class="c1">// Patch the provided finalizer into the application's shutdown lifecycle
+</span><span class="n">myLifeCycle</span><span class="o">.</span><span class="n">addStopHook</span><span class="o">(()</span> <span class="k">=&gt;</span> <span class="n">shutdownHook</span><span class="o">.</span><span class="n">unsafeToFuture</span><span class="o">())</span>
+</code></pre></div></div>
+
+<p>This is certainly not the ideal way to use <code class="highlighter-rouge">cats.effect.Resource</code>, but it’s a useful escape hatch to have when needed. As always, heed the warnings from the docs:</p>
+
+<blockquote>
+  <p>For this reason, this is an advanced and potentially unsafe api which can cause a resource leak if not used correctly, please prefer <code class="highlighter-rouge">use</code> as the standard way of running a Resource program.</p>
+</blockquote>
+
+<p>So if you do resort to manual use of <code class="highlighter-rouge">.allocated</code>, just make sure you’re careful about cleaning up your resources at the appropriate time.</p>
+
+</article>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>

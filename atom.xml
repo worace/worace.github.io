@@ -4,13 +4,105 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-03-08T22:51:29-08:00</updated>
+ <updated>2021-03-25T00:30:18-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
    <email>horace@worace.works</email>
  </author>
 
+ 
+ <entry>
+   <title>Using Cats Effect Resource in Non-Functional Contexts</title>
+   <link href="http://worace.works/2021/03/25/cats-effect-resource-in-imperative-contexts/"/>
+   <updated>2021-03-25T00:00:00-07:00</updated>
+   <id>http://worace.works/2021/03/25/cats-effect-resource-in-imperative-contexts</id>
+   <content type="html">&lt;h3 id=&quot;summary--tldr&quot;&gt;Summary / TL;DR&lt;/h3&gt;
+
+&lt;p&gt;Use &lt;a href=&quot;https://typelevel.org/cats-effect/api/cats/effect/Resource.html#allocated[G[x]%3E:F[x],B%3E:A](implicitF:cats.effect.BracketThrow[G]):G[(B,G[Unit])]&quot;&gt;Resource.allocated&lt;/a&gt; to integrate &lt;code class=&quot;highlighter-rouge&quot;&gt;cats.effect.Resource&lt;/code&gt; into non-FP contexts such as a test framework setup/teardown methods or traditional callback-driven APIs. But be cautious in doing so, as it’s now your responsibility to make sure the provided finalizer gets called at the appropriate time.&lt;/p&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://typelevel.org/cats-effect/datatypes/resource.html&quot;&gt;Cats Effect Resource&lt;/a&gt; is an excellent tool for managing resource lifecycles in Scala. It provides something similar to Python’s &lt;a href=&quot;https://docs.python.org/3/reference/compound_stmts.html#the-with-statement&quot;&gt;‘with’ helper&lt;/a&gt; or Java’s &lt;a href=&quot;https://www.baeldung.com/java-try-with-resources&quot;&gt;Try With Resources&lt;/a&gt; but in a functional API that plays nice with &lt;code class=&quot;highlighter-rouge&quot;&gt;cats.effect.IO&lt;/code&gt; or other pure effect types in Scala.&lt;/p&gt;
+
+&lt;p&gt;There are several ways to define a &lt;code class=&quot;highlighter-rouge&quot;&gt;Resource&lt;/code&gt; but my preference is using &lt;code class=&quot;highlighter-rouge&quot;&gt;Resource.make&lt;/code&gt;, which follows a familiar “acquire” / “release” pattern:&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;cats.effect.IO&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;java.io.FileWriter&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Resource's signature is Resource[+F[_], +A], containing 2 type parameters:
+// an effect F (e.g. cats.effect.IO)
+// and the resource type A
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;myFile&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;, &lt;span class=&quot;kt&quot;&gt;FileWriter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;make&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// acquire the resource by providing an IO[A] which generates it
+&lt;/span&gt;  &lt;span class=&quot;nc&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;FileWriter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;pizza.txt&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;FileWriter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// release the resource by providing an IO[Unit] which closes it
+&lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;// Note that this block receives the resource as a parameter
+&lt;/span&gt;  &lt;span class=&quot;nc&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;close&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;())&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This “double block” syntax can be unfamiliar at first, but it’s simply exploiting Scala’s &lt;a href=&quot;https://docs.scala-lang.org/tour/multiple-parameter-lists.html&quot;&gt;multiple parameter lists&lt;/a&gt; to accept the acquire and release args in sequence without wrapping parentheses.&lt;/p&gt;
+
+&lt;p&gt;Once you’ve constructed a resource (or rather, defined the logic for constructing it, as the actual construction is deferred), you can access it via the &lt;code class=&quot;highlighter-rouge&quot;&gt;use&lt;/code&gt; method:&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;myFile&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;, &lt;span class=&quot;kt&quot;&gt;FileWriter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;???&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;result&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Unit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;myFile&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;use&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;file&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nc&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;write&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;pepperoni&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;integrating-resource-into-an-app&quot;&gt;Integrating Resource into an App&lt;/h2&gt;
+
+&lt;p&gt;Note that the block provided to &lt;code class=&quot;highlighter-rouge&quot;&gt;use&lt;/code&gt; also expects an &lt;code class=&quot;highlighter-rouge&quot;&gt;IO&lt;/code&gt; (its signature is &lt;code class=&quot;highlighter-rouge&quot;&gt;(f: (A) =&amp;gt; G[B])&lt;/code&gt;) and yields an &lt;code class=&quot;highlighter-rouge&quot;&gt;IO[B]&lt;/code&gt;. &lt;code class=&quot;highlighter-rouge&quot;&gt;Resource&lt;/code&gt;’s machinery folds the effectful acquire/release operations into the rest of your program so the whole thing distills into a single &lt;code class=&quot;highlighter-rouge&quot;&gt;IO[Blah]&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;This works especially smoothly in contexts where you can put the resource-management on the “outside” of your program, such as in &lt;a href=&quot;https://typelevel.org/cats-effect/datatypes/ioapp.html&quot;&gt;IOApp&lt;/a&gt;. It’s very common to see &lt;code class=&quot;highlighter-rouge&quot;&gt;IOApp&lt;/code&gt; used along this pattern:&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;cats.effect._&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;object&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;extends&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;IOApp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;, &lt;span class=&quot;kt&quot;&gt;MyApp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;???&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;args&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;List&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;])&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;ExitCode&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;use&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;app&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;res&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Unit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;doStuff&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;res&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;ExitCode&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Success&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;resource-in-less-friendly-contexts&quot;&gt;Resource in less friendly contexts&lt;/h3&gt;
+
+&lt;p&gt;However, sometimes we don’t have total control over the layering of a program, and instead have to fit a functional core, which may be heavily IO-based, into an imperative shell, which is not. This comes up commonly in scenarious such as:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Test frameworks, which often use an imperative, stateful API for defining fixtures via a &lt;code class=&quot;highlighter-rouge&quot;&gt;setup&lt;/code&gt; / &lt;code class=&quot;highlighter-rouge&quot;&gt;teardown&lt;/code&gt; protocol.&lt;/li&gt;
+  &lt;li&gt;Traditional hook-driven APIs, such as web frameworks that provide their own lifecycle methods. For example, I ran into this recently trying to integrate &lt;code class=&quot;highlighter-rouge&quot;&gt;cats.effect.Resource&lt;/code&gt; into the &lt;a href=&quot;https://www.playframework.com/documentation/2.8.x/api/scala/play/api/inject/ApplicationLifecycle.html#addStopHook(hook:()=%3Escala.concurrent.Future[_]):Unit&quot;&gt;ApplicationLifecycle&lt;/a&gt; of a Play application.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Luckily, Resource does provide an escape hatch for these situations: &lt;a href=&quot;https://typelevel.org/cats-effect/api/cats/effect/Resource.html#allocated[G[x]%3E:F[x],B%3E:A](implicitF:cats.effect.BracketThrow[G]):G[(B,G[Unit])]&quot;&gt;Resource.allocated&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Resource.allocated&lt;/code&gt; basically provides an unsafe method for “unnesting” the typical resource management flow. Instead of &lt;code class=&quot;highlighter-rouge&quot;&gt;use&lt;/code&gt;-ing your resource by providing an inner IO, you retrieve the value of it immediately, along with a callback which you are responsible for invoking to trigger the necessary release steps:&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;appResource&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;, &lt;span class=&quot;kt&quot;&gt;MyApp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;???&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// this IO[Unit] is your deferred finalizer
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;appLauncher&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;MyApp&lt;/span&gt;, &lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Unit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;])]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;appResource&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;allocated&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shutdownHook&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;MyApp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Unit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;impLauncher&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;unsafeRunSync&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Patch the provided finalizer into the application's shutdown lifecycle
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;myLifeCycle&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addStopHook&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shutdownHook&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;unsafeToFuture&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;())&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This is certainly not the ideal way to use &lt;code class=&quot;highlighter-rouge&quot;&gt;cats.effect.Resource&lt;/code&gt;, but it’s a useful escape hatch to have when needed. As always, heed the warnings from the docs:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;For this reason, this is an advanced and potentially unsafe api which can cause a resource leak if not used correctly, please prefer &lt;code class=&quot;highlighter-rouge&quot;&gt;use&lt;/code&gt; as the standard way of running a Resource program.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;So if you do resort to manual use of &lt;code class=&quot;highlighter-rouge&quot;&gt;.allocated&lt;/code&gt;, just make sure you’re careful about cleaning up your resources at the appropriate time.&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Play! Nice: Better Play Framework Pipelines with Cats Effect</title>
