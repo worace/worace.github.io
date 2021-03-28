@@ -1,5 +1,6 @@
 ---
-title: "You're in the JARmy now: An eager neophyte's guide to JVM Packaging"
+title: "You're in the JARmy now"
+subtitle: "An eager neophyte's guide to JVM packaging"
 layout: post
 ---
 

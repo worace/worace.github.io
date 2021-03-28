@@ -10,11 +10,10 @@ pre {
 
 code {
   padding: .25em .5em;
-  font-size: 85%;
-  /* color: $code-color; */
   background-color: #fbf1c7;
   color: #427b58;
   border-radius: 3px;
+  font-weight: 400;
 }
 
 pre {
@@ -31,12 +30,17 @@ pre code {
 
 // Pygments via Jekyll
 .highlight {
+  font-weight: 300; // inconsolata light 300
   padding: 0.75rem;
   margin-bottom: 1rem;
-  font-size: .8rem;
+  /* font-size: .8rem; */
   line-height: 1.4;
   /* background-color: #f9f9f9; */
   border-radius: .25rem;
+
+  code {
+    font-weight: 300; // inconsolata light 300
+  }
 
   pre {
     margin-bottom: 0;

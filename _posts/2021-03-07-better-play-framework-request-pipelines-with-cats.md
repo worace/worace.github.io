@@ -1,5 +1,6 @@
 ---
-title: "Play! Nice: Better Play Framework Pipelines with Cats Effect"
+title: "Play! Nice"
+subtitle: "Better Play Framework Pipelines with Cats Effect"
 layout: post
 ---
 
