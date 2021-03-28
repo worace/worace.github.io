@@ -8,7 +8,12 @@ title: Home
   <ul>
   {% for post in paginator.posts %}
     <li>
-      <a href="{{ site.baseurl }}{{ post.url }}"> {{ post.title }} </a>
+      <a href="{{ site.baseurl }}{{ post.url }}">
+        <span>{{ post.title }}</span>
+        {% if post.subtitle %}
+        <span>- {{post.subtitle}}</span>
+        {% endif %}
+      </a>
     </li>
   {% endfor %}
   </ul>
