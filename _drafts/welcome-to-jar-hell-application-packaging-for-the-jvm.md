@@ -186,6 +186,8 @@ ch
 
 Everything under `META-INF/` is metadata describing the packaged code, while the tree of class files corresponds to the compiled Java sources which you can see on [github](https://github.com/kungfoo/geohash-java).
 
+JARs can also include other files like static assets (e.g. images for a web app) or configuration files, which are called "resources". Most projects put these under a directory like `src/main/resources/blah.txt`, which will get bundled into the top level of the JAR like `/blah.txt.
+
 Many JVM tools understand JARs directly, meaning you **can use them directly as part of your classpath**:
 
 ```bash
@@ -259,6 +261,16 @@ So to recap:
 * Build tools, such as Maven, use project manifests (e.g. a `pom.xml`) to attach library versioning + dependency semantics to bundled JAR packages
 * Build tools, again, use this dependency graph to retrieve all the required packages for your project and programmatically assemble them into a Classpath you can use for tasks like compiling, testing, or running your code
 
+What about deployment? Now that I can build my project locally, I want to run it on a server somewhere. In some ways, this is a great strength of the JVM -- as long as you're not doing anything too crazy with native system dependencies (e.g [JNI](https://en.wikipedia.org/wiki/Java_Native_Interface)), or shelling out to system commands from your code, for the most part your server will "just" need a Java Runtime Environment in order to run your code.
+
+All you need to do is get this pile of `.class` files we've been accumulating into the right place, and there are a couple common ways to do that.
+
+### 'dist' packaging of an app and its dependencies
+
+### Uber/Fat/Assembly JARs
+
+#### Resource Deduplication
+
 ## Build Tools: Ant, Maven, et al.
 
 * Ant: Make-like build tool engine
@@ -267,11 +279,13 @@ So to recap:
 * compile code to class files
 * bundle class files into JARs
 
-### FAQ
+### FAQ / TODO
 
 * What are all these `$` in my `.class` names
 * Why don't JARs handle library manifests directly
 * Build tool 101
+* Do we really need all this stuff?
+* Why does my java project have 30 levels of nested directories? Project organization conventions `src/main/scala/...` + resources
 
 
 ### Resources
