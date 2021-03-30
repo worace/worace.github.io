@@ -4,41 +4,91 @@ subtitle: "An eager neophyte's guide to JVM packaging"
 layout: post
 ---
 
-"Write once, run anywhere," they said. "It'll be fun," they said. Well I once wrote some code and now I'm still waiting for 4.2GB of `.class` files to upload to the servers of an online bookstore so I can run it. I wish I could explain that to 1995 James Golick.
+The JVM has become quite a big tent in recent years. There are still some grizzled vetrans around, to be sure, who lived through applets and J2EE and all the rest, but there are also weirdos like me, who stumbled into the JVM unwittingly because of Clojure, or Scala or JRuby or whatever. I did not know at the time, but my nascent love of parentheses and immutable data structures was a slippery slope into grudging familiarity with the JVM as a platform. One of the many things I've absorbed through osmosis on this journey is an understanding of the JVM app packaging model. In recent years I've worked with JVM code in Clojure, Scala, Ruby (JRuby), Javascript (Nashorn - don't ask), and occasionally I even write some Java. While they all have their own quirks, one common theme is a shared reliance on the JVM packaging and library distribution model for reusing and deploying code.
 
-This is Part 1 of a 2-part series about Application Packaging and Dependency Management on the JVM. This section covers some of the basics of the JVM's compilation and packaging model. Part 2 investigates some of the problems that arise especially when managing dependencies for larger projects.
+This post attempts to distill some of this in a way that current and future JVM newcomers can digest. This is less of a tutorial for performing specific build actions with a tool like Maven, and more about developing a mental model for how code gets packaged and distributed for the JVM. I'll also try to cover a bit of the narrative history for how these approaches evolved which sometimes helps in understanding how things got to be the way they are.
+
+This is Part 1 of a 2-part series. This section covers some of the basics of the JVM's compilation and packaging model, so if you're a veteran who's been writing Ant scripts since 2001, it may not be fo much use for you. In Part 2, we'll look at some more advanced topics and in particular discuss some of the problems that arise especially when managing dependencies for larger JVM projects.
 
 If you're a newcomer to the JVM or if you just have the particular type of brain worms that motivate you to read 5000 words about JARs, Classpaths, POMs, this may be of interest. In either case I am sorry for you.
 
-## Summary / TL;DR
-## Java Class Compilation Model
+## Java and the JVM Class Compilation Model
 
-As you may have learned in your first "Hello World" intro to Java, the JVM consumes our code not as raw `.java` sources but as compiled `.class` files, which contain bytecode instructions the JVM understands.
+As is oft repeated, Java code runs on the **J**ava **V**irtual **M**achine. The JVM does not consume code from raw `.java` sources but rather as compiled `.class` files, which contain bytecode instructions the JVM understands. You can read more about the [ClassFile](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html) specification elsewhere, but in short it contains a binary representation of a Class including its fields, methods, etc.
 
-We often deal with `.class` compilation via build tools (more on that soon), but the simplest way to produce them is via `javac` directly:
+Unsurprisingly, the JVM Class model resonates closely with that of the Java language, for which it was created. But it's worth noting that they're not fundamentally linked. And over the years we've seen many alt-JVM languages exploit this fact by compiling their own code into this format and this getting access to the JVM's excellent runtime for free (There's even a whole [conference](http://openjdk.java.net/projects/mlvm/summit2019/) about it!). When the Scala compiler turns an [anonymous lambda expression into JVM bytecode](https://www.toptal.com/scala/scala-bytecode-and-the-jvm), it may do things that we would not think of as very "class-like", but it's still following the same rules and using the same format.
+
+### Making `.class` files
+
+We often deal with `.class` compilation via build tools, which we'll get to in a moment, but the simplest way to produce them is via `javac` (or another JVM lang compiler) directly:
 
 ```java
 // Hello.java
 public class Hello {
     public static void main(String[] args) {
-        System.out.println("Hello");
+        System.out.println("Hello, World!");
     }
 }
 ```
 
 ```
 $ javac Hello.java
+
 $ ls
 Hello.class     Hello.java
-$ java Hello
-Hello
+
+$ java Hello # run our newly compiled program
+Hello, World!
 ```
 
 `javac` compiles our `Hello.java` source into a corresponding `Hello.class`. When running a command like `java Hello`, the `Hello` is actually the name of a Class, and the JVM has to go and fetch it in order to execute the code it contains.
 
+If you want to see a more thorough explanation of how this looks to the JVM, you can actually interrogate it with `javap`:
+
+```
+$ javap -p -v Hello.class
+Classfile /Users/worace/Dropbox/scratch/jar-hell/Hello.class
+  Last modified Mar 14, 2021; size 401 bytes
+  MD5 checksum 82b2651206ac355844d233fbfdb42297
+  Compiled from "Hello.java"
+public class Hello
+  minor version: 0
+  major version: 52
+  flags: ACC_PUBLIC, ACC_SUPER
+Constant pool:
+   #1 = Methodref          #6.#15         // java/lang/Object."<init>":()V
+   #2 = Fieldref           #16.#17        // java/lang/System.out:Ljava/io/PrintStream;
+   #3 = String             #18            // Hello
+   // ...
+{
+  public Hello();
+    descriptor: ()V
+    flags: ACC_PUBLIC
+    // ...
+
+  public static void main(java.lang.String[]);
+    descriptor: ([Ljava/lang/String;)V
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: getstatic     #2                  // Field java/lang/System.out:Ljava/io/PrintStream;
+         3: ldc           #3                  // String Hello
+         5: invokevirtual #4                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+         8: return
+      LineNumberTable:
+        line 3: 0
+        line 4: 8
+}
+SourceFile: "Hello.java"
+```
+
+Again, the meaning of all that is beyond the scope of this article, but if you're interested in JVM internals you can read up on it elsewhere.
+
 ## Classloading and the Classpath
 
-Just as your shell uses the `PATH` variable to know where to look for executables, the JVM uses a ["Classpath"](https://docs.oracle.com/javase/tutorial/essential/environment/paths.html) to determine where to search for `.class` files corresponding to a requested class name.
+So we can compile and run a trivial example with 1 class, but what about when there are more of them, and they want to interact?
+
+Just as your shell uses a `PATH` variable to know where to look for executables, the JVM uses a similar concept of the ["Classpath"](https://docs.oracle.com/javase/tutorial/essential/environment/paths.html) to determine where to search for `.class` files corresponding to a requested class name. The Classpath is a simple concept, but it's very fundamental to how real-world JVM applications get run (or, frequently, crash due to Classpath problems).
 
 By default the Classpath is simply `.`, the current directory. So our previous example works because the `Hello.class` definition matching the class named `Hello` (`.class` files are named for the Class they contain) is sitting in the current directory, and the JVM is able to find it.
 
@@ -46,7 +96,7 @@ By default the Classpath is simply `.`, the current directory. So our previous e
 
 In practice, Java code is usually organized into packages (that's the `package com.mycorp.foo` you see at the top of all your company's Java files), and there's a [convention](https://docs.oracle.com/javase/tutorial/java/package/managingfiles.html) of expecting `.class` files on the Classpath to be organized in a directory structure that matches their package hierarchy.
 
-So a more realistic example of a simple source / class tree might be:
+So, a more realistic example of a simple source / class tree might be:
 
 ```java
 // ./example/Pizza.java
@@ -90,16 +140,18 @@ $ java example.Pizza
 yummm
 ```
 
-This loads 2 of our classes: `example.Pizza`, which we triggered explicitly, and `example.Calzone`, which `example.Pizza` imports. In both cases, the classloader is able to find these by traversing the classpath (`.`, the default) to find the corresponding class files (`Pizza.class` and `Calzone.class`, matching their class names) under the directory (`./example/`) which corresponds to their package name.
+This loads 2 of our classes: `example.Pizza`, which we triggered explicitly, and `example.Calzone`, which `example.Pizza` imports. In both cases, the JVM is able to find these by traversing the classpath (`.`, the default) to find the corresponding class files (`Pizza.class` and `Calzone.class`, matching their class names) under the directory (`./example/`) which corresponds to their package name.
+
+The actual loading of `.class` file to in-memory Class representation is handled by another component, called a [ClassLoader](https://docs.oracle.com/javase/7/docs/api/java/lang/ClassLoader.html), which is also out of the scope of this discussion.
 
 ## Packaging Classes into JAR Files
 
-So using manual `javac` commands and some careful directory organization, we can produce a Classpath which gives the Classloader what it wants:
+So using manual `javac` commands and some careful directory organization, we can produce a Classpath which gives the ClassLoader what it wants:
 
 * One (or more) searchable base directories containing...
 * Class files organized into subdirectories according to their package hierarchy
 
-If needed, we could even wire up a crude deployment system from this by just `scp`-ing our whole directory to a server, `ssh`-ing into it, and running `java Foo` -- and people have certainly done this over the years.
+If needed, we could even wire up a crude deployment system from this by just `scp`-ing our whole directory to a server, `ssh`-ing into it, and running `java Foo` -- and people certainly have deployed JVM code like this over the years.
 
 But, carting around `.class` trees manually gets tedious, so they created a specification for packaging them into more organized bundles, called [JAR files](https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jarGuide.html).
 
@@ -264,10 +316,12 @@ So now we can:
 Well, I wish I could explain to 1995 James Gosling that I'm about to upload 4.2GB of `.class` files to the servers of an online bookstore in the hopes that they'll run them on my behalf.
 
 
-It's worth noting that while the JVM's class and object model resonates closely with that of the Java language, they're not fundamentally linked. The wide range of non-Java JVM languages show that other compilers can target this format just fine, although the results may require `.class` encodings of things we wouldn't think of as very class-like.
 
 
 The actual loading of compiled `.class` files into memory is accomplished by another component, called a [Classloader](https://www.baeldung.com/java-classloaders) which is mostly beyond the scope of this discussion, but provides yet another layer of subtlety in the whole process.
 
 
 All of this can get quite complicated, so it's generally managed by...
+
+
+"Write once, run anywhere," they said. "It'll be fun," they said. Well I once wrote some code and now I'm still waiting for 4.2GB of `.class` files to upload to the servers of an online bookstore so I can run it. I wish I could explain that to 1995 James Golick.
