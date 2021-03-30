@@ -155,11 +155,9 @@ If needed, we could even wire up a crude deployment system from this by just `sc
 
 But, carting around `.class` trees manually gets tedious, so they created a specification for packaging them into more organized bundles, called [JAR files](https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jarGuide.html).
 
-A JAR is basically a Zip archive (you can literally unpack them with `unzip`) containing some metadata files and a tree of class files. This is exactly the "scp our `.class` directory to a server" model we just mentioned, but wrapped in a trenchcoat to make it more presentable.
+A JAR is basically a Zip archive (you can literally unpack them with `unzip`) containing some metadata files and a tree of class files. This is exactly the "scp our `.class` directory to a server" model we just mentioned, but wrapped in a trenchcoat to make it more presentable. JAR files have a bunch of other niche features (special Applet support, Service loader configuration, content signing, indexing schemes to speed up class loading, etc), but for most of us they're just the standard way to package and distribute (compiled) JVM code.
 
-Like everything else in the JVM ecosystem, JAR files have acrued a lot of niche features over the years (special support for Applets, Service loader configuration, content signing, indexing schemes to speed up class loading, etc), but for most of us they're just the standard way to package and distribute (compiled) JVM code.
-
-You can see how they work for yourself by pulling one from a public package archive and unpacking it:
+You can see how they work yourself by pulling one from a public package archive and unpacking it:
 
 ```
 $ wget https://repo1.maven.org/maven2/ch/hsr/geohash/1.3.0/geohash-1.3.0.jar
@@ -188,30 +186,33 @@ ch
 
 Everything under `META-INF/` is metadata describing the packaged code, while the tree of class files corresponds to the compiled Java sources which you can see on [github](https://github.com/kungfoo/geohash-java).
 
-JAR files are ubiquitous. Most JVM tools understand them, and **can use them directly as part of the classpath**:
+Many JVM tools understand JARs directly, meaning you **can use them directly as part of your classpath**:
 
 ```bash
 # Launch the scala repl with this JAR on the classpath
+# and import a class it contains
 $ scala -classpath geohash-1.3.0.jar
 scala> import ch.hsr.geohash.GeoHash
 import ch.hsr.geohash.GeoHash
 ```
 
-So while your classpath can be composed of raw `.class` files, like the examples we saw earlier, for 3rd party code it's more common to use JARs. As with your shell's `$PATH` variable, you can include multiple classpath entries by separating them with `:`. So if you had several library JARs to use you might invoke a command like `java -cp /path/to/lib1.jar:/path/to/lib2.jar:/path/to/lib3.jar com.example.MyClass`.
+So while your classpath can be composed of raw `.class` files, like the examples we saw earlier, for 3rd party code it's more common to use JARs. As with your shell's `$PATH` variable, you can include multiple classpath entries by separating them with `:`, for example: `java -cp /path/to/lib1.jar:/path/to/lib2.jar:/path/to/lib3.jar com.example.MyClass`.
 
-So the classpath mechanism also lets us incorporate 3rd party library code into our JVM programs, which is great. But managing JAR packages manually is quite tedious, so in practice we'd use a build tool for this.
+So the default Classpath / Class Loading mechanics allow us to provide the JVM with our own locally compiled code as well as 3rd party library code, which is great. But, managing JAR packages manually gets tedious. In practice this will almost always be done with a build tool...
 
 ## Maven and the POM: From `.class` files in a trenchcoat to meaningful library semantics
 
-JAR files provide a standard mechanism for bundling compiled JVM code, but they're fairly agnostic about the intent or provenance of that code.
+While the JAR format does provide a standard mechanism for bundling compiled JVM code, it's fairly agnostic about the intent or provenance of that code. In particular, JARs themselves don't include any provisions for describing the relationship between multiple packages, in the way we would expect from a modern software library and dependency management system.
 
-In particular the JAR format itself does not include any provisions for describing the relationship between multiple packages, in the way we would expect from a modern software library and dependency management system.
+While many languages nowadays launch with a clearly sanctioned build tool from day 1 (e.g. [Mix](https://hexdocs.pm/mix/Mix.html) for Elixir or [Cargo](https://doc.rust-lang.org/cargo/) for Rust), Java predated these conventions, and it took time for the ecosystem to coalesce around a standard. In the very early days, people tended to manage library distribution by hand, via shell scripts, FTP servers, or even just emailing JAR files around.
 
-While many languages nowadays launch with a clearly sanctioned build tool from day 1 (e.g. [Mix](https://hexdocs.pm/mix/Mix.html) for Elixir or [Cargo](https://doc.rust-lang.org/cargo/) for Rust), Java predated these conventions, and it took time for the ecosystem to coalesce around a standard. In the very early days, people simply managed library distribution by hand, via shell scripts, File servers, or even just emailing JAR files around.
+Then there was a generation of "Build-a-Build" build tools, most famously [Ant](https://ant.apache.org/), which provided Make-like utilities for scripting common compilation and JAR management tasks, but were fairly low-level and encouraged a lot of customization.
 
-Then there was a generation of "Build-a-Build" build tools, most famously [Ant](https://ant.apache.org/), which provided Make-like utilities for scripting common compilation and JAR management tasks, but was fairly low-level and encouraged a lot of customization.
+Finally [Maven](https://maven.apache.org/) entered the scene, and brought a more modern flavor of dependency management and build tooling to Java.
 
-Finally [Maven](https://maven.apache.org/) entered the scene, and brought a more modern flavor of dependency management and build tooling to Java. While Maven is still very popular in its own right, it's especially significant for establishing many of the dependency management conventions still in use throughout the JVM ecosystem today.
+### Maven's Library Model
+
+While Maven is still very popular in its own right, it's especially significant for establishing many of the dependency management conventions still in use throughout the JVM ecosystem today.
 
 In Maven's model, a library consists of:
 
@@ -241,13 +242,22 @@ For example this `pom.xml` defines a project with group `com.example`, artifact 
 
 Crucially, this structure adds the ability to encode dependency graphs alongside JARs of compiled code. To share a Maven library, you can publish your JAR plus a `pom.xml` to a public package repository like [Maven Central](https://maven.apache.org/). Then, other users will be able to retrieve both of these, use the attached `pom.xml` to identify additional transitive dependencies, and repeat the process until they've resolved the full tree.
 
-Finally, once the build tool has resolved and downloaded all of these dependencies, it can use the POM tree to automatically assemble a Classpath for compiling and running your project's code. So while we looked before at doing this manually like `java -cp /path/to/lib1.jar:/path/to/lib2.jar com.example.MyClass`, in practice that process will usually be managed for you by a build tool such as Maven.
+Finally, once the build tool has resolved and downloaded all of these dependencies, it can use the POM tree to automatically assemble a Classpath for compiling and running your project's code. So while we looked before at doing this manually like `java -cp /path/to/lib1.jar:/path/to/lib2.jar com.example.MyClass`, in practice that process will usually be managed for you by a build tool such as Maven. When you run something like `mvn test` or `mvn compile`, the Classpath is still there. But it's being handled for you automatically by Maven, based on the information in your `pom.xml`.
 
 ### Maven and the Broader Ecosystem
 
 Over the years a number of other build tools have been developed for the JVM: [Leiningen (Clojure)](https://leiningen.org/), [sbt (scala)](https://www.scala-sbt.org/), [Gradle (groovy, kotlin, etc)](https://gradle.org/), not to mention the "monorepo" tools like [Pants](https://www.pantsbuild.org/) and [Bazel](https://bazel.build/). But they all follow the same basic model: use a project spec to recursively retrieve library JAR files + manifests, then generate a Classpath to use these libraries for compiling and running local source files.
 
-And in practice, many of these other tools continue to use Maven's own `pom.xml` as a standard interchange format that they can all understand. So working in Clojure with Leiningen you'll use a `project.clj` file to define your own dependencies, but under the hood it's likely to consume and produce `pom.xml` files to interact with other projects.
+And in practice, many of these other tools even continue to use Maven's own `pom.xml` as a standard interchange format that they can all understand. So working in Clojure with Leiningen you'll use a `project.clj` file to describe your build and define your own dependencies, but under the hood it's likely to consume and produce `pom.xml` files to interact with other projects.
+
+## From Local Development to Production Distribution
+
+So to recap:
+
+* Compilers (`javac`, `scalac`, etc) turn language source code into bytecode (`.class` files) which the JVM can run
+* JAR files bundle compiled `.class` files for a given project or library into a manageable package
+* Build tools, such as Maven, use project manifests (e.g. a `pom.xml`) to attach library versioning + dependency semantics to bundled JAR packages
+* Build tools, again, use this dependency graph to retrieve all the required packages for your project and programmatically assemble them into a Classpath you can use for tasks like compiling, testing, or running your code
 
 ## Build Tools: Ant, Maven, et al.
 
@@ -260,6 +270,8 @@ And in practice, many of these other tools continue to use Maven's own `pom.xml`
 ### FAQ
 
 * What are all these `$` in my `.class` names
+* Why don't JARs handle library manifests directly
+* Build tool 101
 
 
 ### Resources
@@ -325,3 +337,9 @@ All of this can get quite complicated, so it's generally managed by...
 
 
 "Write once, run anywhere," they said. "It'll be fun," they said. Well I once wrote some code and now I'm still waiting for 4.2GB of `.class` files to upload to the servers of an online bookstore so I can run it. I wish I could explain that to 1995 James Golick.
+
+
+
+### Build Tool 101
+
+Build tools are complicated beasts because they do a lot of different things. But some of the most basic ones 
