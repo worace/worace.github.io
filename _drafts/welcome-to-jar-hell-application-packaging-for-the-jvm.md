@@ -257,6 +257,14 @@ In addition to compiled `.class` files, JARs can also include other non-code fil
 
 The catch is that resource files in a JAR have to be unique, so when you squash all your deps into an uberjar, you'll have to resolve these conflicts. Different tools have different ways of configuring this, but it's common to specify a "Merge Strategy" for handling these conflicts. For example here's [sbt-assembly's docs on the subject](https://github.com/sbt/sbt-assembly#merge-strategy).
 
+#### Other Uberjar Topics
+
+Dpeending on your use case, there are bunch of variations you can add to this approach. Hopefully we'll look at some of these in Part 2, but in the meantime you can read more:
+
+* [Shading, a way to relocate private copies of a Class to deal with conflicts](https://maven.apache.org/plugins/maven-shade-plugin/examples/class-relocation.html)
+* [Uberjar variants](https://dzone.com/articles/the-skinny-on-fat-thin-hollow-and-uber)
+* [WAR Files](https://docs.oracle.com/cd/E19199-01/816-6774-10/a_war.html) - WAR files are a JAR variant used for deploying certain types of Java web applications in the J2EE ecosystem. They're not exactly the same as an uberjar, but the topics are related. I'm neither very familiar with nor very interested in J2EE, so you'll have to read up on this elsewhere.
+
 ### Docker
 
 Ironically one Java's initial selling points was the simplicity and reliability of its deployments -- as long as your server has the right version of Java, it can run any of your applications. The proliferation of Docker-based deployments diminishes this benefit somewhat, but nonetheless, the JVM runs just fine with Docker. In many cases, you can just grab the [OpenJDK](https://hub.docker.com/_/openjdk) image of the appropriate version and go.
@@ -267,24 +275,8 @@ Usually you'll be putting into your Docker image some variation of one of the pr
 * Put your compiled code and all your dependencies into a docker image and include an entrypoint command that invokes them correctly (sbt's [native-packager](https://www.scala-sbt.org/sbt-native-packager/formats/docker.html) plugin does this)
 * Use a dedicated Java-to-Container build plugin like [Google's Jib](https://github.com/GoogleContainerTools/jib)
 
-### WAR Files
+## Summary
 
-[WAR files](https://docs.oracle.com/cd/E19199-01/816-6774-10/a_war.html) are a JAR variant specialized for deploying certain types of Java web applications out of the J2EE ecosystem. J2EE is its own complex topic which I'm honestly not that interested in, so I won't be going into this here.
+So, that's that. JVM packaging from making ClassFiles with `javac` to bundling full applications for deployment. There are a lot of details that I've had to omit here, so depending on your use case you'll probably need to read more elsewhere. But hopefully this has given you enough of an overview to understand how the pieces fit together, and make informed research elsewhere.
 
-### FAQ / TODO
-
-* What are all these `$` in my `.class` names
-* Why don't JARs handle library manifests directly
-* Build tool 101
-* Do we really need all this stuff?
-* Why does my java project have 30 levels of nested directories? Project organization conventions `src/main/scala/...` + resources
-* Provided scope
-* Shading
-* Java 9 / Module System
-
-### Resources
-
-* https://www.javapubhouse.com/2015/01/episode-47-stop-maven-time.html
-* https://manifest.fm/6
-
-# Part 2: Classpath Hell and Managing Dependencies in Large Projects
+Stay tuned for **Part 2**, in which we will descend into Classpath Hell, and hopefully emerge singed, but enlightened.

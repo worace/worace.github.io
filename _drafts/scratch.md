@@ -137,3 +137,24 @@ Then there was a generation of "Build-a-Build" build tools, most famously [Ant](
 While many languages nowadays launch with a sanctioned dependency management solution from day 1, Java predated these conventions, and it took time for the ecosystem to coalesce around a standard. 
 
 In the very early days, people tended to manage library distribution by hand, via shell scripts, FTP servers, or even just emailing JAR files around.
+
+* What are all these `$` in my `.class` names
+* Build tool 101
+
+
+## FAQ / TODO
+
+* Do we really need all this stuff?
+* Why don't JARs handle library manifests directly
+* Why does my java project have 30 levels of nested directories? Project organization conventions `src/main/scala/...` + resources
+* Provided scope
+* Shading
+* Java 9 / Module System
+* Other types of uberjars
+
+### Resources
+
+* https://www.javapubhouse.com/2015/01/episode-47-stop-maven-time.html
+* https://manifest.fm/6
+
+# Part 2: Classpath Hell and Managing Dependencies in Large Projects
