@@ -218,7 +218,7 @@ $ mvn dependency:build-classpath
 
 Over the years a number of other build tools have been developed for the JVM: [Leiningen (Clojure)](https://leiningen.org/), [sbt (scala)](https://www.scala-sbt.org/), [Gradle (groovy, kotlin, etc)](https://gradle.org/), not to mention the "monorepo" tools like [Pants](https://www.pantsbuild.org/) and [Bazel](https://bazel.build/). But they all follow the same basic model: use a project spec to recursively retrieve library JAR files + dependency manifests, then generate a Classpath to use these libraries for compiling and running local source code.
 
-And while these tools often have their own configuration format (`build.sbt`, `project.clj`, `build.gradle`, etc), they often still support Maven's `pom.xml` as a standard interoperable dependency manifest format.
+And while these tools all have their own configuration format (`build.sbt`, `project.clj`, `build.gradle`, etc), they still support Maven's `pom.xml` as a standard interoperable dependency manifest format. So sometimes when we speak of Maven libraries, we don't mean projects literally managed by the Maven build tool, but rather libraries that are built and distributed in keeping with the model that Maven established.
 
 ## From Local Development to Production Distribution
 
@@ -280,6 +280,7 @@ Usually you'll be putting into your Docker image some variation of one of the pr
 * Why does my java project have 30 levels of nested directories? Project organization conventions `src/main/scala/...` + resources
 * Provided scope
 * Shading
+* Java 9 / Module System
 
 ### Resources
 
