@@ -277,6 +277,6 @@ Usually you'll be putting into your Docker image some variation of one of the pr
 
 So there's your crash course in JVM packaging. There are a ton of details surrounding this topic, so we've inevitably had to skip over a lot. But hopefully it provides enough of an overview to understand how the pieces fit together, and make informed further research elsewhere.
 
-Now you must be thinking, "Wow, that is very thorough! Surely with such a robust packaging system everything must work perfectly in production?" Ha! If only! Just whisper the words "ClassNotFoundException" to a Java developer and see how they react.
+What's next? I'm sure you must be thinking, "Wow, with such a robust packaging system surely everything must work perfectly in production?" Ha! If only! Just whisper the words "ClassNotFoundException" to a Java developer and see how they react.
 
 Unfortunately, it does not, in fact, all work perfectly in production. To learn more about this, stay tuned for **Part 2**, in which we will descend into Classpath Hell, and hopefully emerge singed, but enlightened.
