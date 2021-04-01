@@ -167,7 +167,7 @@ Java itself predated many of these conventions, so while it's common for newer l
 
 ### Maven's Library Model
 
-While Maven remains a popular build tool in its own right, we're particularly interested in its approach dependency management, which established many standards that are still used throughout the JVM ecosystem today. Even if you're not working with Maven itself, you're probably dealing with Maven-style libraries and patterns, so it's helpful to understand how it works.
+While Maven remains a popular build tool in its own right, we're particularly interested in its approach dependency management, which established many conventions that are still used throughout the JVM ecosystem today. Even if you're not working with Maven itself, you're bound to encounter Maven-style libraries and patterns, so it's helpful to understand how it works.
 
 In Maven's model, a library consists of:
 
@@ -199,9 +199,9 @@ Here's an example `pom.xml` that defines a project with group `com.example`, art
 
 The POM `<dependencies/>` list allows us to encode dependency graphs alongside JARs of compiled code. To share a Java library, you can publish your JAR plus a `pom.xml` to a public package repository like [Maven Central](https://maven.apache.org/). Then, other users will be able to retrieve both of these files, use the attached `pom.xml` to identify additional transitive dependencies, and repeat the process until they've resolved the full tree.
 
-Finally, once the build tool has resolved and downloaded all your dependencies, it can use the POM tree to automatically assemble a Classpath for compiling and running your project's code.
+Finally, once the build tool has resolved and downloaded all your dependencies, it can use the POM tree to automatically assemble a Classpath for compiling and running your project's code. One of the build tool's many responsibility is to flatten your dependency tree, via deduplication and version conflict resolution, into a list, where each individual package only appears once.
 
-So while we looked before at doing this manually like `java -cp /path/to/lib1.jar:/path/to/lib2.jar com.example.MyClass`, in practice that process will usually be managed by a build tool. When you run something like `mvn test` or `mvn compile`, the Classpath is still there. But it's being handled for you automatically, based on the information in your `pom.xml`.
+So while we looked before at specifying a Classpath manually, like `java -cp /path/to/lib1.jar:/path/to/lib2.jar com.example.MyClass`, in practice that process will usually be managed by a build tool. When you run something like `mvn test` or `mvn compile`, the Classpath is still there. But it's being handled for you automatically, based on the information in your `pom.xml`.
 
 Most build tools use some sort of local cache directory (for Maven it's `~/.m2`) to save copies of remote dependencies. So if you examine your classpath locally, you may see it contains entries from that directory. Here's an example from the geohash-java project we saw before:
 
