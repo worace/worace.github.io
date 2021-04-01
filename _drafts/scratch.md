@@ -158,3 +158,9 @@ In the very early days, people tended to manage library distribution by hand, vi
 * https://manifest.fm/6
 
 # Part 2: Classpath Hell and Managing Dependencies in Large Projects
+
+The JVM has become a big tent in recent years.
+
+There are definitely still veterans around who have lived through Applets and J2EE and all the rest, but there are also a lot of newcomers, who stumbled into the JVM unwittingly because of Clojure, or because of Spark, or Android, or whatever.
+
+For those of us who didn't come in through the traditional Java developer path, there are a lot of JVM nuances like GC tuning, package mangement, etc that you have to absorb over time.
