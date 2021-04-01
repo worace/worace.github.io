@@ -4,7 +4,7 @@ subtitle: "An eager neophyte's guide to JVM packaging (Part 1 of 2)"
 layout: post
 ---
 
-The JVM is a big tent. Maybe you're a seasoned veteran, who's lived through it all from Applets to J2EE. Or maybe you're a weirdo like me who came in through Clojure, only to find that love for parentheses and immutable data structures is actually a slippery slope into GC tuning and Classpath troubleshooting.
+The JVM is a big tent. Maybe you're a seasoned veteran who's lived through it all from Applets to J2EE. Or maybe you're a weirdo like me who came in through Clojure, only to find that love for parentheses and immutable data structures is actually a slippery slope into GC tuning and Classpath troubleshooting.
 
 This article is targeted at the latter group, and aims to provide a crash course in JVM app packaging for newcomers to the platform. We'll cover compilation basics, JARs, `pom.xml`, and deployment strategies. This is less about accomplishing tasks with a specific build tool and more about developing a mental model for how code gets packaged and distributed on the JVM.
 
@@ -231,17 +231,31 @@ We've seen how this works locally, but what about deployment?
 
 Luckily, the JVM makes this fairly easy -- as long as you don't get too crazy with native dependencies (e.g [JNI](https://en.wikipedia.org/wiki/Java_Native_Interface)), or shelling out to system commands, you should be able to run your app on any server with the proper [Java Runtime Environment](https://www.oracle.com/java/technologies/javase-jre8-downloads.html) version.
 
-All you need to do is get this pile of `.class` files we've been accumulating into the right place, and there are a couple common ways to do that.
+All we need to do is get this pile of `.class` files we've accumulated into the right place, and there are a couple common ways to do that.
+
+### Side Note: Libraries vs Applications
+
+### Zip, Push, and Script
+
+One common approach involves doing a straightforward upload of all the JARs your build tool has resolved for your Classpath, along with the one it has created for your actual code, onto your production environment. Then, in production, you would invoke the appropriate `java` command, along the lines of `java -cp <My application JAR>:<all my library JARs> com.mycorp.MyMainClass`. Often people will wrap this last bit in some kind of generated script that makes it easier to get the Classpath portion right.
+
+There are a lot of different ways to achieve this, so it's really kind of a broad family of techniques and will vary depending on what specific build tool and type of application you're trying to run. Sbt's [native-packager](https://github.com/sbt/sbt-native-packager) plugin offers a bunch of distribution techniques, and some of them fall into this category. For example it can package all of your JARs into a Zip archive or tarball (yes, for those keeping score, we're now putting JARs, which are rebranded Zip archives, into other Zip archives), which includes the packages + a handy run script that will kick everything off. It can even build platform-specific archives, like a `deb` for installation with `dpkg` on Debian systems, or an `msi` image for Windows deployments. I'm less familiar with the offerings outside of sbt, but there are likely comparable tools out there for Maven, Gradle, etc.
+
+If you're on AWS and EC2, Netflix has done a lot of work around automating deployments via [AMIs](https://github.com/Netflix/aminator), and has released some tooling (e.g. [Nebula](https://nebula-plugins.github.io/documentation/introduction_to_nebula.html))
+
+There's also always the tried and true [Heroku approach](https://devcenter.heroku.com/articles/java-support#activation), which is to clone your source tree onto your prod server, run the build process _there_, then kick off your server process from the resulting artifacts. This approach works fine too, and allows them to help manage some of the conventions around how your build is run. The downside is that this requires extra dependencies in your prod environment (you need your build tools in addition to just the Java runtime), but it works fine in many cases. (Worth noting that Heroku also supports deploying Java apps via [pre-built JARs](https://devcenter.heroku.com/articles/deploying-java-applications-with-the-heroku-maven-plugin))
+
+The point is there are a whole host of options here, depending on what platform or build tool you're working with. But they all share the same rough goal of 1) using a build tool to fetch deps, resolve a Classpath, and compile code, 2) pushing those artifacts to a prod server, and 3) passing it all off to the appropriate `java` command.
 
 ### Uber/Fat/Assembly JARs
 
-The example JARs we've seen so far only contain the compiled `.class` files for their own direct source code. Even if your project requires other dependencies to run, those dependencies' `.class` files aren't included, because you expect to access them via a build tool which will stitch them into your Classpath.
+The main annoyance about the previous approach is that it can require shuffling a lot of files around.
 
-This type of JAR is sometimes called a "skinny" JAR. It's the default packaging strategy in most JVM build tools, and it's what you want if you're distributing your code for other developers to consume (for example publishing a library into a package repository), or if you're going to be running the code along with all of the other JARs on the Classpath (like what happens with `mvn test`, etc).
+The JARs we've seen so far only contain the compiled `.class` files for their own direct source code. Even if your project requires other dependencies to run, those dependencies' `.class` files aren't included, because you expect to access them via a build tool which will stitch them into your Classpath.
 
-However, JARs can also be used (abused?) as an application deployment mechanism, where the final target is not a package repository or local development task, but some production server environment. In these cases, you no longer care about granularity or redistribution -- you just want the simplest means possible of getting the `.class` files needed for your project into production. One approach to this is building what's called an "Uber", "Assembly", of "Fat" JAR.
+This type of JAR is sometimes called a "skinny" JAR. It's the default packaging strategy in most JVM build tools, and it's what you want if you're distributing your code for other developers to consume (for example publishing a library into a package repository), or if you're going to be running the code along with all of the other JARs on the Classpath (like what happens with `mvn test`, etc). It's good from a library management perspective because it keeps things granular and composable, but it can be annoying at deployment time because you end up with dozens or even hundreds of JARs to cart around. What if you could just get it all onto _one_ JAR?
 
-An uberjar flattens out your application's compiled code, resources, _plus all the JARs on its classpath and all of their resources_ into a single output JAR. To do this, your build tool fetches dependencies and compiles your code like normal, then goes 1 by 1 through all the other JARs on the Classpath, unpacks them, and repacks their contents into the final uberjar. It's basically a whole bunch of JARs squished into one.
+It turns out JARs _can_ be used (abused?) in this way, by creating what's called an "Uber", "Assembly", of "Fat" JAR. An uberjar flattens out your application's compiled code, resources, _plus all the JARs on its classpath and all of their resources_ into a single output JAR. To do this, your build tool fetches dependencies and compiles your code like normal, then goes 1 by 1 through all the other JARs on the Classpath, unpacks them, and repacks their contents into the final uberjar. It's basically a whole bunch of JARs squished into one.
 
 The benefit of this is that the final product no longer has any dependencies. Its whole Classpath is just the one resulting JAR, and your whole deployment model can consist of uploading the uberjar to production and invoking `java -jar my-application.jar`. It's sort of the JVM equivalent of building a single executable binary out of a language like Go or Rust.
 
@@ -261,17 +275,36 @@ Uberjar configuration can get quite complex, so depending on your use case there
 
 * [Shading, a way to relocate private copies of a Class to deal with conflicts](https://maven.apache.org/plugins/maven-shade-plugin/examples/class-relocation.html)
 * [Uberjar variants](https://dzone.com/articles/the-skinny-on-fat-thin-hollow-and-uber)
-* [WAR Files](https://docs.oracle.com/cd/E19199-01/816-6774-10/a_war.html) - WAR files are a JAR variant used for deploying certain types of Java web applications in the J2EE ecosystem. They're not exactly the same as an uberjar, but the topics are related. I'm neither very familiar with nor very interested in J2EE, so you'll have to read up on this elsewhere.
 
-### Docker
+### WAR Files and J2EE
 
-Ironically one of Java's initial selling points -- simplicity of deployment -- has been somewhat diminished by the proliferation of Docker, but nonetheless, the JVM runs just fine with Docker. In many cases, you can simply grab the appropriate [OpenJDK](https://hub.docker.com/_/openjdk) image version and go.
+[WAR Files](https://docs.oracle.com/cd/E19199-01/816-6774-10/a_war.html) are a special type of JAR variant used for deploying certain types of Java web applications in the J2EE ecosystem. J2EE is a whole can of worms that I honestly don't know that much about, nor am I very interested in learning. But it does come up a lot so it's worth touching on here.
+
+In short, these applications are designed to deploy not to generic VMs (like an Ubuntu 16 instance or w/e) but rather into specialized Java-based [Application Servers](https://en.wikipedia.org/wiki/List_of_application_servers#Java), like [Apache Tomcat](http://tomcat.apache.org/). Your company would run one or more of these Tomcat instances, which get treated as shared infrastructure, and individual applications would package their code (into WARs) and deploy into into _those_.
+
+The application server handles process of orchestrating your application (no `java -jar MyApp.jar` here), as well as providing a bunch of [common J-* branded system services](https://en.wikipedia.org/wiki/Jakarta_EE#Web_profile). Because of all this, there are extra considerations around packaging and deployment to make sure the 2 systems (your application and the hosting Application Server) play nicely together, and that's where the WAR spec comes in.
+
+[This article](https://javapipe.com/blog/tomcat-application-server/) gives a good overview of this whole system. [Here's another good one](https://octopus.com/blog/application-server-vs-uberjar) about WARs specifically.
+
+As an aside, despite my skepticism and poorly masked disdain for all this, it is kind of amusing to read about. The idea of persistent, multitenant JVM app servers is interesting, and if you squint right, running WARs via Tomcat isn't so different from how everyone today is running "pods" of "containers" on abstracted machines via kubernetes. It just has a horrifying enterprise-y pocket protector kind of vibe around it.
+
+And the decline of one is not unrelated to the rise of the other -- while there are plenty of J2EE deployments out there, much of the ecosystem has moved away from this model. People care more about portability between cloud environments and deployment standardization between languages (e.g. the [12 Factor Model](https://12factor.net/)), and in that environment highly customized, language-specific infrastructure is less appealing than a giant uberjar you can run anywhere with a Java runtime.
+
+### Container Images
+
+Ironically one of Java's initial selling points -- simplicity of deployment -- has been somewhat diminished by the proliferation of Docker.
+
+Now that everyone's production environments are just a _???_, the benefit of just putting the JRE on all your servers and being able to run things doesn't matter as much.
+
+Nonetheless, the JVM runs just fine with Docker, and in many cases, you can simply grab the appropriate [OpenJDK](https://hub.docker.com/_/openjdk) image version, stuff your JARs into it, and go.
 
 Usually you'll be putting into your Docker image some variation of one of the previous models:
 
 * Build an uberjar and put it in a JDK docker image
 * Put your compiled code and all your dependencies into a docker image and include an entrypoint command that invokes them with the proper settings and Classpath (sbt's [native-packager](https://www.scala-sbt.org/sbt-native-packager/formats/docker.html) plugin does this)
 * Use a dedicated Java-to-Container build plugin like [Google's Jib](https://github.com/GoogleContainerTools/jib)
+
+### GraalVM Native Images
 
 ## Summary
 

@@ -164,3 +164,11 @@ The JVM has become a big tent in recent years.
 There are definitely still veterans around who have lived through Applets and J2EE and all the rest, but there are also a lot of newcomers, who stumbled into the JVM unwittingly because of Clojure, or because of Spark, or Android, or whatever.
 
 For those of us who didn't come in through the traditional Java developer path, there are a lot of JVM nuances like GC tuning, package mangement, etc that you have to absorb over time.
+
+
+as an application deployment mechanism, where the final target is not a package repository or local development task, but some production server environment. In these cases, you no longer care about granularity or redistribution -- you just want the simplest means possible of getting the `.class` files needed for your project into production. One approach to this is building 
+
+Honestly if you can get through this stuff without falling into a stupor and drooling on your keyboard, congrats.
+
+
+It's kind of amusing to read about this stuff nowadays, because it honestly has a lot of similarities to modern RPC-based microservice architectures, . The components are isolated from one another, except that they're kind of not, because they have lots of interdependencies to actually do anything, 
