@@ -159,15 +159,15 @@ But, managing lists of JARs for a Classpath by hand gets tedious, so in practice
 
 ## Maven and the POM: From ClassFiles in a trenchcoat to dependency semantics
 
-While the JAR format provides a mechanism for bundling compiled JVM code, it's fairly agnostic about the intent or provenance of that code. In particular, there's not a built-in provision for describing the relationship _between_ multiple JARs, in the way we would expect from a modern software library and dependency management system.
+While the JAR format provides a mechanism for bundling compiled JVM code, it's fairly agnostic about the intent or provenance of that code. In particular, there's not a built-in provision for describing the relationship _between_ multiple JARs, in the way we expect from a modern dependency management system.
 
-Java predated many of the contemporary conventions around dependency management, so while it's common for newer languages to ship with these tools from day 1, it took time for the Java community to coalesce around a standard. After several iterations, including earlier tools like [Ant](https://ant.apache.org/), not to mention many home-rolled systems involving FTP-ing or even emailing JAR files around, [Maven](https://maven.apache.org/) eventually emerged as a de facto standard.
+Java itself predated many of these conventions, so while it's common for newer languages to ship with such tools from day 1, it took time for the Java community to coalesce around a standard. After several iterations, including earlier tools like [Ant](https://ant.apache.org/), not to mention many home-grown systems involving FTP-ing or even emailing JAR files around, [Maven](https://maven.apache.org/) eventually emerged as a de facto standard.
 
 **Side Note**: While I'm sure Ant was great in its time, it eventually became so loathed in some circles that it inspired Clojure's build tool to be [named](https://github.com/technomancy/leiningen/blob/master/README.md#leiningen) after a [German Short Story](https://en.wikipedia.org/wiki/Leiningen_Versus_the_Ants) in which the protagonist battles a horde of ants in the Brazilian jungle.
 
 ### Maven's Library Model
 
-While Maven remains a popular build tool in its own right, we're particularly interested in its dependency management conventions, which are still in use throughout the JVM ecosystem today.
+While Maven remains a popular build tool in its own right, we're particularly interested in its approach dependency management, which established many standards that are still used throughout the JVM ecosystem today. Even if you're not working with Maven itself, you're probably dealing with Maven-style libraries and patterns, so it's helpful to understand how it works.
 
 In Maven's model, a library consists of:
 
