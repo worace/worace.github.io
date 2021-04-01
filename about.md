@@ -7,6 +7,6 @@ layout: default
 
 I'm a Software Engineer in Los Angeles. During the day I work on Places Data for [Foursquare](https://foursquare.com/).
 
-Before programming I studied Architecture and worked for a while at a small firm in Berkeley.
+Outside of work I sometimes surf (poorly), chase [carp in the LA river](https://twitter.com/worace/status/1376588367152865281) (unsuccessfully), or hack on side projects, usually with a geospatial bent.
 
-In another life I would be a fly fishing guide.
+Lately I've been working on [Contour](https://contour.app/), an application for sharing and editing geospatial data. Sometimes I livestream some of this project work on [Twitch](https://www.twitch.tv/worace).
