@@ -203,7 +203,7 @@ Finally, once the build tool has resolved and downloaded all your dependencies, 
 
 So while we looked before at specifying a Classpath manually, like `java -cp /path/to/lib1.jar:/path/to/lib2.jar com.example.MyClass`, in practice that process will usually be managed by a build tool. When you run something like `mvn test` or `mvn compile`, the Classpath is still there. But it's being handled for you automatically, based on the information in your `pom.xml`.
 
-Most build tools use some sort of local cache directory (for Maven it's `~/.m2`) to save copies of remote dependencies. So if you examine your classpath locally, you may see it contains entries from that directory. Here's an example from the geohash-java project we saw before:
+Most build tools use some sort of local cache directory (for Maven it's `~/.m2`) to save copies of remote dependencies, so if you examine your classpath locally, you may see it contains entries from that directory. Here's an example from the geohash-java project we saw before:
 
 ```
 $ mvn dependency:build-classpath
@@ -216,7 +216,7 @@ $ mvn dependency:build-classpath
 
 Over the years a number of other build tools have been developed for the JVM: [Leiningen (Clojure)](https://leiningen.org/), [sbt (scala)](https://www.scala-sbt.org/), [Gradle (groovy, kotlin, etc)](https://gradle.org/), not to mention the "monorepo" tools like [Pants](https://www.pantsbuild.org/) and [Bazel](https://bazel.build/). But they all follow the same basic model: use a project spec to recursively retrieve library JAR files + dependency manifests, then generate a Classpath to use these libraries for compiling and running local source code.
 
-And while these tools all have their own configuration format (`build.sbt`, `project.clj`, `build.gradle`, etc), they still support Maven's `pom.xml` as a standard interoperable dependency manifest format. So sometimes when we speak of Maven libraries, we don't mean projects literally managed by the Maven build tool, but rather libraries that are built and distributed in keeping with the model that Maven established.
+And while these tools all have their own semantics, special features, and configuration file formats (`build.sbt`, `project.clj`, `build.gradle`, etc), they still support Maven's `pom.xml` as a standard interoperable dependency manifest. So sometimes when we speak of Maven libraries, we don't mean "projects literally managed by the Maven build tool", but rather libraries that are built and distributed in keeping with the model that Maven established.
 
 ## From Local Development to Production Distribution
 
