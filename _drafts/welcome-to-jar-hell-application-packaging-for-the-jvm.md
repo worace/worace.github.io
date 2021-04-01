@@ -277,4 +277,6 @@ Usually you'll be putting into your Docker image some variation of one of the pr
 
 So, that's that. JVM packaging from making ClassFiles with `javac` to bundling full applications for deployment. There are a lot of details that I've had to omit here, so depending on your use case you'll probably need to read more elsewhere. But hopefully this has given you enough of an overview to understand how the pieces fit together, and make informed research elsewhere.
 
-Stay tuned for **Part 2**, in which we will descend into Classpath Hell, and hopefully emerge singed, but enlightened.
+I know you must be thinking, "Wow, that is very thorough. Surely with such a robust packaging system everything must work perfectly in production?" Ha! If only! Just whisper the words "ClassNotFoundException" to a Java developer and see how they react.
+
+Unfortunately, it does not, in fact, all work perfectly in production. To learn more about this, stay tuned for **Part 2**, in which we will descend into Classpath Hell, and hopefully emerge singed, but enlightened.
