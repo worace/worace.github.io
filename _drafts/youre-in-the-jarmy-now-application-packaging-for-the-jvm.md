@@ -4,7 +4,7 @@ subtitle: "An eager neophyte's guide to JVM packaging (Part 1 of 2)"
 layout: post
 ---
 
-The JVM is a big tent. Maybe you're a seasoned veteran, who's lived through it all from Applets to J2EE. Or maybe you're a weirdo like me who came in through Clojure, only to find that love for parentheses and immutable data structures is actually a slippery slope into deep knowledge of GC tuning parameters and Classpath troubleshooting.
+The JVM is a big tent. Maybe you're a seasoned veteran, who's lived through it all from Applets to J2EE. Or maybe you're a weirdo like me who came in through Clojure, only to find that love for parentheses and immutable data structures is actually a slippery slope into GC tuning and Classpath troubleshooting.
 
 This article is targeted at the latter group, and aims to provide a crash course in JVM app packaging for newcomers to the platform. We'll cover compilation basics, JARs, `pom.xml`, and deployment strategies. This is less about accomplishing tasks with a specific build tool and more about developing a mental model for how code gets packaged and distributed on the JVM.
 
