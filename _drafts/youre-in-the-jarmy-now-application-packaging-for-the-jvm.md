@@ -4,7 +4,7 @@ subtitle: "An eager neophyte's guide to JVM packaging (Part 1 of 2)"
 layout: post
 ---
 
-The JVM is a big tent. Maybe you're a seasoned veteran who's lived through everything from Applets to J2EE. Or maybe you're a weirdo like me who came in through Clojure, only to find that love for parentheses and immutable data structures is actually a slippery slope into GC tuning and Classpath troubleshooting.
+The JVM is a big tent. Maybe you're a seasoned veteran who's lived through everything from Applets to J2EE. Or maybe you're a weirdo like me who came in through Clojure, only to find that love for parentheses and immutable data structures was a slippery slope into Classpath troubleshooting.
 
 This article is targeted at the latter group, and aims to provide a crash course in JVM app packaging for newcomers to the platform. We'll cover compilation basics, JARs, `pom.xml`, and deployment strategies. This is less about accomplishing tasks with a specific build tool and more about developing a mental model for how code gets packaged and distributed on the JVM.
 
@@ -14,7 +14,13 @@ Stay tuned as well for Part 2, which will cover more advanced topics such as the
 
 As you may recall from "Java 101", Java code runs on the **J**ava **V**irtual **M**achine. Over time, the JVM has evolved into a powerful [polyglot runtime](http://openjdk.java.net/projects/mlvm/summit2019/), but it was created expressly for running the Java programming language, and the 2 still share a lot of design traits.
 
-On the JVM, as in Java, _everything_ is a class, and the fundamental unit of code for the JVM is a `.class` file. The JVM won't run `.java` (or any other language) source files directly, they must first be turned into `.class` files by a compiler. Java Class? Turned into a `.class`. Scala [Anonymous Function](https://www.toptal.com/scala/scala-bytecode-and-the-jvm)? Given a funny name then turned into a `.class`. Clojure macro? Expanded by the Clojure compiler, purified with the blood of a goat, and turned into a `.class`.
+On the JVM, as in Java, _everything_ is a class, and the fundamental unit of code for the JVM is a `.class` file. The JVM won't run `.java` (or any other language) source files directly, they must first be turned into `.class` files by a compiler.
+
+Java Class? Turned into a `.class`.
+
+Scala [Anonymous Function](https://www.toptal.com/scala/scala-bytecode-and-the-jvm)? Given a funny name and turned into a `.class`.
+
+Clojure macro? Expanded by the Clojure compiler, purified with the blood of a goat, then turned into a `.class`.
 
 The [JVM Spec](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html) defines the structure of `.class` files, which contain a binary representation of a class, including its constructors, fields, and methods, expressed as bytecode instructions in the [JVM Instruction Set](https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html).
 
@@ -236,6 +242,8 @@ Luckily, the JVM makes this fairly easy -- as long as you don't get too crazy wi
 
 All we need to do is get this pile of `.class` files we've accumulated into the right place, and there are a couple common ways to do that.
 
+## TODO NEED A TRANSITION HERE
+
 ### Zip, Push, and Script
 
 One common approach involves doing a straightforward upload of all the JARs your build tool has resolved for your Classpath, along with the one it has created for your actual code, onto your production environment. Then, in production, you would invoke the appropriate `java` command, along the lines of `java -cp <My application JAR>:<all my library JARs> com.mycorp.MyMainClass`. Often people will wrap this last bit in some kind of generated script that makes it easier to get the Classpath portion right.
@@ -286,7 +294,18 @@ Usually you'll be putting into your Docker image some variation of one of the pr
 * Put your compiled code and all your dependencies into a docker image and include an entrypoint command that invokes them with the proper settings and Classpath (sbt's [native-packager](https://www.scala-sbt.org/sbt-native-packager/formats/docker.html) plugin does this)
 * Use a dedicated Java-to-Container build plugin like [Google's Jib](https://github.com/GoogleContainerTools/jib). Jib is interesting because it's implemented in pure Java and thus can integrate directly into your build tool without requiring an external Docker process.
 
-### GraalVM Native Images
+### GraalVM Native Image
+
+[GraalVM](https://www.graalvm.org/) is an alternative JVM runtime with some really interesting features, one of which is the ability to do Ahead-of-time compilation of JVM bytecode into self-contained, platform-specific executables, called [Native Images](https://www.graalvm.org/reference-manual/native-image/). A native image includes your application's code, its dependencies, plus the standard library as well the core runtime utilities like the garbage collector. It's all there in one standalone binary package, so you don't even need to have `java` installed anymore. The resulting program also has _much_ faster startup time and lower memory requirements than traditional JVM programs, making it interesting for use cases like CLI utilities where the JVM previously was not a great fit.
+
+While CLI tools are cool, the Industry is mostly excited about this because of serverless. Everyone wants to stuff their Java programs into a Lambda/Cloud Run/whatever function and use them on-demand, but this doesn't work well if your bloated app takes 30 seconds to boot. So native image provides a path to running Java programs in these environments.
+
+So what's the catch? Well there are 2 main ones:
+
+1. Restrictions of the native image AOT process mean that some traditional JVM tricks like runtime reflection don't work. There are sort of workarounds for this.
+2. So far, native image performance is at [least different, and generally slightly worse](https://github.com/oracle/graal/issues/1069#issuecomment-473649871), than traditional JVMs. The AOT model cuts into the optimizations that can be done at runtime (you don't get that sweet sweet JIT), so your "warmed up" throughput will usually be worse. However this is still evolving, and there are [workarounds](https://www.graalvm.org/reference-manual/native-image/PGO/), so do your research.
+
+Ironically point number 1 has lead to a huge wave of backpedalling across the industry, as everyone tries to get things like Spring running under native image. Suddenly reflection is bad and compile time abstractions are cool in Java.
 
 ## Summary
 
