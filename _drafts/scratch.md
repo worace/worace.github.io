@@ -172,3 +172,48 @@ Honestly if you can get through this stuff without falling into a stupor and dro
 
 
 It's kind of amusing to read about this stuff nowadays, because it honestly has a lot of similarities to modern RPC-based microservice architectures, . The components are isolated from one another, except that they're kind of not, because they have lots of interdependencies to actually do anything, 
+
+
+The format of a `.class` file is defined by 
+
+Java Class? `Class`.
+, which contains bytecode representation of a single JVM Class. 
+
+As in Java, everything on the JVM is a class, or at least class-like, 
+
+The JVM doesn't consume raw `.java` sources but rather compiled `.class` files, which contain bytecode instructions in the JVM instruction set. You can read more about the  and the [ClassFile](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html) specification elsewhere, but in short they provide a binary representation of the code for a Class, including its fields, constructors, methods, etc.
+
+The JVM Class model aligns closely with that of the Java language, but they're not fundamentally linked. Thanks to this separation, the many [alt-JVM languages](http://openjdk.java.net/projects/mlvm/summit2019/) are able to compile their own code into JVM bytecode, and get access to the JVM's excellent runtime for free.
+
+When the Scala compiler turns an [anonymous lambda expression into JVM bytecode](https://www.toptal.com/scala/scala-bytecode-and-the-jvm), it may do things that we would not think of as very "class-like", but it's still following the same model, with the same rules and binary format.
+
+but how do we get external JARs to depend on? We could record a list of dependencies, along with where we found them on the internet, and ask each new team member to go and download them to their own machine.
+
+We like dependencies because we are lazy programmers who want to have work already done for us, but they can add a lot of complexity
+
+We mentioned that one use case for a JAR is to pull in external code written by another developer. We call 3rd party JARs like this "libraries" or "dependencies", and . But how do we get external JARs to depend on? We could record a list of all our dependencies, along with where we found them on the internet, and whenever a new person joins the project they can go and download them to their own machine. However this is error-prone, not to mention the fact that our dependencies might have _their own dependencies_, so you can see how the whole thing starts to spiral out of control. We need more tooling.
+
+ so while it's common for newer languages to ship with dependency tools from day 1,
+
+
+predated many of these conventions and it took time for the JVM community to coalesce around an approach.
+
+Because the Application Server handles the orchestration and lifecycle of your individual App
+
+The application server handles the process of orchestrating your application (no `java -jar MyApp.jar` here), as well as providing a bunch of [common J-* branded system services](https://en.wikipedia.org/wiki/Jakarta_EE#Web_profile). Because of all this, there are extra considerations around packaging and deployment to make sure the 2 systems (your application and the hosting Application Server) play nicely together, and that's where the WAR spec comes in.
+
+
+#### Uberjar Gotcha: Resource Deduplication
+
+In addition to compiled `.class` files, JARs can also include other non-code files called "resources". These could be configuration files, static assets, etc., and can be accessed programmatically via Java [APIs](https://docs.oracle.com/javase/8/docs/technotes/guides/lang/resources.html).
+
+The catch is that resource files in a JAR have to be unique, so when you squash all your deps into an uberjar, you'll have to resolve these conflicts. Different tools have different ways of configuring this, but it's common to specify a "Merge Strategy" for handling these conflicts. For example here's [sbt-assembly's docs on the subject](https://github.com/sbt/sbt-assembly#merge-strategy).
+
+If you're on AWS and EC2, Netflix has done a lot of work around automating deployments via [AMIs](https://github.com/Netflix/aminator), and has released some tooling (e.g. [Nebula](https://nebula-plugins.github.io/documentation/introduction_to_nebula.html)) to do this for Java applications.
+
+There's also always the tried and true [Heroku approach](https://devcenter.heroku.com/articles/java-support#activation), of cloning your source tree onto your prod server, running the build process _there_, then launching your server process from the resulting artifacts. The downside to this is that it requires extra dependencies in your prod environment (you need your build tools in addition to just the Java runtime), but it works fine in many cases. (Worth noting that Heroku supports deploying Java apps via [pre-built JARs](https://devcenter.heroku.com/articles/deploying-java-applications-with-the-heroku-maven-plugin) as well.)
+
+
+The point is there are a bunch of options here, depending on what platform or build tool you're working with. But they all share the same rough goal of 1) using a build tool to fetch deps, resolve a Classpath, and compile code, 2) pushing those artifacts to a prod server, and 3) passing it all off to the appropriate `java` command.
+
+, and it's great when distributing code for other developers to consume (for example publishing a library into a package repository), or if you're going to be running the code along with all of the other JARs on the Classpath (like what happens with `mvn test`, etc).

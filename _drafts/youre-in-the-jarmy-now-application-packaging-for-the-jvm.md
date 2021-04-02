@@ -4,7 +4,7 @@ subtitle: "An eager neophyte's guide to JVM packaging (Part 1 of 2)"
 layout: post
 ---
 
-The JVM is a big tent. Maybe you're a seasoned veteran who's lived through it all from Applets to J2EE. Or maybe you're a weirdo like me who came in through Clojure, only to find that love for parentheses and immutable data structures is actually a slippery slope into GC tuning and Classpath troubleshooting.
+The JVM is a big tent. Maybe you're a seasoned veteran who's lived through everything from Applets to J2EE. Or maybe you're a weirdo like me who came in through Clojure, only to find that love for parentheses and immutable data structures is actually a slippery slope into GC tuning and Classpath troubleshooting.
 
 This article is targeted at the latter group, and aims to provide a crash course in JVM app packaging for newcomers to the platform. We'll cover compilation basics, JARs, `pom.xml`, and deployment strategies. This is less about accomplishing tasks with a specific build tool and more about developing a mental model for how code gets packaged and distributed on the JVM.
 
@@ -12,22 +12,22 @@ Stay tuned as well for Part 2, which will cover more advanced topics such as the
 
 ## Java and the JVM Class Model
 
-As you may know, Java code runs on the **J**ava **V**irtual **M**achine. The JVM doesn't consume raw `.java` sources but rather compiled `.class` files, which contain bytecode instructions in the JVM instruction set. You can read more about the [JVM Instruction Set](https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html) and the [ClassFile](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html) specification elsewhere, but in short they provide a binary representation of the code for a Class, including its fields, constructors, methods, etc.
+As you may recall from "Java 101", Java code runs on the **J**ava **V**irtual **M**achine. Over time, the JVM has evolved into a powerful [polyglot runtime](http://openjdk.java.net/projects/mlvm/summit2019/), but it was created expressly for running the Java programming language, and the 2 still share a lot of design traits.
 
-The JVM Class model aligns closely with that of the Java language, but they're not fundamentally linked. Thanks to this separation, the many [alt-JVM languages](http://openjdk.java.net/projects/mlvm/summit2019/) are able to compile their own code into JVM bytecode, and get access to the JVM's excellent runtime for free.
+On the JVM, as in Java, _everything_ is a class, and the fundamental unit of code for the JVM is a `.class` file. The JVM won't run `.java` (or any other language) source files directly, they must first be turned into `.class` files by a compiler. Java Class? Turned into a `.class`. Scala [Anonymous Function](https://www.toptal.com/scala/scala-bytecode-and-the-jvm)? Given a funny name then turned into a `.class`. Clojure macro? Expanded by the Clojure compiler, purified with the blood of a goat, and turned into a `.class`.
 
-When the Scala compiler turns an [anonymous lambda expression into JVM bytecode](https://www.toptal.com/scala/scala-bytecode-and-the-jvm), it may do things that we would not think of as very "class-like", but it's still following the same model, with the same rules and binary format.
+The [JVM Spec](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html) defines the structure of `.class` files, which contain a binary representation of a class, including its constructors, fields, and methods, expressed as bytecode instructions in the [JVM Instruction Set](https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html).
 
 ## Making `.class` files
 
-We often deal with `.class` compilation via build tools, which we'll get to in a moment, but the simplest way to produce them is by invoking `javac` (or another JVM lang compiler) directly:
+In practice we usually deal with `.class` compilation through build tools, but the simplest way to produce one is by invoking `javac` (or another JVM lang compiler) directly:
 
 ```java
 // Hello.java
 public class Hello {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
-    }
+  public static void main(String[] args) {
+    System.out.println("Hello, World!");
+  }
 }
 ```
 
@@ -41,8 +41,7 @@ $ java Hello # run our newly compiled program
 Hello, World!
 ```
 
-`javac` compiles our `Hello.java` source into a corresponding `Hello.class`. When running a command like `java Hello`, `Hello` is actually the name of a Class, and the JVM has to go and fetch it in order to execute the code it contains.
-
+`javac` compiles our `Hello.java` source into a corresponding `Hello.class`. When we run a java command like `java Hello`, the `Hello` we're specifying is actually the name of a Class, and the JVM has to go and fetch it in order to execute the code it contains.
 
 ## Classloading and the Classpath
 
@@ -114,7 +113,7 @@ If needed, we could even wire up a crude deployment system from this by just `sc
 
 But, carting around `.class` trees manually gets tedious, so they created a specification for packaging them into more organized bundles, called [JAR files](https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jarGuide.html).
 
-A JAR is basically a Zip archive (you can literally unpack them with `unzip`) containing a tree of class files along with a few bits of metadata. You can see how they work yourself by pulling one from a public package archive and unpacking it:
+A JAR is basically a Zip archive (you can literally unpack them with `unzip`) containing a tree of class files along with some metadata. You can see how they work yourself by pulling one from a public package archive and unpacking it:
 
 ```
 $ wget https://repo1.maven.org/maven2/ch/hsr/geohash/1.3.0/geohash-1.3.0.jar
@@ -141,7 +140,7 @@ ch
             # etc...
 ```
 
-Everything under `META-INF/` is metadata describing the packaged code, while the tree of class files corresponds to the compiled representations of the Java sources you can see [here on github](https://github.com/kungfoo/geohash-java). If you examine the code in that repo, you'll see the package names and source directory structure match the `.class` tree in this JAR, just like our `example.Calzone` and `./example/Calzone.class` tree matched before.
+Everything under `META-INF/` is metadata describing the packaged code, while the tree of class files corresponds to the compiled representations of the Java sources you can find [here on github](https://github.com/kungfoo/geohash-java). If you examine the code in that repo, you'll see the package names and source directory structure match the `.class` tree in this JAR, just like our `example.Calzone` and `./example/Calzone.class` tree matched before.
 
 Many JVM tools understand JARs, meaning you **can use them directly as part of your classpath**:
 
@@ -157,17 +156,21 @@ As with your shell's `$PATH` variable, you can include multiple Classpath entrie
 
 But, managing lists of JARs for a Classpath by hand also gets tedious, so in practice most of this generally gets done using a build tool...
 
-## Maven and the POM: From ClassFiles in a trenchcoat to dependency semantics
+## From ClassFiles in a trenchcoat to genuine dependency semantics
 
-While the JAR format provides a mechanism for bundling compiled JVM code, it's fairly agnostic about the intent or provenance of that code. In particular, there's not a built-in provision for describing the relationship _between_ multiple JARs, in the way we expect from a modern dependency management system.
+On the JVM, a "library" or "dependency" is 3rd party code (as usual, packaged in a JAR) which we want to use in our own projects. As lazy programmers we love the idea of having code already written for us, but unfortunately managing dependencies for software projects can get complicated.
 
-Java itself predated many of these conventions, so while it's common for newer languages to ship with such tools from day 1, it took time for the Java community to coalesce around a standard. After several iterations, including earlier tools like [Ant](https://ant.apache.org/), not to mention many home-grown systems involving FTP-ing or even emailing JAR files around, [Maven](https://maven.apache.org/) eventually emerged as a de facto standard.
+We have to identify what libraries we want to use and figure out where on the internet to find them, only to then discover that our dependencies _have dependencies of their own!_ So the whole thing has to be repeated down a potentially very complex tree. We need another level of tooling.
 
-**Side Note**: While I'm sure Ant was great in its time, it eventually became so loathed in some circles that it inspired Clojure's build tool to be [named](https://github.com/technomancy/leiningen/blob/master/README.md#leiningen) after a [German Short Story](https://en.wikipedia.org/wiki/Leiningen_Versus_the_Ants) in which the protagonist battles a horde of ants in the Brazilian jungle.
+In fact, Java originally shipped without a set convention for managing library dependencies, largely because it predated many of the approaches we've developed to this problem over the last 25 years. While the JAR format gives us a way to bundle compiled JVM code, it doesn't include a mechanism for describing the relationship _between_ multiple JARs, and these semantics had to be filled in over time by community tooling.
+
+After several iterations, including tools like [Ant](https://ant.apache.org/), not to mention home-grown systems involving FTP-ing or even emailing JAR files around, [Apache Maven](https://maven.apache.org/) eventually emerged as a de facto standard.
+
+**Side Note**: While I'm sure Ant was great in its time, it eventually became so loathed in some circles that it inspired Clojure's build tool to be [named](https://github.com/technomancy/leiningen/blob/master/README.md#leiningen) after a [German Short Story](https://en.wikipedia.org/wiki/Leiningen_Versus_the_Ants) in which the protagonist battles a horde of ants in the Brazilian jungle. 🐜
 
 ### Maven's Library Model
 
-While Maven remains a popular build tool in its own right, we're particularly interested in its approach to dependency management, which established many of the conventions still used throughout the JVM ecosystem today. Even if you're not working with Maven itself, you're bound to encounter Maven-style libraries and patterns, so it's helpful to understand how it works.
+While Maven remains a popular build tool in its own right, we're especially interested in its approach to dependency management, which established many conventions used throughout the JVM ecosystem. Even if you're not working with Maven itself, you're bound to encounter Maven-style libraries and patterns, so it's helpful to understand how it works.
 
 In Maven's model, a library consists of:
 
@@ -197,11 +200,11 @@ Here's an example `pom.xml` that defines a project with group `com.example`, art
 
 ### Dependency Resolution + Classpath Management
 
-The POM `<dependencies/>` list allows us to encode dependency graphs alongside JARs of compiled code. To share a Java library, you can publish your JAR plus a `pom.xml` to a public package repository like [Maven Central](https://maven.apache.org/). Then, other users will be able to retrieve both of these files, use the attached `pom.xml` to identify additional transitive dependencies, and repeat the process until they've resolved the full tree.
+The POM `<dependencies/>` list allows us to encode dependency graphs alongside JARs of compiled code. To share a Java library, you can publish your JAR plus a `pom.xml` to a public package repository like [Maven Central](https://maven.apache.org/). Then, other users can retrieve both of these files, use the attached `pom.xml` to identify additional transitive dependencies, and repeat the process until they've resolved the full tree.
 
 Finally, once the build tool has resolved and downloaded all your dependencies, it can use the POM tree to automatically assemble a Classpath for compiling and running your project's code. One of the build tool's many responsibilities is flattening your dependency _tree_, via deduplication and version conflict resolution, into a _list_, where each individual package only appears once.
 
-So while we looked before at specifying a Classpath manually, like `java -cp /path/to/lib1.jar:/path/to/lib2.jar com.example.MyClass`, in practice that process will usually be managed by a build tool. When you run something like `mvn test` or `mvn compile`, the Classpath is still there. But it's being handled for you automatically, based on the information in your `pom.xml`.
+So while we looked before at specifying a Classpath manually, like `java -cp /path/to/lib1.jar:/path/to/lib2.jar com.example.MyClass`, in practice that process will almost always be managed by a build tool. When you run something like `mvn test` or `mvn compile`, the Classpath is still there. But Maven is handling it for you automatically, based on the information in your `pom.xml`.
 
 Most build tools use some sort of local cache directory to save copies of remote dependencies (for Maven it's `~/.m2`), so if you examine your classpath locally, you may see it contains entries from that directory. Here's an example from the geohash-java project we saw before:
 
@@ -216,7 +219,7 @@ $ mvn dependency:build-classpath
 
 Over the years a number of other build tools have been developed for the JVM: [Leiningen (Clojure)](https://leiningen.org/), [sbt (scala)](https://www.scala-sbt.org/), [Gradle (groovy, kotlin, etc)](https://gradle.org/), not to mention the "monorepo" tools like [Pants](https://www.pantsbuild.org/) and [Bazel](https://bazel.build/). But they all follow the same basic model: use a project spec to recursively retrieve library JAR files + dependency manifests, then generate a Classpath to use these libraries for compiling and running local source code.
 
-And while these tools all have their own semantics, special features, and configuration file formats (`build.sbt`, `project.clj`, `build.gradle`, etc), they still support Maven's `pom.xml` as a standard interoperable dependency manifest. So sometimes when we speak of Maven libraries, we don't mean "projects literally managed by the Maven build tool", but rather libraries that are built and distributed in keeping with the model that Maven established.
+And while these tools all have their own semantics, special features, and configuration files (`build.sbt`, `project.clj`, `build.gradle`, etc), they still support Maven's `pom.xml` as a standard interoperable dependency manifest format. Sometimes when we speak of "Maven libraries", we don't mean "projects literally managed by the Maven build tool", but rather, libraries that are built and distributed in keeping with the model Maven established.
 
 ## From Local Development to Production Distribution
 
@@ -233,29 +236,17 @@ Luckily, the JVM makes this fairly easy -- as long as you don't get too crazy wi
 
 All we need to do is get this pile of `.class` files we've accumulated into the right place, and there are a couple common ways to do that.
 
-### Side Note: Libraries vs Applications
-
 ### Zip, Push, and Script
 
 One common approach involves doing a straightforward upload of all the JARs your build tool has resolved for your Classpath, along with the one it has created for your actual code, onto your production environment. Then, in production, you would invoke the appropriate `java` command, along the lines of `java -cp <My application JAR>:<all my library JARs> com.mycorp.MyMainClass`. Often people will wrap this last bit in some kind of generated script that makes it easier to get the Classpath portion right.
 
-There are a lot of different ways to achieve this, so it's really kind of a broad family of techniques and will vary depending on what specific build tool and type of application you're trying to run. Sbt's [native-packager](https://github.com/sbt/sbt-native-packager) plugin offers a bunch of distribution techniques, and some of them fall into this category. For example it can package all of your JARs into a Zip archive or tarball (yes, for those keeping score, we're now putting JARs, which are rebranded Zip archives, into other Zip archives), which includes the packages + a handy run script that will kick everything off. It can even build platform-specific archives, like a `deb` for installation with `dpkg` on Debian systems, or an `msi` image for Windows deployments. I'm less familiar with the offerings outside of sbt, but there are likely comparable tools out there for Maven, Gradle, etc.
-
-If you're on AWS and EC2, Netflix has done a lot of work around automating deployments via [AMIs](https://github.com/Netflix/aminator), and has released some tooling (e.g. [Nebula](https://nebula-plugins.github.io/documentation/introduction_to_nebula.html))
-
-There's also always the tried and true [Heroku approach](https://devcenter.heroku.com/articles/java-support#activation), which is to clone your source tree onto your prod server, run the build process _there_, then kick off your server process from the resulting artifacts. This approach works fine too, and allows them to help manage some of the conventions around how your build is run. The downside is that this requires extra dependencies in your prod environment (you need your build tools in addition to just the Java runtime), but it works fine in many cases. (Worth noting that Heroku also supports deploying Java apps via [pre-built JARs](https://devcenter.heroku.com/articles/deploying-java-applications-with-the-heroku-maven-plugin))
-
-The point is there are a whole host of options here, depending on what platform or build tool you're working with. But they all share the same rough goal of 1) using a build tool to fetch deps, resolve a Classpath, and compile code, 2) pushing those artifacts to a prod server, and 3) passing it all off to the appropriate `java` command.
+There are a lot of different ways to achieve this, depending on what platform you're targeting and what build tool you're using. Sbt's [native-packager plugin](https://github.com/sbt/sbt-native-packager), for example, can package all of your JARs into a Zip archive or tarball, along with a handy run script that will kick everything off. (For those keeping score, yes, we're now putting JARs, which are rebranded Zip archives, into other Zip archives). There are likely similar plugins for Maven or Gradle.
 
 ### Uber/Fat/Assembly JARs
 
-The main annoyance about the previous approach is that it can require shuffling a lot of files around.
+The JARs we've seen so far only contain the compiled `.class` files for their own direct source code, which is sometimes referred to as a "skinny" JAR. Skinny JARs are good from a library management perspective because they keep things granular and composable, but they can be annoying at deployment time because you end up with dozens or even hundreds of JARs to cart around. What if you could just get it all onto _one_ JAR?
 
-The JARs we've seen so far only contain the compiled `.class` files for their own direct source code. Even if your project requires other dependencies to run, those dependencies' `.class` files aren't included, because you expect to access them via a build tool which will stitch them into your Classpath.
-
-This type of JAR is sometimes called a "skinny" JAR. It's the default packaging strategy in most JVM build tools, and it's what you want if you're distributing your code for other developers to consume (for example publishing a library into a package repository), or if you're going to be running the code along with all of the other JARs on the Classpath (like what happens with `mvn test`, etc). It's good from a library management perspective because it keeps things granular and composable, but it can be annoying at deployment time because you end up with dozens or even hundreds of JARs to cart around. What if you could just get it all onto _one_ JAR?
-
-It turns out JARs _can_ be used (abused?) in this way, by creating what's called an "Uber", "Assembly", of "Fat" JAR. An uberjar flattens out your application's compiled code, resources, _plus all the JARs on its classpath and all of their resources_ into a single output JAR. To do this, your build tool fetches dependencies and compiles your code like normal, then goes 1 by 1 through all the other JARs on the Classpath, unpacks them, and repacks their contents into the final uberjar. It's basically a whole bunch of JARs squished into one.
+It turns out JARs _can_ be used (abused?) in this way, by creating what's called an "Uber", "Assembly", or "Fat" JAR. An uberjar flattens out the compiled code from your project's JAR, _plus the compiled code from all the JARs on its classpath_ into a single output JAR. It's basically a whole bunch of JARs squished into one.
 
 The benefit of this is that the final product no longer has any dependencies. Its whole Classpath is just the one resulting JAR, and your whole deployment model can consist of uploading the uberjar to production and invoking `java -jar my-application.jar`. It's sort of the JVM equivalent of building a single executable binary out of a language like Go or Rust.
 
@@ -263,16 +254,11 @@ Most build tools either have this built in or provide a plugin for doing it: [Ma
 
 Uberjar deployments are especially common in the Hadoop/Spark ecosystem, but get used a lot for web services or other server applications as well.
 
-#### Uberjar Gotcha: Resource Deduplication
-
-In addition to compiled `.class` files, JARs can also include other non-code files called "resources". These could be configuration files, static assets, etc., and can be accessed programmatically via Java [APIs](https://docs.oracle.com/javase/8/docs/technotes/guides/lang/resources.html).
-
-The catch is that resource files in a JAR have to be unique, so when you squash all your deps into an uberjar, you'll have to resolve these conflicts. Different tools have different ways of configuring this, but it's common to specify a "Merge Strategy" for handling these conflicts. For example here's [sbt-assembly's docs on the subject](https://github.com/sbt/sbt-assembly#merge-strategy).
-
 #### Other Uberjar Topics
 
-Uberjar configuration can get quite complex, so depending on your use case there are bunch of variations you can add to this approach. Hopefully we'll look at some of these in Part 2, but in the meantime you can read more:
+Uberjar configuration can get complicated, so depending on your use case there are bunch of variations you can add to this approach:
 
+* [Resource deduplication](https://github.com/sbt/sbt-assembly#merge-strategy) - "Resources" (non-code auxiliary files) in a JAR have to be unique, so when building an uberjar, you often have to configure a strategy for merging any conflicts that occur
 * [Shading, a way to relocate private copies of a Class to deal with conflicts](https://maven.apache.org/plugins/maven-shade-plugin/examples/class-relocation.html)
 * [Uberjar variants](https://dzone.com/articles/the-skinny-on-fat-thin-hollow-and-uber)
 
@@ -280,21 +266,17 @@ Uberjar configuration can get quite complex, so depending on your use case there
 
 [WAR Files](https://docs.oracle.com/cd/E19199-01/816-6774-10/a_war.html) are a special type of JAR variant used for deploying certain types of Java web applications in the J2EE ecosystem. J2EE is a whole can of worms that I honestly don't know that much about, nor am I very interested in learning. But it does come up a lot so it's worth touching on here.
 
-In short, these applications are designed to deploy not to generic VMs (like an Ubuntu 16 instance or w/e) but rather into specialized Java-based [Application Servers](https://en.wikipedia.org/wiki/List_of_application_servers#Java), like [Apache Tomcat](http://tomcat.apache.org/). Your company would run one or more of these Tomcat instances, which get treated as shared infrastructure, and individual applications would package their code (into WARs) and deploy into into _those_.
-
-The application server handles process of orchestrating your application (no `java -jar MyApp.jar` here), as well as providing a bunch of [common J-* branded system services](https://en.wikipedia.org/wiki/Jakarta_EE#Web_profile). Because of all this, there are extra considerations around packaging and deployment to make sure the 2 systems (your application and the hosting Application Server) play nicely together, and that's where the WAR spec comes in.
+In short, these applications are designed to deploy not to generic VMs (like a bare Ubuntu EC2 instance with `java` installed) but rather into specialized Java-based [Application Servers](https://en.wikipedia.org/wiki/List_of_application_servers#Java), like [Apache Tomcat](http://tomcat.apache.org/). Your company would run one or more of these Tomcat instances, which get treated as shared infrastructure, and individual applications get pacakged into WARs and deployed into a pre-existing App Server, probably along with a bunch of other application WAR files. The Application Server manages your app's lifecycle, along with providing some shared system services, and because of these interactions extra care must be taken to ensure the 2 components cooperate well, which is what the WAR spec provides.
 
 [This article](https://javapipe.com/blog/tomcat-application-server/) gives a good overview of this whole system. [Here's another good one](https://octopus.com/blog/application-server-vs-uberjar) about WARs specifically.
 
-As an aside, despite my skepticism and poorly masked disdain for all this, it is kind of amusing to read about. The idea of persistent, multitenant JVM app servers is interesting, and if you squint right, running WARs via Tomcat isn't so different from how everyone today is running "pods" of "containers" on abstracted machines via kubernetes. It just has a horrifying enterprise-y pocket protector kind of vibe around it.
+Despite my skepticism and poorly masked disdain for all this, it is kind of amusing to read about. If you squint right, running WARs via Tomcat isn't so different from running "pods" of "containers" on abstracted machines via kubernetes, just with a lot more enterprise-y pocket protector vibes.
 
-And the decline of one is not unrelated to the rise of the other -- while there are plenty of J2EE deployments out there, much of the ecosystem has moved away from this model. People care more about portability between cloud environments and deployment standardization between languages (e.g. the [12 Factor Model](https://12factor.net/)), and in that environment highly customized, language-specific infrastructure is less appealing than a giant uberjar you can run anywhere with a Java runtime.
+And the decline of one is certainly related to the rise of the other -- while there are plenty of J2EE deployments out there, much of the ecosystem has moved away from this model. These days people care more about cloud portability and deployment standardization (e.g. the [12 Factor Model](https://12factor.net/)), which makes highly customized, language-specific infrastructure less appealing than a giant uberjar you can run anywhere with a Java runtime.
 
 ### Container Images
 
-Ironically one of Java's initial selling points -- simplicity of deployment -- has been somewhat diminished by the proliferation of Docker.
-
-Now that everyone's production environments are just a _???_, the benefit of just putting the JRE on all your servers and being able to run things doesn't matter as much.
+Ironically one of Java's initial selling points -- simplicity of deployment -- has been somewhat diminished by the proliferation of Docker. Now that everyone's production environments are built around a Bring Your Own Container model of customization, the benefit of just putting the JRE on all your servers doesn't matter as much.
 
 Nonetheless, the JVM runs just fine with Docker, and in many cases, you can simply grab the appropriate [OpenJDK](https://hub.docker.com/_/openjdk) image version, stuff your JARs into it, and go.
 
@@ -302,7 +284,7 @@ Usually you'll be putting into your Docker image some variation of one of the pr
 
 * Build an uberjar and put it in a JDK docker image
 * Put your compiled code and all your dependencies into a docker image and include an entrypoint command that invokes them with the proper settings and Classpath (sbt's [native-packager](https://www.scala-sbt.org/sbt-native-packager/formats/docker.html) plugin does this)
-* Use a dedicated Java-to-Container build plugin like [Google's Jib](https://github.com/GoogleContainerTools/jib)
+* Use a dedicated Java-to-Container build plugin like [Google's Jib](https://github.com/GoogleContainerTools/jib). Jib is interesting because it's implemented in pure Java and thus can integrate directly into your build tool without requiring an external Docker process.
 
 ### GraalVM Native Images
 
