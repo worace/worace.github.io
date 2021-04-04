@@ -12,17 +12,18 @@ Stay tuned as well for Part 2, which will cover more advanced topics such as the
 
 ## Java and the JVM Class Model
 
-As you may recall from "Java 101", Java code runs on the **J**ava **V**irtual **M**achine. Over time, the JVM has evolved into a powerful [polyglot runtime](http://openjdk.java.net/projects/mlvm/summit2019/), but it was created expressly for running the Java programming language, and the 2 still share a lot of design traits.
+As you may recall from "Java 101", Java code runs on the **J**ava **V**irtual **M**achine. These days, the JVM has evolved into a powerful [polyglot runtime](http://openjdk.java.net/projects/mlvm/summit2019/) that we use to host a variety of non-Java languages. But it was originally created expressly for the purpose of running Java, and the 2 share a lot of common characteristics.
 
 On the JVM, as in Java, _everything_ is a class, and the fundamental unit of code for the JVM is a `.class` file. The JVM won't run `.java` (or any other language) source files directly, they must first be turned into `.class` files by a compiler.
 
-Java Class? Turned into a `.class`.
+Java Class? Turned into a `.class`. Scala [Anonymous Function](https://www.toptal.com/scala/scala-bytecode-and-the-jvm)? Given a funny name and turned into a `.class`.
+Clojure macro? Expanded by the Clojure compiler, purified with the blood of a goat, mixed into a namespace, and [turned into a `.class`](http://blog.kdgregory.com/2016/05/how-and-when-clojure-compiles-your-code.html).
 
-Scala [Anonymous Function](https://www.toptal.com/scala/scala-bytecode-and-the-jvm)? Given a funny name and turned into a `.class`.
+A Classfile contains a binary representation of a class, following a structure defined by the [JVM Spec](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html). It includes slots for Class-y things like constructors, constants, fields, and methods. Most importantly, it contains our actual code, represented as [JVM Bytecode](https://en.wikipedia.org/wiki/Java_bytecode), which describes code using the JVM's internal [instruction set](https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html), which is analogous to the machine-level instruction set that would be hardwired into your [x86](https://en.wikipedia.org/wiki/X86_instruction_listings) or [ARM](https://en.wikipedia.org/wiki/ARM_architecture#Instruction_set) CPU.
 
-Clojure macro? Expanded by the Clojure compiler, purified with the blood of a goat, then turned into a `.class`.
+Of course, this is just scratching the surface of a complex topic full of nuances and exceptions. For one thing the conventions and state of the art around these things are constantly changing (newer versions of Scala actually _don't_ generate [standalone classes for anonymous functions](https://www.scala-lang.org/news/2.12.0/#java-8-style-bytecode-for-lambdas) because they use Java 8's [invokedynamic](https://www.infoq.com/articles/Invokedynamic-Javas-secret-weapon/) instead). And for another there are always exceptions (you can in fact generate Bytecode at runtime rather than including it in a pre-compiled `.class` file, something that dynamic languages like JRuby [do a lot of](https://realjenius.com/2009/10/06/distilling-jruby-the-jit-compiler/)).
 
-The [JVM Spec](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html) defines the structure of `.class` files, which contain a binary representation of a class, including its constructors, fields, and methods, expressed as bytecode instructions in the [JVM Instruction Set](https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html).
+But, in general, especially if you're working in a statically compiled language like Java or Scala, most things will get turned into a `.class` file at compile time. As we'll see, managing the generation, organization, and interaction of Classfiles is one of the fundamental tasks for JVM build tools and deployment workflows, so keeping them in mind is a useful model to understand how these processes work.
 
 ## Making `.class` files
 
@@ -166,9 +167,9 @@ But, managing lists of JARs for a Classpath by hand also gets tedious, so in pra
 
 On the JVM, a "library" or "dependency" is 3rd party code (as usual, packaged in a JAR) which we want to use in our own projects. As lazy programmers we love the idea of having code already written for us, but unfortunately managing dependencies for software projects can get complicated.
 
-We have to identify what libraries we want to use and figure out where on the internet to find them, only to then discover that our dependencies _have dependencies of their own!_ So the whole thing has to be repeated down a potentially very complex tree. We need another level of tooling.
+We identify the libraries we want to use and figure out where on the internet to find them, only to then discover that our dependencies _have dependencies of their own!_ So the whole thing has to be repeated down a potentially very complex tree. We need another level of tooling to manage this for us.
 
-In fact, Java originally shipped without a set convention for managing library dependencies, largely because it predated many of the approaches we've developed to this problem over the last 25 years. While the JAR format gives us a way to bundle compiled JVM code, it doesn't include a mechanism for describing the relationship _between_ multiple JARs, and these semantics had to be filled in over time by community tooling.
+In fact, Java originally shipped without a set convention for managing library dependencies, largely because it predated many of the approaches we've developed to this problem over the last 25 years. While the JAR format gives us a way to bundle compiled JVM code, it doesn't include a mechanism for describing the relationship _between_ multiple JARs, and these semantics, including versioning, repository management, conflict resolution, etc, had to be filled in over time by community tooling.
 
 After several iterations, including tools like [Ant](https://ant.apache.org/), not to mention home-grown systems involving FTP-ing or even emailing JAR files around, [Apache Maven](https://maven.apache.org/) eventually emerged as a de facto standard.
 
@@ -232,7 +233,7 @@ And while these tools all have their own semantics, special features, and config
 So to recap:
 
 * Compilers (`javac`, `scalac`, etc) turn language source code into bytecode (`.class` files) which the JVM can run
-* JAR files bundle compiled `.class` files into a manageable package
+* JAR files bundle compiled `.class` files into manageable packages
 * Project manifests like a `pom.xml` attach library versioning + dependency semantics to bundled JAR packages
 * Build tools use this dependency info to retrieve required packages for your project and programmatically assemble a Classpath for compiling, testing, and running your code
 
