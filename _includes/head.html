@@ -6,11 +6,10 @@
   <title>
     {% if page.title == "Home" %}
       {{ site.title }}
+    {% elsif page.display_title %}
+      {{ page.display_title }}
     {% else %}
       {{ page.title }}
-      {% if page.subtitle %}
-        - {{page.subtitle}}
-      {% endif %}
     {% endif %}
   </title>
   <link rel="preconnect" href="https://fonts.gstatic.com">
