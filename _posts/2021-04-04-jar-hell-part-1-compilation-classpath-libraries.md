@@ -1,6 +1,6 @@
 ---
 title: Welcome to JAR Hell
-subtitle: Part 1: A neophyte's guide to compilation, classpaths, and library management on the JVM
+subtitle: "Part 1: A neophyte's guide to compilation, classpaths, and library management on the JVM"
 display_title: Welcome to JAR Hell, Part 1 (Compilation, Classpaths, and Libraries)
 layout: post
 date: 2021-04-04 19:26 -0700
