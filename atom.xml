@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-04-04T21:55:15-07:00</updated>
+ <updated>2021-04-04T22:00:55-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -13,10 +13,10 @@
 
  
  <entry>
-   <title></title>
-   <link href="http://worace.works/2021/04/04/2021-04-04-jar-hell-part-1-compilation-classpath-libraries/"/>
-   <updated>2021-04-04T21:55:15-07:00</updated>
-   <id>http://worace.works/2021/04/04/2021-04-04-jar-hell-part-1-compilation-classpath-libraries</id>
+   <title>Welcome to JAR Hell</title>
+   <link href="http://worace.works/2021/04/04/jar-hell-part-1-compilation-classpath-libraries/"/>
+   <updated>2021-04-04T19:26:00-07:00</updated>
+   <id>http://worace.works/2021/04/04/jar-hell-part-1-compilation-classpath-libraries</id>
    <content type="html">&lt;p&gt;The JVM is a big tent. Maybe you’re a seasoned veteran who’s lived through everything from Applets to J2EE. Or maybe you’re a weirdo who came in through Clojure, only to find that love for parentheses and immutable data structures was a slippery slope into Classpath troubleshooting (🙋).&lt;/p&gt;
 
 &lt;p&gt;This article is targeted at the latter group, and aims to provide a crash course in JVM app packaging for newcomers to the platform. We’ll cover compilation basics, the Classpath, JARs, &lt;code class=&quot;highlighter-rouge&quot;&gt;pom.xml&lt;/code&gt;, and the Maven dependency model. This is less about accomplishing specific build tasks and more about developing a mental model for how code gets packaged and distributed on the JVM.&lt;/p&gt;
