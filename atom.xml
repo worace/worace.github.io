@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-04-04T22:00:55-07:00</updated>
+ <updated>2021-04-05T08:49:49-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -59,7 +59,9 @@ $ java Hello # run our newly compiled program
 Hello, World!
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;javac&lt;/code&gt; compiles our &lt;code class=&quot;highlighter-rouge&quot;&gt;Hello.java&lt;/code&gt; source into a corresponding &lt;code class=&quot;highlighter-rouge&quot;&gt;Hello.class&lt;/code&gt;. The &lt;a href=&quot;https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javap.html&quot;&gt;javap&lt;/a&gt; tool can give you more insight into the contents of a &lt;code class=&quot;highlighter-rouge&quot;&gt;.class&lt;/code&gt; file if you are interested in poking around further. But in short when we run a java command like &lt;code class=&quot;highlighter-rouge&quot;&gt;java Hello&lt;/code&gt;, the &lt;code class=&quot;highlighter-rouge&quot;&gt;Hello&lt;/code&gt; we’re specifying is actually the name of a Class, and the JVM will execute the code it contains (by convention it looks for a &lt;a href=&quot;http://tutorials.jenkov.com/java/main-method.html&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;main&lt;/code&gt; method&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;javac&lt;/code&gt; compiles our &lt;code class=&quot;highlighter-rouge&quot;&gt;Hello.java&lt;/code&gt; source into a corresponding &lt;code class=&quot;highlighter-rouge&quot;&gt;Hello.class&lt;/code&gt;. When we run a java command like &lt;code class=&quot;highlighter-rouge&quot;&gt;java Hello&lt;/code&gt;, the &lt;code class=&quot;highlighter-rouge&quot;&gt;Hello&lt;/code&gt; we’re specifying is actually the name of a Class, and the JVM will execute the code it contains (specifically, starting with its &lt;a href=&quot;http://tutorials.jenkov.com/java/main-method.html&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;main&lt;/code&gt; method&lt;/a&gt;).&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Aside:&lt;/strong&gt; &lt;a href=&quot;https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javap.html&quot;&gt;javap&lt;/a&gt; is a disassembler for Classfiles, which can give you some interesting output on these files if you want to poke around further.&lt;/p&gt;
 
 &lt;h2 id=&quot;classloading-and-the-classpath&quot;&gt;Classloading and the Classpath&lt;/h2&gt;
 

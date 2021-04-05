@@ -4,7 +4,7 @@
   <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="last-modified" content="2021-04-04T22:00:55-07:00" />
+  <meta http-equiv="last-modified" content="2021-04-05T08:49:49-07:00" />
 
   <title>
     
@@ -87,7 +87,9 @@ $ java Hello # run our newly compiled program
 Hello, World!
 </code></pre></div></div>
 
-<p><code class="highlighter-rouge">javac</code> compiles our <code class="highlighter-rouge">Hello.java</code> source into a corresponding <code class="highlighter-rouge">Hello.class</code>. The <a href="https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javap.html">javap</a> tool can give you more insight into the contents of a <code class="highlighter-rouge">.class</code> file if you are interested in poking around further. But in short when we run a java command like <code class="highlighter-rouge">java Hello</code>, the <code class="highlighter-rouge">Hello</code> we’re specifying is actually the name of a Class, and the JVM will execute the code it contains (by convention it looks for a <a href="http://tutorials.jenkov.com/java/main-method.html"><code class="highlighter-rouge">main</code> method</a>).</p>
+<p><code class="highlighter-rouge">javac</code> compiles our <code class="highlighter-rouge">Hello.java</code> source into a corresponding <code class="highlighter-rouge">Hello.class</code>. When we run a java command like <code class="highlighter-rouge">java Hello</code>, the <code class="highlighter-rouge">Hello</code> we’re specifying is actually the name of a Class, and the JVM will execute the code it contains (specifically, starting with its <a href="http://tutorials.jenkov.com/java/main-method.html"><code class="highlighter-rouge">main</code> method</a>).</p>
+
+<p><strong>Aside:</strong> <a href="https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javap.html">javap</a> is a disassembler for Classfiles, which can give you some interesting output on these files if you want to poke around further.</p>
 
 <h2 id="classloading-and-the-classpath">Classloading and the Classpath</h2>
 
