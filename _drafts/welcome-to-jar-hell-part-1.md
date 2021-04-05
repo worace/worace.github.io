@@ -1,6 +1,7 @@
 ---
 title: "Welcome to JAR Hell, Part 1"
 subtitle: "A neophyte's guide to compilation, classpaths, and library management on the JVM"
+display_title: "Welcome to JAR Hell, Part 1 (Compilation, Classpaths, and Libraries)"
 layout: post
 ---
 

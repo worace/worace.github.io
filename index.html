@@ -9,9 +9,10 @@ title: Home
   {% for post in paginator.posts %}
     <li>
       <a href="{{ site.baseurl }}{{ post.url }}">
+        {% if post.display_title %}
+        <span>{{ post.display_title }}</span>
+        {% else %}
         <span>{{ post.title }}</span>
-        {% if post.subtitle %}
-        <span>- {{post.subtitle}}</span>
         {% endif %}
       </a>
     </li>
