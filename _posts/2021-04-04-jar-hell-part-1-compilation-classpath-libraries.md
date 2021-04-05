@@ -1,10 +1,11 @@
 ---
-title: "Welcome to JAR Hell, Part 1"
-subtitle: "A neophyte's guide to compilation, classpaths, and library management on the JVM"
-display_title: "Welcome to JAR Hell, Part 1 (Compilation, Classpaths, and Libraries)"
+title: Welcome to JAR Hell, Part 1
+subtitle: A neophyte's guide to compilation, classpaths, and library management on
+  the JVM
+display_title: Welcome to JAR Hell, Part 1 (Compilation, Classpaths, and Libraries)
 layout: post
+date: 2021-04-04 19:26 -0700
 ---
-
 The JVM is a big tent. Maybe you're a seasoned veteran who's lived through everything from Applets to J2EE. Or maybe you're a weirdo who came in through Clojure, only to find that love for parentheses and immutable data structures was a slippery slope into Classpath troubleshooting (🙋).
 
 This article is targeted at the latter group, and aims to provide a crash course in JVM app packaging for newcomers to the platform. We'll cover compilation basics, the Classpath, JARs, `pom.xml`, and the Maven dependency model. This is less about accomplishing specific build tasks and more about developing a mental model for how code gets packaged and distributed on the JVM.
