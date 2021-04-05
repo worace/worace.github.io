@@ -13,7 +13,7 @@ This is Part 1 in a series, so stay tuned for Part 2, which will cover deploymen
 
 ## Java and the JVM Class Model
 
-As you may recall from "Java 101", Java code runs on the **J**ava **V**irtual **M**achine. These days, the JVM has evolved into a powerful [polyglot runtime](http://openjdk.java.net/projects/mlvm/summit2019/) that hosts a variety of non-Java languages. But it was originally created expressly for the purpose of running Java, and the 2 share a lot of common characteristics.
+As you may recall from "Java 101", Java code runs on the **J**ava **V**irtual **M**achine. These days, the JVM has evolved into a powerful [polyglot runtime](http://openjdk.java.net/projects/mlvm/summit2019/) that hosts a variety of non-Java languages. But it was originally created expressly for the purpose of running Java, and the 2 share a lot of common design choices.
 
 On the JVM, as in Java, _everything_ is a class, and the fundamental unit of code for the JVM is a `.class` file. The JVM can't run `.java` (or any other language) source files directly -- they must first be turned into `.class` files by a compiler.
 
