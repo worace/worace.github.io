@@ -7,28 +7,20 @@
 
   <title>
     
-      Sangria Scalar for ISO 8601 Dates &middot; Horace Williams
+      Sangria Scalar for ISO 8601 Dates
+      
     
   </title>
-  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet"> 
+
   <link rel="stylesheet" href="/styles.css">
   <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
   <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
   <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+
+  
 </head>
-
-
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-117025935-1"></script>
-<script>
- window.dataLayer = window.dataLayer || [];
- function gtag(){dataLayer.push(arguments);}
- gtag('js', new Date());
-
- gtag('config', 'UA-117025935-1');
-</script>
-
 
 
   <body>
@@ -39,11 +31,8 @@
         <h3 class="masthead-title">
           <a href="/" title="Home">Horace Williams</a>
         </h3>
-
         <ul class="nav-links">
           <li><a href="/about">about</a></li>
-          <li><a href="https://github.com/worace">github</a></li>
-          <li><a href="http://twitter.com/worace">twitter</a></li>
         </ul>
       </header>
       
@@ -51,6 +40,7 @@
       <main>
         <article class="post">
   <h1 class="post-title">Sangria Scalar for ISO 8601 Dates</h1>
+  <h2 class="post-subtitle"><em></em></h2>
   <time datetime="2020-05-08T00:00:00-07:00" class="post-date">08 May 2020</time>
   <p>Today I had to figure out how to encode a <code>java.util.Date</code> as a GraphQL Scalar using <a href="https://sangria-graphql.org/">Sangria</a>. <a href="https://graphql.org/learn/schema/#scalar-types">Scalars</a> in GraphQL are basically fancy strings that let you encode custom data types. This one reads and writes a <code>java.util.Date</code> as an <a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a>-formatted string, which looks like &#8220;2020-05-09T03:20:28Z.&#8221; If your dates are not in UTC you may have a bad time, so don&#8217;t do that.</p>
 <p>Here it is!</p>

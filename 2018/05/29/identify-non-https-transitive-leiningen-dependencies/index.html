@@ -7,28 +7,20 @@
 
   <title>
     
-      Identify Non-HTTPS Transitive Leiningen Dependencies &middot; Horace Williams
+      Identify Non-HTTPS Transitive Leiningen Dependencies
+      
     
   </title>
-  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet"> 
+
   <link rel="stylesheet" href="/styles.css">
   <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
   <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
   <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+
+  
 </head>
-
-
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-117025935-1"></script>
-<script>
- window.dataLayer = window.dataLayer || [];
- function gtag(){dataLayer.push(arguments);}
- gtag('js', new Date());
-
- gtag('config', 'UA-117025935-1');
-</script>
-
 
 
   <body>
@@ -39,11 +31,8 @@
         <h3 class="masthead-title">
           <a href="/" title="Home">Horace Williams</a>
         </h3>
-
         <ul class="nav-links">
           <li><a href="/about">about</a></li>
-          <li><a href="https://github.com/worace">github</a></li>
-          <li><a href="http://twitter.com/worace">twitter</a></li>
         </ul>
       </header>
       
@@ -51,6 +40,7 @@
       <main>
         <article class="post">
   <h1 class="post-title">Identify Non-HTTPS Transitive Leiningen Dependencies</h1>
+  <h2 class="post-subtitle"><em></em></h2>
   <time datetime="2018-05-29T00:00:00-07:00" class="post-date">29 May 2018</time>
   <p>If you&#8217;ve been using Leiningen any time over the last several months you have likely run into the dreaded error: <code>Tried to use insecure HTTP repository without TLS</code>.</p>
 <p>This is due to a change in <a href="https://github.com/technomancy/leiningen/blob/master/NEWS.md#280-rc1--2017-09-18">Leiningen 2.8</a> which blocks non-TLS remote maven repositories. The change itself is well-intentioned and reasonable: relying on non-HTTPS dependencies is, overall, a bad idea. However dealing with it has caused lots of headaches for people who have a non-HTTPS dependency buried somewhere in their tree but don&#8217;t know which one it is or where it&#8217;s coming from.</p>

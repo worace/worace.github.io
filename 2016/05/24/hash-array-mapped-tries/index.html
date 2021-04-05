@@ -7,28 +7,20 @@
 
   <title>
     
-      Hash Array Mapped Tries &middot; Horace Williams
+      Hash Array Mapped Tries
+      
     
   </title>
-  <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet"> 
+
   <link rel="stylesheet" href="/styles.css">
   <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
   <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
   <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+
+  
 </head>
-
-
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-117025935-1"></script>
-<script>
- window.dataLayer = window.dataLayer || [];
- function gtag(){dataLayer.push(arguments);}
- gtag('js', new Date());
-
- gtag('config', 'UA-117025935-1');
-</script>
-
 
 
   <body>
@@ -39,11 +31,8 @@
         <h3 class="masthead-title">
           <a href="/" title="Home">Horace Williams</a>
         </h3>
-
         <ul class="nav-links">
           <li><a href="/about">about</a></li>
-          <li><a href="https://github.com/worace">github</a></li>
-          <li><a href="http://twitter.com/worace">twitter</a></li>
         </ul>
       </header>
       
@@ -51,6 +40,7 @@
       <main>
         <article class="post">
   <h1 class="post-title">Hash Array Mapped Tries</h1>
+  <h2 class="post-subtitle"><em></em></h2>
   <time datetime="2016-05-24T00:00:00-07:00" class="post-date">24 May 2016</time>
   <p>A Hash Array Mapped Trie (HAMT) is a structure for organizing arbitrary data in a broadly-branching tree. HAMTs are commonly used to build immutable Hash Maps in functional programming languages. By using a value&#8217;s hash code to represent a unique &#8220;path&#8221; into the tree, we can build a Hash Map on top of a tree, rather than on an Array-based table as is more commonly seen. The structure is more complex than a simple Hash Table, but provides a few key benefits, including:</p>
 <ul>
