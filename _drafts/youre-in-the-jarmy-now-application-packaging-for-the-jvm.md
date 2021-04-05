@@ -1,6 +1,6 @@
 ---
 title: "Welcome to JAR Hell, Part 1"
-subtitle: "A neophyte's guide to code distribution on the JVM"
+subtitle: "A neophyte's guide to compilation, classpaths, and library management on the JVM"
 layout: post
 ---
 
