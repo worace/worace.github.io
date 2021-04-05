@@ -49,7 +49,9 @@ $ java Hello # run our newly compiled program
 Hello, World!
 ```
 
-`javac` compiles our `Hello.java` source into a corresponding `Hello.class`. The [javap](https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javap.html) tool can give you more insight into the contents of a `.class` file if you are interested in poking around further. But in short when we run a java command like `java Hello`, the `Hello` we're specifying is actually the name of a Class, and the JVM will execute the code it contains (by convention it looks for a [`main` method](http://tutorials.jenkov.com/java/main-method.html)).
+`javac` compiles our `Hello.java` source into a corresponding `Hello.class`. When we run a java command like `java Hello`, the `Hello` we're specifying is actually the name of a Class, and the JVM will execute the code it contains (specifically, starting with its [`main` method](http://tutorials.jenkov.com/java/main-method.html)).
+
+**Aside:** [javap](https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javap.html) is a disassembler for Classfiles, which can give you some interesting output on these files if you want to poke around further.
 
 ## Classloading and the Classpath
 
