@@ -1,30 +1,51 @@
-We've seen how this works locally, but what about deployment?
+---
+title: Welcome to JAR Hell
+subtitle: "Part 2: Application Deployment Strategies"
+display_title: Welcome to JAR Hell, Part 2: Application Deployment Strategies
+layout: post
+---
 
-Luckily, the JVM makes this fairly easy -- as long as you don't get too crazy with native dependencies (e.g [JNI](https://en.wikipedia.org/wiki/Java_Native_Interface)), or shelling out to system commands, you should be able to run your app on any server with the proper [Java Runtime Environment](https://www.oracle.com/java/technologies/javase-jre8-downloads.html) version.
+In Part 1, we looked at the basic model for loading and executing code on the JVM. We saw how a Class (usually represented by a `.class` file) is the basic unit for JVM code, and how the Classpath makes classes (usually organized into JARs) available to the JVM at compile time and runtime. And we looked at how build tools like Maven help us incorporate external libraries into our project by organizing them into dependency graphs, fetching them from external sources, and organizing them into a Classpath for local development.
 
-All we need to do is get this pile of `.class` files we've accumulated into the right place, and there are a couple common ways to do that.
+But what about production deployments? The Classpath still exists regardless of whether we're running code on our Macbook or on a server in AWS. But in development environments we rely on our build tool to manage the whole thing. For production, we'd prefer to run _without_ a build tool, and ideally without any system dependencies beyond a Java Runtime Environment and the collection of JARs required for our application. In this post, we'll look at several ways to accomplish this.
 
-## TODO NEED A TRANSITION HERE
+### Preface: Applications vs. Libraries
 
-### Zip, Push, and Script
+Before diving in it's useful to consider a distinction between 2 types of projects (and JARs) you encounter on the JVM. In Part 1, we looked at JARs as a mechanism for using 3rd party code in our projects, usually by fetching them from a package repository like Maven Central. We call this type of JAR a "library", and there are some common conventions about how it's built and distributed.
 
-One common approach involves doing a straightforward upload of all the JARs your build tool has resolved for your Classpath, along with the one it has created for your actual code, onto your production environment. Then, in production, you would invoke the appropriate `java` command, along the lines of `java -cp <My application JAR>:<all my library JARs> com.mycorp.MyMainClass`. Often people will wrap this last bit in some kind of generated script that makes it easier to get the Classpath portion right.
+In general, library JARs only contain a "shallow" bundle of compiled `.class` files, meaning they include _their own_ direct code but not that of their dependencies. This is sometimes also called a "skinny" JAR. You might ask how this is useful, since if we depend on library A, and A depends on B, we obviously can't run our application without also having B. But the answer is that the developers of A expect you (or really your build tool) to retrieve B on your own after consulting A's dependency manifest (i.e. its Maven POM) which they also provide.
 
-There are a lot of different ways to achieve this, depending on what platform you're targeting and what build tool you're using. Sbt's [native-packager plugin](https://github.com/sbt/sbt-native-packager), for example, can package all of your JARs into a Zip archive or tarball, along with a handy run script that will kick everything off. (For those keeping score, yes, we're now putting JARs, which are rebranded Zip archives, into other Zip archives). There are likely similar plugins for Maven or Gradle.
+When dealing with _libraries_ we prefer smaller, granular packages that can be managed programmatically by a build tool. This gives downstream users more flexibility to cache packages, handle dependency conflicts, etc. The good thing is that library distribution in this model is usually simple. Bundle your code into a single JAR and push that plus your POM to a package repo and you're good to go.
+
+_Applications_, by contrast, are not intended for distribution to other developers or consumption by other code. Rather, they're meant to run as standalone artifacts (e.g. they probably include a `main` method) and will require a deployment strategy which, one way or another, gets the application's own code, along with a fully resolved Classpath where library JARs have been identified, deduplicated, and downloaded, into the target runtime environment. This type of deployment -- running compiled applications along with their dependencies -- is what we're focused on in this article.
+
+## Deployment for the JVM
+
+Luckily, the JVM makes the actual "run the code" portion fairly easy -- as long as you don't get too crazy with native dependencies (e.g [JNI](https://en.wikipedia.org/wiki/Java_Native_Interface)), or shelling out to system commands, you should be able to run your app on any server with the proper [Java Runtime Environment](https://www.oracle.com/java/technologies/javase-jre8-downloads.html) version.
+
+But we _do_ have to get all of the compiled code into the right place. Here are several approaches.
+
+### Push and Script
+
+For starters we can always just do a straightforward upload of the library JARs our build tool resolves for our Classpath, along with the one it has create for our own code. For example if we're using Maven, we'll end up with a classpath / run command (locally) that looks something like `java -cp ./target/my-app.jar:~/.m2/repository/foo.jar:~/.m2/repository/bar.jar com.mycorp.MyMainClass`. So to run in prod, we have to push those same 3 JARs into our target environment, and run a `java` command with them in the same Classpath arrangement. Often we'll wrap this last bit (invoking `java` with the right Classpath and main class) in some kind of script (this might even be generated by a tool) to make managing it easier.
+
+There are a lot of ways to achieve this, so I tend to think of it as a rough pattern more than a specific tool. Sbt's [native-packager plugin](https://github.com/sbt/sbt-native-packager) is a great example of a tool that does this really well. It can package all of your JARs into a Zip archive or tarball, along with a handy run script (you can see the [template](https://github.com/sbt/sbt-native-packager/blob/master/src/main/resources/com/typesafe/sbt/packager/archetypes/scripts/bash-template) for these) that will kick everything off. (For those keeping score, yes, we're now putting JARs, which are rebranded Zip archives, into other Zip archives). There are likely similar plugins for Maven or Gradle.
 
 ### Uber/Fat/Assembly JARs
 
-The JARs we've seen so far only contain the compiled `.class` files for their own direct source code, which is sometimes referred to as a "skinny" JAR. Skinny JARs are good from a library management perspective because they keep things granular and composable, but they can be annoying at deployment time because you end up with dozens or even hundreds of JARs to cart around. What if you could just get it all onto _one_ JAR?
+As mentioned in the Libraries vs. Applications section, we've so far been dealing with "skinny" jars containing 1 project's compiled code. In order to make a larger application work, we just have to put a bunch of them side by side on the Classpath. This works fine, but can get annoying because you end up with dozens or even hundreds of JARs to cart around. What if you could just get it all onto _one_ JAR?
 
-It turns out JARs _can_ be used (abused?) in this way, by creating what's called an "Uber", "Assembly", or "Fat" JAR. An uberjar flattens out the compiled code from your project's JAR, _plus the compiled code from all the JARs on its classpath_ into a single output JAR. It's basically a whole bunch of JARs squished into one.
+It turns out JARs _can_ be used (abused?) in this way, by creating what's called an "Uber" JAR (also sometimes called an "Assembly" or "Fat" JAR). An uberjar flattens out the compiled code from your project's JAR, _plus the compiled code from all the JARs on its classpath_ into a single output JAR. It's basically a whole bunch of JARs squished into one.
 
 The benefit of this is that the final product no longer has any dependencies. Its whole Classpath is just the one resulting JAR, and your whole deployment model can consist of uploading the uberjar to production and invoking `java -jar my-application.jar`. It's sort of the JVM equivalent of building a single executable binary out of a language like Go or Rust.
 
-Most build tools either have this built in or provide a plugin for doing it: [Maven Assembly Plugin](http://maven.apache.org/plugins/maven-assembly-plugin/), [sbt-assembly](https://github.com/sbt/sbt-assembly), [Leiningen (built in)](https://github.com/technomancy/leiningen/blob/master/doc/TUTORIAL.md#uberjar). Consult the README for whichever of these you're using for more details on setting them up.
+In theory, repacking your dependency JARs into an uberjar is not that different than the previous approach of just pushing each JAR individually and running your application with all of them on the Classpath. However the single file simplicity, along with additional techniques that have developed for managing complex uberjars (more on these in a moment) have combined to make this a popular approach in recent years. Uberjar deployments are especially common in the Hadoop/Spark ecosystem, but get they used a lot for web services or other server applications as well.
 
-Uberjar deployments are especially common in the Hadoop/Spark ecosystem, but get used a lot for web services or other server applications as well.
+Many build tools either have this capability built in or provide a plugin for doing it: [Maven Assembly Plugin](http://maven.apache.org/plugins/maven-assembly-plugin/), [sbt-assembly](https://github.com/sbt/sbt-assembly), [Leiningen (built in)](https://github.com/technomancy/leiningen/blob/master/doc/TUTORIAL.md#uberjar). Consult the README for whichever of these you're using for more details on setting them up.
 
 #### Other Uberjar Topics
+
+While the uberjar process is not conceptually so complex (unzip + rezip), in practice there are some subtleties and advanced features that can make things quite complicated, especially for larger projects.
 
 Uberjar configuration can get complicated, so depending on your use case there are bunch of variations you can add to this approach:
 
