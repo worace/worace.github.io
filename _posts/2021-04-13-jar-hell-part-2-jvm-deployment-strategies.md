@@ -1,10 +1,10 @@
 ---
-title: "Welcome to JAR Hell"
-subtitle: "Part 2: Application Deployment Strategies"
-display_title: "Welcome to JAR Hell, Part 2 - Application Deployment Strategies"
+title: Welcome to JAR Hell
+subtitle: 'Part 2: Application Deployment Strategies'
+display_title: Welcome to JAR Hell, Part 2 - Application Deployment Strategies
 layout: post
+date: 2021-04-13 09:40 -0700
 ---
-
 In [Part 1](/2021/04/04/jar-hell-part-1-compilation-classpath-libraries/), we looked at the basic model for loading and executing code on the JVM.
 
 We saw how a Classes (usually represented by `.class` files) provide the basic unit for JVM code, and how the Classpath makes classes (usually organized into JARs) available to the JVM at compile- and runtime. And we saw how tools like Maven help us use external libraries by fetching them from package repositories and incorporating them into the local Classpath.
