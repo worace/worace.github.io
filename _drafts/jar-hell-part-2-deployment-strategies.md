@@ -31,7 +31,13 @@ Applications require a deployment strategy which, one way or another, gets the a
 
 Luckily, the JVM makes the actual "run the code" portion fairly easy -- as long as you don't get too crazy with native dependencies (e.g [JNI](https://en.wikipedia.org/wiki/Java_Native_Interface)), or shelling out to system commands, you should be able to run your app on any server with the proper [JRE](https://www.oracle.com/java/technologies/javase-jre8-downloads.html) version.
 
-But you _do_ have to worry about getting all of the compiled code into the right place. There are a lot of ways to do this, so here is a rundown of some of the common options.
+But you _do_ have to worry about getting all of the compiled code into the right place. There are a lot of ways to do this, so we'll look at several options:
+
+* Push JARs to a server and run
+* Uberjars
+* WAR files / J2EE
+* Docker Images
+* GraalVM Native Images
 
 ### Push and Script
 
@@ -144,7 +150,7 @@ So what's the catch? Well there are 2 main ones:
 
 ## Summary
 
-So there's your crash course in JVM app packaging. There are a ton of details surrounding this topic, so we've inevitably had to skip over a lot. But hopefully it provides enough of an overview of the landscape, and provides a jumping off point to make informed further research elsewhere.
+So there's your crash course in JVM app packaging. There are a ton of details surrounding this topic, so we've inevitably had to skip over a lot. But hopefully it provides an overview of the landscape, and serves as a starting point to make informed further research elsewhere.
 
 What's next? I'm sure you must be thinking: "*Wow, with a rock-solid runtime and so many great deployment options, surely everything must work perfectly in production?*"
 
