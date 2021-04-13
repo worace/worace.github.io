@@ -4,13 +4,185 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-04-05T21:10:39-07:00</updated>
+ <updated>2021-04-13T09:41:22-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
    <email>horace@worace.works</email>
  </author>
 
+ 
+ <entry>
+   <title>Welcome to JAR Hell</title>
+   <link href="http://worace.works/2021/04/13/jar-hell-part-2-jvm-deployment-strategies/"/>
+   <updated>2021-04-13T09:40:00-07:00</updated>
+   <id>http://worace.works/2021/04/13/jar-hell-part-2-jvm-deployment-strategies</id>
+   <content type="html">&lt;p&gt;In &lt;a href=&quot;/2021/04/04/jar-hell-part-1-compilation-classpath-libraries/&quot;&gt;Part 1&lt;/a&gt;, we looked at the basic model for loading and executing code on the JVM.&lt;/p&gt;
+
+&lt;p&gt;We saw how a Classes (usually represented by &lt;code class=&quot;highlighter-rouge&quot;&gt;.class&lt;/code&gt; files) provide the basic unit for JVM code, and how the Classpath makes classes (usually organized into JARs) available to the JVM at compile- and runtime. And we saw how tools like Maven help us use external libraries by fetching them from package repositories and incorporating them into the local Classpath.&lt;/p&gt;
+
+&lt;p&gt;But what about production deployments?&lt;/p&gt;
+
+&lt;p&gt;The Classpath still exists regardless of whether we’re running code on our Macbook or on a server in AWS, but for production, we’d prefer to run &lt;em&gt;without&lt;/em&gt; a build tool, and ideally without any system dependencies beyond a Java Runtime Environment.&lt;/p&gt;
+
+&lt;p&gt;In this post, we’ll look at several ways to accomplish this.&lt;/p&gt;
+
+&lt;h3 id=&quot;preface-applications-vs-libraries&quot;&gt;Preface: Applications vs. Libraries&lt;/h3&gt;
+
+&lt;p&gt;Software projects can be coarsely divided into 2 groups: Libraries and Applications. Libraries are consumed by other code, while Applications are meant to run on their own. On the JVM, both types of software can be packaged as JARs, but there are some common conventions around how each gets handled.&lt;/p&gt;
+
+&lt;p&gt;In general, library JARs only contain a “shallow” bundle of compiled &lt;code class=&quot;highlighter-rouge&quot;&gt;.class&lt;/code&gt; files, meaning they include &lt;em&gt;their own&lt;/em&gt; direct code but not that of their dependencies. This is sometimes also called a “skinny” JAR.&lt;/p&gt;
+
+&lt;p&gt;You might ask how this is useful, since if we depend on library A, and A depends on B, we obviously can’t run our application without also having B. But the answer is that the developers of A expect you to retrieve B on your own after consulting A’s dependency manifest (i.e. its Maven POM). When dealing with &lt;em&gt;libraries&lt;/em&gt; we prefer smaller, granular packages that can be managed programmatically by a build tool. This gives downstream users more flexibility to cache packages, handle dependency conflicts, etc.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Applications&lt;/em&gt;, by contrast, are not intended for distribution to other developers or consumption by other code. Rather, they’re meant to run as standalone artifacts (e.g. they probably include a &lt;code class=&quot;highlighter-rouge&quot;&gt;main&lt;/code&gt; method).&lt;/p&gt;
+
+&lt;p&gt;Applications require a deployment strategy which, one way or another, gets the application’s own code, along with a fully resolved Classpath containing any necessary libraries, into the target runtime environment. This type of deployment – running compiled applications along with their dependencies – is what we’re focused on in this article.&lt;/p&gt;
+
+&lt;h2 id=&quot;deployment-for-the-jvm&quot;&gt;Deployment for the JVM&lt;/h2&gt;
+
+&lt;p&gt;Luckily, the JVM makes the actual “run the code” portion fairly easy – as long as you don’t get too crazy with native dependencies (e.g &lt;a href=&quot;https://en.wikipedia.org/wiki/Java_Native_Interface&quot;&gt;JNI&lt;/a&gt;), or shelling out to system commands, you should be able to run your app on any server with the proper &lt;a href=&quot;https://www.oracle.com/java/technologies/javase-jre8-downloads.html&quot;&gt;JRE&lt;/a&gt; version.&lt;/p&gt;
+
+&lt;p&gt;But you &lt;em&gt;do&lt;/em&gt; have to worry about getting all of the compiled code into the right place. There are a lot of ways to do this, so we’ll look at several options:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Push JARs to a server and run&lt;/li&gt;
+  &lt;li&gt;Uberjars&lt;/li&gt;
+  &lt;li&gt;WAR files / J2EE&lt;/li&gt;
+  &lt;li&gt;Docker Images&lt;/li&gt;
+  &lt;li&gt;GraalVM Native Images&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;push-and-script&quot;&gt;Push and Script&lt;/h3&gt;
+
+&lt;p&gt;For starters we can always just do a straightforward upload of the library JARs our build tool resolves for our Classpath, along with the one it has create for our own code.&lt;/p&gt;
+
+&lt;p&gt;For example if we’re using Maven, we’ll end up with a classpath / run command (locally) that looks something like &lt;code class=&quot;highlighter-rouge&quot;&gt;java -cp ./target/my-app.jar:~/.m2/repository/foo.jar:~/.m2/repository/bar.jar com.mycorp.MyMainClass&lt;/code&gt;. So to run in prod, we have to push those same 3 JARs into our target environment, and run a &lt;code class=&quot;highlighter-rouge&quot;&gt;java&lt;/code&gt; command with them in the same Classpath arrangement.&lt;/p&gt;
+
+&lt;p&gt;There are a lot of ways to achieve this, so I tend to think of it as a rough pattern more than a specific implementation.&lt;/p&gt;
+
+&lt;p&gt;Sbt’s &lt;a href=&quot;https://github.com/sbt/sbt-native-packager&quot;&gt;native-packager plugin&lt;/a&gt; is a great example of a tool that does this really well. It can package all of your JARs into a Zip archive or tarball, along with a handy run script (you can see the &lt;a href=&quot;https://github.com/sbt/sbt-native-packager/blob/master/src/main/resources/com/typesafe/sbt/packager/archetypes/scripts/bash-template&quot;&gt;template&lt;/a&gt; for these) that will kick everything off. There are likely similar plugins for Maven or Gradle.&lt;/p&gt;
+
+&lt;h3 id=&quot;uberfatassembly-jars&quot;&gt;Uber/Fat/Assembly JARs&lt;/h3&gt;
+
+&lt;p&gt;As mentioned in the Libraries vs. Applications section, we’ve so far been dealing with “skinny” jars containing 1 project’s compiled code.&lt;/p&gt;
+
+&lt;p&gt;In order to make a larger application work, we have to put a bunch of them side by side on the Classpath. This works fine, but can get annoying because you end up with dozens or even hundreds of JARs to cart around. What if you could just get it all onto &lt;em&gt;one&lt;/em&gt; JAR?&lt;/p&gt;
+
+&lt;p&gt;It turns out JARs &lt;em&gt;can&lt;/em&gt; be used (abused?) in this way, by creating what’s called an “Uber” JAR (AKA “Assembly” or “Fat” JAR). An uberjar flattens out the compiled code from your project’s JAR, &lt;em&gt;plus the compiled code from all the JARs on its classpath&lt;/em&gt; into a single output JAR. It’s basically a whole bunch of JARs squished into one.&lt;/p&gt;
+
+&lt;p&gt;The benefit of this is that the final product no longer has any dependencies. Its whole Classpath is just the one resulting JAR, and your whole deployment model can consist of uploading the uberjar to production and invoking &lt;code class=&quot;highlighter-rouge&quot;&gt;java -jar my-application.jar&lt;/code&gt;. It’s sort of the JAR equivalent of building a single executable binary out of a language like Go or Rust.&lt;/p&gt;
+
+&lt;p&gt;The simplicity of the single-file deployment strategy has made uberjars popular in recent years. They’re especially common in the Hadoop/Spark ecosystem, but get used a lot for web services or other server applications as well.&lt;/p&gt;
+
+&lt;p&gt;Most build tools can either build uberjars out of the box or provide a plugin for doing it: &lt;a href=&quot;https://maven.apache.org/plugins/maven-shade-plugin/&quot;&gt;Maven Shade Plugin&lt;/a&gt;, &lt;a href=&quot;https://github.com/sbt/sbt-assembly&quot;&gt;sbt-assembly&lt;/a&gt;, &lt;a href=&quot;https://github.com/technomancy/leiningen/blob/master/doc/TUTORIAL.md#uberjar&quot;&gt;Leiningen (built in)&lt;/a&gt;. Consult the README for whichever of these you’re using for more details.&lt;/p&gt;
+
+&lt;h4 id=&quot;other-uberjar-topics&quot;&gt;Other Uberjar Topics&lt;/h4&gt;
+
+&lt;p&gt;While the uberjar process is not conceptually so complex (unzip + rezip), in practice there are some subtleties and advanced features that can make things quite complicated, especially for larger projects. Here are a few uberjar advanced topics you may run into.&lt;/p&gt;
+
+&lt;h5 id=&quot;resource-deduplication&quot;&gt;Resource Deduplication&lt;/h5&gt;
+
+&lt;p&gt;In addition to the usual &lt;code class=&quot;highlighter-rouge&quot;&gt;.class&lt;/code&gt; files, JARs can also contain other non-code files called “resources”. These could be configuration files, static assets, etc., and can be accessed programmatically via Java &lt;a href=&quot;https://docs.oracle.com/javase/8/docs/technotes/guides/lang/resources.html&quot;&gt;APIs&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The catch is that resource files in a JAR have to be unique (by path), so when you squash all your deps into a single uberjar, you’ll likely run into conflicts that have to be resolved. Different tools have different ways of configuring this, but it’s common to specify a “Merge Strategy” for handling these conflicts. For example here’s &lt;a href=&quot;https://github.com/sbt/sbt-assembly#merge-strategy&quot;&gt;sbt-assembly’s docs on the subject&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h5 id=&quot;shading&quot;&gt;Shading&lt;/h5&gt;
+
+&lt;p&gt;Shading is a technique for dealing with certain kinds of dependency conflicts by relocating code from one conflicting version of a package into a different namespace, thus allowing it to coexist with another version of itself. Technically shading can be applied to any JAR, but it comes up a lot in the context of uberjars, because large uberjars tend to produce the kinds of conditions where shading is necessary.&lt;/p&gt;
+
+&lt;p&gt;Shading is a complex topic in its own right so we’ll cover it more in Part 3, which focuses on dependency conflicts and classpath pathologies. In the meantime here are some good resources:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://medium.com/@akhaku/java-class-shadowing-and-shading-9439b0eacb13&quot;&gt;Java Class Shadowing and Shading&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://softwareengineering.stackexchange.com/questions/297276/what-is-a-shaded-java-dependency&quot;&gt;Stack Exchange: What is a “shaded” Java dependency?&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;war-files-and-j2ee&quot;&gt;WAR Files and J2EE&lt;/h3&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://docs.oracle.com/cd/E19199-01/816-6774-10/a_war.html&quot;&gt;WAR Files&lt;/a&gt; are a special JAR variant used for deploying certain types of Java web applications in the J2EE ecosystem. J2EE is a whole can of worms that I honestly don’t know much about, nor am I very interested in learning. But it does come up a lot so it’s worth touching on here.&lt;/p&gt;
+
+&lt;p&gt;In short, these applications are designed to deploy not to generic VMs (like a bare Ubuntu EC2 instance with &lt;code class=&quot;highlighter-rouge&quot;&gt;java&lt;/code&gt; installed) but rather into specialized Java-based &lt;a href=&quot;https://en.wikipedia.org/wiki/List_of_application_servers#Java&quot;&gt;Application Servers&lt;/a&gt;, like &lt;a href=&quot;http://tomcat.apache.org/&quot;&gt;Apache Tomcat&lt;/a&gt;. Your company would run one or more of these Tomcat instances, which get treated as shared infrastructure, and individual applications get pacakged into WARs and deployed into a pre-existing App Server, probably along with a bunch of other application WAR files.&lt;/p&gt;
+
+&lt;p&gt;The Application Server manages your app’s lifecycle, along with providing some shared system services, and because of these interactions extra care must be taken to ensure the 2 components cooperate well, which is what the WAR spec provides.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://javapipe.com/blog/tomcat-application-server/&quot;&gt;This article&lt;/a&gt; gives a good overview of this whole system. &lt;a href=&quot;https://octopus.com/blog/application-server-vs-uberjar&quot;&gt;Here’s another good one&lt;/a&gt; about WARs specifically.&lt;/p&gt;
+
+&lt;p&gt;Despite my skepticism and poorly masked disdain for all this, it is kind of amusing to read about. If you squint right, running WARs via Tomcat isn’t so different from running “pods” of “containers” on abstracted machines via kubernetes, just with a lot more enterprise-y pocket protector vibes.&lt;/p&gt;
+
+&lt;p&gt;And the decline of one is certainly related to the rise of the other – while there are plenty of J2EE deployments running out there, much of the industry has moved away from this model. These days people care more about cloud portability and deployment standardization (e.g. running with Docker or deploying via the &lt;a href=&quot;https://12factor.net/&quot;&gt;12 Factor Model&lt;/a&gt;). This makes highly customized, language-specific infrastructure less appealing than a giant uberjar you can run with a single &lt;code class=&quot;highlighter-rouge&quot;&gt;java -jar&lt;/code&gt; command.&lt;/p&gt;
+
+&lt;h3 id=&quot;docker-and-container-images&quot;&gt;Docker and Container Images&lt;/h3&gt;
+
+&lt;p&gt;Ironically one of Java’s initial selling points – simplicity of deployment – has been somewhat diminished by the proliferation of Docker. Now that everyone’s prod environments are “BYO Container” anyway, the benefit of just putting the JRE on all your servers doesn’t matter as much.&lt;/p&gt;
+
+&lt;p&gt;Nevertheless, the JVM runs just fine in Docker, and in many cases, you can grab an appropriate base image (like &lt;a href=&quot;https://hub.docker.com/_/openjdk&quot;&gt;OpenJDK&lt;/a&gt;), stuff your JARs into it, and go.&lt;/p&gt;
+
+&lt;p&gt;However it’s worth emphasizing: using Docker doesn’t change the fundamental JVM equation of Java Runtime + Classpath full of JARs = Application. The only difference is now the base image provides the JRE, and you’ll be loading your Classpath JARs into a container image rather than onto a bare server or VM.&lt;/p&gt;
+
+&lt;p&gt;So usually you’ll be putting into your Docker image some variation of one of the previous models:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Put your compiled code and all your dependencies into a docker image and include an entrypoint command that invokes them with the proper settings and Classpath. Basically the “Push &amp;amp; Script” strategy but in Docker. (sbt’s &lt;a href=&quot;https://www.scala-sbt.org/sbt-native-packager/formats/docker.html&quot;&gt;native-packager&lt;/a&gt; plugin does this)&lt;/li&gt;
+  &lt;li&gt;Build an uberjar and put it in a JDK docker image. Your Dockerfile &lt;code class=&quot;highlighter-rouge&quot;&gt;CMD&lt;/code&gt; setting will be something like &lt;code class=&quot;highlighter-rouge&quot;&gt;java -jar /path/to/that.jar&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Use a dedicated Java-to-Container build plugin like &lt;a href=&quot;https://github.com/GoogleContainerTools/jib&quot;&gt;Google’s Jib&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&quot;jib-java-specific-container-image-builds&quot;&gt;Jib: Java-specific Container Image Builds&lt;/h4&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/GoogleContainerTools/jib&quot;&gt;Jib&lt;/a&gt; is an interesting new project providing a pure-Java build tool for the &lt;a href=&quot;https://github.com/opencontainers/image-spec&quot;&gt;OCI Image Spec&lt;/a&gt;. This is interesting for a few reasons.&lt;/p&gt;
+
+&lt;p&gt;First, because it’s implemented in Java, Jib integrates into existing JVM build tools. Normally, running &lt;code class=&quot;highlighter-rouge&quot;&gt;docker build&lt;/code&gt; requires an RPC connection to a Docker daemon process on your machine. You need to have Docker installed, and the build process has to copy things back and forth between the daemon and the docker client. Jib allows you to sidestep all this and keep things entirely within your Maven or Gradle build.&lt;/p&gt;
+
+&lt;p&gt;Second, by targeting Java applications specifically (rather than providing a general-purpose container build tool) Jib is able to make some interesting optimizations like:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Using &lt;a href=&quot;https://github.com/GoogleContainerTools/distroless&quot;&gt;distroless&lt;/a&gt; base images that contain &lt;em&gt;only&lt;/em&gt; the JVM (not even a full OS!) which makes your images a lot smaller&lt;/li&gt;
+  &lt;li&gt;Taking better advantage of image layering by splitting your dependencies (which tend to change less) into a separate layer from your classes (which change often). This gives you faster incremental builds since most builds only require re-building the smaller application layer.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Thanks to these tricks, Jib images can often be smaller and build faster than traditional Docker builds.&lt;/p&gt;
+
+&lt;p&gt;More info on Jib:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.youtube.com/watch?v=H6gR_Cv4yWI&quot;&gt;Jib presentation from Oreilly Velocity 2018&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://cloud.google.com/blog/topics/developers-practitioners/comparing-containerization-methods-buildpacks-jib-and-dockerfile&quot;&gt;GCP Blog Post on JVM Containerization Options&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.baeldung.com/jib-dockerizing&quot;&gt;Baeldung on using Jib&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;graalvm-native-images&quot;&gt;GraalVM Native Images&lt;/h3&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.graalvm.org/&quot;&gt;GraalVM&lt;/a&gt; is an alternative JVM runtime with some really interesting features, one of which is the ability to do Ahead-of-Time compilation of JVM bytecode.&lt;/p&gt;
+
+&lt;p&gt;Traditionally, the JVM uses a JIT compiler to turn bytecode into native machine code at runtime. But Graal lets us do this at build time, which opens up the possibility of packaging JVM applications into self-contained, platform-specific executables, called &lt;a href=&quot;https://www.graalvm.org/reference-manual/native-image/&quot;&gt;Native Images&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;A native image includes all of your application’s code, its dependencies, plus the necessary Java Runtime bits like the standard library and the garbage collector. It’s all there in one standalone binary package, so you don’t even need to have &lt;code class=&quot;highlighter-rouge&quot;&gt;java&lt;/code&gt; installed anymore.&lt;/p&gt;
+
+&lt;p&gt;Because the runtime doesn’t have to JIT all your code at startup, the resulting program also starts &lt;em&gt;much&lt;/em&gt; faster and requires less memory than traditional JVM programs, making it interesting for use cases like CLI utilities where the JVM previously was not a great fit.&lt;/p&gt;
+
+&lt;p&gt;While JVM CLIs are cool, the Industry is mostly excited about native images for a different reason: &lt;strong&gt;Serverless&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Everyone wants to stuff their Java programs into a Lambda/Cloud Run/whatever function and use them on-demand, but this doesn’t work well if your bloated app takes 30 seconds to boot. So native image provides a path to running Java programs in these environments.&lt;/p&gt;
+
+&lt;p&gt;So what’s the catch? Well there are 2 main ones:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Restrictions of the native image AOT process mean that some runtime features like reflection don’t work well or at all. In some cases there are workarounds but YMMV. &lt;a href=&quot;https://www.graalvm.org/reference-manual/native-image/Reflection/&quot;&gt;Consult the docs&lt;/a&gt;. (&lt;strong&gt;Side note&lt;/strong&gt;: Ironically this has led to a wave of backpedalling across the industry, as everyone scrambles to get things like Spring running without reflection. Suddenly reflection is bad and compile time abstractions are cool in Java.)&lt;/li&gt;
+  &lt;li&gt;So far, native image performance is at &lt;a href=&quot;https://github.com/oracle/graal/issues/1069#issuecomment-473649871&quot;&gt;least different, and generally slightly worse&lt;/a&gt;, than traditional JVMs. The AOT process is able to make fewer optimizations than the traditional JIT, so your “warmed up” throughput will usually be worse. There are some workarounds, like &lt;a href=&quot;https://www.graalvm.org/reference-manual/native-image/PGO/&quot;&gt;PGO&lt;/a&gt;, and this landscape continues to evolve, so again, do your research.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;/h2&gt;
+
+&lt;p&gt;So there’s your crash course in JVM app packaging. There are a ton of details surrounding this topic, so we’ve inevitably had to skip over a lot. But hopefully it provides an overview of the landscape, and serves as a starting point to make informed further research elsewhere.&lt;/p&gt;
+
+&lt;p&gt;What’s next? I’m sure you must be thinking: “&lt;em&gt;Wow, with a rock-solid runtime and so many great deployment options, surely everything must work perfectly in production?&lt;/em&gt;”&lt;/p&gt;
+
+&lt;p&gt;Ha! If only! Just whisper the words &lt;code class=&quot;highlighter-rouge&quot;&gt;ClassNotFoundException&lt;/code&gt; to a Java developer and see how they react.&lt;/p&gt;
+
+&lt;p&gt;Unfortunately, it does not, in fact, all work perfectly in production. To learn more about this, stay tuned for &lt;strong&gt;Part 3&lt;/strong&gt;, in which we will descend into Classpath Hell, and hopefully emerge singed, but enlightened.&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Welcome to JAR Hell</title>
