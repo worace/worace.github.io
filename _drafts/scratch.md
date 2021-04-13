@@ -217,3 +217,38 @@ There's also always the tried and true [Heroku approach](https://devcenter.herok
 The point is there are a bunch of options here, depending on what platform or build tool you're working with. But they all share the same rough goal of 1) using a build tool to fetch deps, resolve a Classpath, and compile code, 2) pushing those artifacts to a prod server, and 3) passing it all off to the appropriate `java` command.
 
 , and it's great when distributing code for other developers to consume (for example publishing a library into a package repository), or if you're going to be running the code along with all of the other JARs on the Classpath (like what happens with `mvn test`, etc).
+
+
+
+Before diving in it's useful to consider a distinction between 2 common types of projects (and JARs). In Part 1, we looked at some example JARs sourced from Maven Central, a JVM package repository. We call this type of JAR a "library", and there are some common conventions about how it's built and distributed.
+
+* [Resource deduplication](https://github.com/sbt/sbt-assembly#merge-strategy) - "Resources" (non-code auxiliary files) in a JAR have to be unique, so when building an uberjar, you often have to configure a strategy for merging any conflicts that occur
+* [Shading, a way to relocate private copies of a Class to deal with conflicts](https://maven.apache.org/plugins/maven-shade-plugin/examples/class-relocation.html)
+* [Uberjar variants](https://dzone.com/articles/the-skinny-on-fat-thin-hollow-and-uber)
+
+ The good thing is that library distribution in this model is usually simple. Bundle your code into a single JAR and push that plus your POM to a package repo and you're good to go.
+
+## Shading
+ The problem here is basically the same as with resources: files in a JAR have to be unique. And recall that the `.class` Filename for a class is based on its package name + class name. So `com.pizza.MyClass` would go into a JAR as `com/pizza/MyClass.class`, and the uniqueness requirement means only one of these can get into the same JAR.
+
+
+Normally this is not a problem -- in fact it's good. Having multiple copies of the same class in a JAR is at best wasteful and at worst risky. But if our dependency tree contains a conflict, it can prevent our app from functioning.
+
+Consider this dep graph:
+
+
+```
+                 /-- com.example.lib-a:1.0 -- com.example.pizza:1.0
+com.mycorp.app--
+                 \-- com.example.lib-b:1.0 -- com.example.pizza:2.0
+```
+
+It's possible that lib-a and lib-b can both need _different_ versions of a class `com.example.pizza.Pepperoni` that is published in the library JAR `com.example.pizza`. But the unique-file requirement will prevent us from putting both of these into our uberjar.
+
+Shading gives us a potential way out of this, by picking one of the `com.example.pizza` versions and _renaming_ its contents into different packages. Usually this would be something unique we make up, in order to avoid accidental collisions. So we might decide to move everything under `com.example.pizza` in version 2.0 to `shadedtwo.com.example.pizza`. `com/example/pizza/Pepperoni.class` becomes `shadedtwo/com/example/pizza/Pepperoni.class`, etc.
+
+Then, we also have to go into the compiled code of anything that _was_ using `com.example.pizza.2.0` (in this case `com.example.lib-b:1.0`) and rewrite those uses to the new shaded package. Now we have a mechanism for having both version 1.0 and 2.0 of `com.example.pizza` on the Classpath.
+
+If this sounds extremely invasive, that's because it is. Shading is buzzsaw surgery of the highest order. No anaesthetic allowed.
+
+We certainly would not manage it by hand (it's done with build tool plugins), but even with proper tooling it can be extremely confusing and squirrelly to configure. So Shading tends to be a "last resort" for those who can't get out of their dependency conflicts any other way.
