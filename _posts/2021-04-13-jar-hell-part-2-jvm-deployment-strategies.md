@@ -1,7 +1,7 @@
 ---
 title: Welcome to JAR Hell
 subtitle: 'Part 2: Application Deployment Strategies'
-display_title: Welcome to JAR Hell, Part 2 - Application Deployment Strategies
+display_title: Welcome to JAR Hell, Part 2 (Application Deployment Strategies)
 layout: post
 date: 2021-04-13 09:40 -0700
 ---
