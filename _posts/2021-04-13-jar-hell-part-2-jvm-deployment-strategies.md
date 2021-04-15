@@ -75,6 +75,8 @@ The catch is that resource files in a JAR have to be unique (by path), so when y
 
 Depending on your application and what libraries you're using, Resource Deduplication can either be a minor annoyance or a huge headache. For example a lot of JARs include metadata files like `META-INF/manifest.mf` that can be discarded -- no big deal. But you can also find collisions between important configuration files which lead to creative workarounds like concatenating and hoping the combined file will satisfy both of the libraries that provided it.
 
+**Edit:** This article has prompted some interesting discussion around the Pros and Cons of the mult-JAR vs Uberjar strategies with regard to resource collisions. [Here is an example Github Repo](https://github.com/worace/multi-jar-vs-uberjar-resources) demonstrating some of these issues. TL;DR multi-JAR Classpaths are still prone to resource collisions, they just will often happen silently with a "first one wins" strategy. So building an Uberjar _can_ be a benefit in these cases because most build tools will warn you about these conflicts force you to resolve them at build time.
+
 ##### Shading
 
 Shading is a technique for dealing with certain kinds of dependency conflicts by relocating code from one version of a package into a different namespace, thus allowing it to coexist with another version of itself.
