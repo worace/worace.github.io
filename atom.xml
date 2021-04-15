@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-04-14T18:07:56-07:00</updated>
+ <updated>2021-04-15T08:39:45-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -88,6 +88,8 @@
 &lt;p&gt;The catch is that resource files in a JAR have to be unique (by path), so when you squash all your deps into a single uberjar, you’ll likely run into conflicts that have to be resolved. Different tools have different ways of configuring this, but it’s common to specify a “Merge Strategy” for handling these conflicts. For example here’s &lt;a href=&quot;https://github.com/sbt/sbt-assembly#merge-strategy&quot;&gt;sbt-assembly’s docs on the subject&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;Depending on your application and what libraries you’re using, Resource Deduplication can either be a minor annoyance or a huge headache. For example a lot of JARs include metadata files like &lt;code class=&quot;highlighter-rouge&quot;&gt;META-INF/manifest.mf&lt;/code&gt; that can be discarded – no big deal. But you can also find collisions between important configuration files which lead to creative workarounds like concatenating and hoping the combined file will satisfy both of the libraries that provided it.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Edit:&lt;/strong&gt; This article has prompted some interesting discussion around the Pros and Cons of the mult-JAR vs Uberjar strategies with regard to resource collisions. &lt;a href=&quot;https://github.com/worace/multi-jar-vs-uberjar-resources&quot;&gt;Here is an example Github Repo&lt;/a&gt; demonstrating some of these issues. TL;DR multi-JAR Classpaths are still prone to resource collisions, they just will often happen silently with a “first one wins” strategy. So building an Uberjar &lt;em&gt;can&lt;/em&gt; be a benefit in these cases because most build tools will warn you about these conflicts force you to resolve them at build time.&lt;/p&gt;
 
 &lt;h5 id=&quot;shading&quot;&gt;Shading&lt;/h5&gt;
 
