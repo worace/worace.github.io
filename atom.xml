@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-04-13T18:12:27-07:00</updated>
+ <updated>2021-04-14T18:07:56-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -19,7 +19,7 @@
    <id>http://worace.works/2021/04/13/jar-hell-part-2-jvm-deployment-strategies</id>
    <content type="html">&lt;p&gt;In &lt;a href=&quot;/2021/04/04/jar-hell-part-1-compilation-classpath-libraries/&quot;&gt;Part 1&lt;/a&gt;, we looked at the basic model for loading and executing code on the JVM.&lt;/p&gt;
 
-&lt;p&gt;We saw how a Classes (usually represented by &lt;code class=&quot;highlighter-rouge&quot;&gt;.class&lt;/code&gt; files) provide the basic unit for JVM code, and how the Classpath makes classes (usually organized into JARs) available to the JVM at compile- and runtime. And we saw how tools like Maven help us use external libraries by fetching them from package repositories and incorporating them into the local Classpath.&lt;/p&gt;
+&lt;p&gt;We saw how Classes (usually represented by &lt;code class=&quot;highlighter-rouge&quot;&gt;.class&lt;/code&gt; files) provide the basic unit for JVM code, and how the Classpath makes classes (usually organized into JARs) available to the JVM at compile- and runtime. And we saw how tools like Maven help us use external libraries by fetching them from package repositories and incorporating them into the local Classpath.&lt;/p&gt;
 
 &lt;p&gt;But what about production deployments?&lt;/p&gt;
 
@@ -87,9 +87,15 @@
 
 &lt;p&gt;The catch is that resource files in a JAR have to be unique (by path), so when you squash all your deps into a single uberjar, you’ll likely run into conflicts that have to be resolved. Different tools have different ways of configuring this, but it’s common to specify a “Merge Strategy” for handling these conflicts. For example here’s &lt;a href=&quot;https://github.com/sbt/sbt-assembly#merge-strategy&quot;&gt;sbt-assembly’s docs on the subject&lt;/a&gt;.&lt;/p&gt;
 
+&lt;p&gt;Depending on your application and what libraries you’re using, Resource Deduplication can either be a minor annoyance or a huge headache. For example a lot of JARs include metadata files like &lt;code class=&quot;highlighter-rouge&quot;&gt;META-INF/manifest.mf&lt;/code&gt; that can be discarded – no big deal. But you can also find collisions between important configuration files which lead to creative workarounds like concatenating and hoping the combined file will satisfy both of the libraries that provided it.&lt;/p&gt;
+
 &lt;h5 id=&quot;shading&quot;&gt;Shading&lt;/h5&gt;
 
-&lt;p&gt;Shading is a technique for dealing with certain kinds of dependency conflicts by relocating code from one conflicting version of a package into a different namespace, thus allowing it to coexist with another version of itself. Technically shading can be applied to any JAR, but it comes up a lot in the context of uberjars, because large uberjars tend to produce the kinds of conditions where shading is necessary.&lt;/p&gt;
+&lt;p&gt;Shading is a technique for dealing with certain kinds of dependency conflicts by relocating code from one version of a package into a different namespace, thus allowing it to coexist with another version of itself.&lt;/p&gt;
+
+&lt;p&gt;Shading comes up a lot in the context of Uberjars, because large Uberjars tend to produce the conditions where shading is necessary. But shading can be applied just as well to library JARs, and some library publishers consider it good etiquette to shade copies of commonly used libraries they depend on (Guava, anyone?) as a means of saving downstream users from potential dependency conflicts. But the rules and conventions around all this are fuzzy, so what you encounter in the wild may vary.&lt;/p&gt;
+
+&lt;p&gt;One point however is worth emphasizing: &lt;strong&gt;If you’re going to bundle Classes you don’t own into a JAR you’re publishing, you should shade them&lt;/strong&gt;. Ideally you really wouldn’t do this at all, but sometimes people get into a bind and have to bundle a transitive dependency for whatever reason. Shading in these cases can save your consumers from unresolvable dependency conflicts.&lt;/p&gt;
 
 &lt;p&gt;Shading is a complex topic in its own right so we’ll cover it more in Part 3, which focuses on dependency conflicts and classpath pathologies. In the meantime here are some good resources:&lt;/p&gt;
 
@@ -130,18 +136,18 @@
 
 &lt;h4 id=&quot;jib-java-specific-container-image-builds&quot;&gt;Jib: Java-specific Container Image Builds&lt;/h4&gt;
 
-&lt;p&gt;&lt;a href=&quot;https://github.com/GoogleContainerTools/jib&quot;&gt;Jib&lt;/a&gt; is an interesting new project providing a pure-Java build tool for the &lt;a href=&quot;https://github.com/opencontainers/image-spec&quot;&gt;OCI Image Spec&lt;/a&gt;. This is interesting for a few reasons.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/GoogleContainerTools/jib&quot;&gt;Jib&lt;/a&gt; is a new-ish project providing a pure-Java build tool for the &lt;a href=&quot;https://github.com/opencontainers/image-spec&quot;&gt;OCI Image Spec&lt;/a&gt;. This is interesting for a few reasons.&lt;/p&gt;
 
 &lt;p&gt;First, because it’s implemented in Java, Jib integrates into existing JVM build tools. Normally, running &lt;code class=&quot;highlighter-rouge&quot;&gt;docker build&lt;/code&gt; requires an RPC connection to a Docker daemon process on your machine. You need to have Docker installed, and the build process has to copy things back and forth between the daemon and the docker client. Jib allows you to sidestep all this and keep things entirely within your Maven or Gradle build.&lt;/p&gt;
 
-&lt;p&gt;Second, by targeting Java applications specifically (rather than providing a general-purpose container build tool) Jib is able to make some interesting optimizations like:&lt;/p&gt;
+&lt;p&gt;Second, by targeting Java applications specifically (rather than providing a general-purpose container build tool) Jib is able to make some creative optimizations like:&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;Using &lt;a href=&quot;https://github.com/GoogleContainerTools/distroless&quot;&gt;distroless&lt;/a&gt; base images that contain &lt;em&gt;only&lt;/em&gt; the JVM (not even a full OS!) which makes your images a lot smaller&lt;/li&gt;
   &lt;li&gt;Taking better advantage of image layering by splitting your dependencies (which tend to change less) into a separate layer from your classes (which change often). This gives you faster incremental builds since most builds only require re-building the smaller application layer.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;Thanks to these tricks, Jib images can often be smaller and build faster than traditional Docker builds.&lt;/p&gt;
+&lt;p&gt;Thanks to these tricks, Jib images are usually smaller and build faster than traditional Docker + Dockerfile-based images.&lt;/p&gt;
 
 &lt;p&gt;More info on Jib:&lt;/p&gt;
 
@@ -153,13 +159,13 @@
 
 &lt;h3 id=&quot;graalvm-native-images&quot;&gt;GraalVM Native Images&lt;/h3&gt;
 
-&lt;p&gt;&lt;a href=&quot;https://www.graalvm.org/&quot;&gt;GraalVM&lt;/a&gt; is an alternative JVM runtime with some really interesting features, one of which is the ability to do Ahead-of-Time compilation of JVM bytecode.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.graalvm.org/&quot;&gt;GraalVM&lt;/a&gt; is an alternative JVM runtime with some really cool features, one of which is the ability to do Ahead-of-Time compilation of JVM bytecode.&lt;/p&gt;
 
 &lt;p&gt;Traditionally, the JVM uses a JIT compiler to turn bytecode into native machine code at runtime. But Graal lets us do this at build time, which opens up the possibility of packaging JVM applications into self-contained, platform-specific executables, called &lt;a href=&quot;https://www.graalvm.org/reference-manual/native-image/&quot;&gt;Native Images&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;A native image includes all of your application’s code, its dependencies, plus the necessary Java Runtime bits like the standard library and the garbage collector. It’s all there in one standalone binary package, so you don’t even need to have &lt;code class=&quot;highlighter-rouge&quot;&gt;java&lt;/code&gt; installed anymore.&lt;/p&gt;
 
-&lt;p&gt;Because the runtime doesn’t have to JIT all your code at startup, the resulting program also starts &lt;em&gt;much&lt;/em&gt; faster and requires less memory than traditional JVM programs, making it interesting for use cases like CLI utilities where the JVM previously was not a great fit.&lt;/p&gt;
+&lt;p&gt;Because the runtime doesn’t have to JIT all your code at startup, the resulting program also starts &lt;em&gt;much&lt;/em&gt; faster and requires less memory than traditional JVM programs, making it appealing for use cases like CLI utilities where the JVM previously was not a great fit.&lt;/p&gt;
 
 &lt;p&gt;While JVM CLIs are cool, the Industry is mostly excited about native images for a different reason: &lt;strong&gt;Serverless&lt;/strong&gt;.&lt;/p&gt;
 
@@ -171,6 +177,8 @@
   &lt;li&gt;Restrictions of the native image AOT process mean that some runtime features like reflection don’t work well or at all. In some cases there are workarounds but YMMV. &lt;a href=&quot;https://www.graalvm.org/reference-manual/native-image/Reflection/&quot;&gt;Consult the docs&lt;/a&gt;. (&lt;strong&gt;Side note&lt;/strong&gt;: Ironically this has led to a wave of backpedalling across the industry, as everyone scrambles to get things like Spring running without reflection. Suddenly reflection is bad and compile time abstractions are cool in Java.)&lt;/li&gt;
   &lt;li&gt;So far, native image performance is at &lt;a href=&quot;https://github.com/oracle/graal/issues/1069#issuecomment-473649871&quot;&gt;least different, and generally slightly worse&lt;/a&gt;, than traditional JVMs. The AOT process is able to make fewer optimizations than the traditional JIT, so your “warmed up” throughput will usually be worse. There are some workarounds, like &lt;a href=&quot;https://www.graalvm.org/reference-manual/native-image/PGO/&quot;&gt;PGO&lt;/a&gt;, and this landscape continues to evolve, so again, do your research.&lt;/li&gt;
 &lt;/ol&gt;
+
+&lt;p&gt;GraalVM is really an amazing technological advancement for the JVM. It’s the kind of thing that Java developers 15 years ago would not have believed to be possible. Will be very interesting to see where this and similar advancements take us in the coming years.&lt;/p&gt;
 
 &lt;h2 id=&quot;summary&quot;&gt;Summary&lt;/h2&gt;
 
