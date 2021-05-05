@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-05-05T09:28:34-07:00</updated>
+ <updated>2021-05-05T09:28:48-07:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -1071,6 +1071,33 @@ FooRequest --&amp;gt; FooOrderRequest ---&amp;gt; I can't just re-use my order-l
   &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>CSV to JSON One Liner with Ruby</title>
+   <link href="http://worace.works/2020/05/05/csv-to-json-one-liner-with-ruby/"/>
+   <updated>2020-05-05T00:00:00-07:00</updated>
+   <id>http://worace.works/2020/05/05/csv-to-json-one-liner-with-ruby</id>
+   <content type="html">&lt;p&gt;I run into this a lot and figured out a reasonably handy way to do it with built-in ruby tooling.&lt;/p&gt;
+
+&lt;p&gt;The one-liner is:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ruby -r csv -r json -e 'CSV.new(STDIN, headers: true).each { |r| puts r.to_h.to_json }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;I put it in by &lt;code class=&quot;highlighter-rouge&quot;&gt;.zshrc&lt;/code&gt; as a function:&lt;/p&gt;
+
+&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;function &lt;/span&gt;csv2json &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  ruby &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; csv &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; json &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'CSV.new(STDIN, headers: true).each { |r| puts r.to_h.to_json }'&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So I can use it like:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;echo 'a,b\n1,2' | csv2json
+{&quot;a&quot;:&quot;1&quot;,&quot;b&quot;:&quot;2&quot;}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 </content>
  </entry>
  

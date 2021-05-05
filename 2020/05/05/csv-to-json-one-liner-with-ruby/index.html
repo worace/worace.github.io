@@ -8,7 +8,7 @@
 
   <title>
     
-      about
+      CSV to JSON One Liner with Ruby
     
   </title>
   <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -50,20 +50,31 @@
       
 
       <main>
-        <h2 id="about">About</h2>
+        <article class="post">
+  <h1 class="post-title">CSV to JSON One Liner with Ruby</h1>
+  <h2 class="post-subtitle"><em></em></h2>
+  <time datetime="2020-05-05T00:00:00-07:00" class="post-date">05 May 2020</time>
+  <p>I run into this a lot and figured out a reasonably handy way to do it with built-in ruby tooling.</p>
 
-<p>I’m a Software Engineer in Los Angeles. During the day I work on Places Data for <a href="https://foursquare.com/">Foursquare</a>.</p>
+<p>The one-liner is:</p>
 
-<p>Outside of work I sometimes surf (poorly), chase <a href="https://twitter.com/worace/status/1376588367152865281">carp in the LA river</a> (unsuccessfully), or hack on side projects, usually with a geospatial bent.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ruby -r csv -r json -e 'CSV.new(STDIN, headers: true).each { |r| puts r.to_h.to_json }
+</code></pre></div></div>
 
-<p>Lately I’ve been working on <a href="https://contour.app/">Contour</a>, an application for sharing and editing geospatial data. Sometimes I livestream some of this project work on <a href="https://www.twitch.tv/worace">Twitch</a>.</p>
+<p>I put it in by <code class="highlighter-rouge">.zshrc</code> as a function:</p>
 
-<h3 id="find-me-elsewhere">Find me elsewhere</h3>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">function </span>csv2json <span class="o">{</span>
+  ruby <span class="nt">-r</span> csv <span class="nt">-r</span> json <span class="nt">-e</span> <span class="s1">'CSV.new(STDIN, headers: true).each { |r| puts r.to_h.to_json }'</span>
+<span class="o">}</span>
+</code></pre></div></div>
 
-<p class="p-short"><a href="https://github.com/worace">Github</a></p>
-<p class="p-short"><a href="http://twitter.com/worace">Twitter</a></p>
-<p class="p-short"><a href="https://www.twitch.tv/worace">Twitch</a></p>
+<p>So I can use it like:</p>
 
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo 'a,b\n1,2' | csv2json
+{"a":"1","b":"2"}
+</code></pre></div></div>
+
+</article>
 
       </main>
 
