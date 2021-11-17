@@ -87,3 +87,7 @@ ol li:before {
   color: $body-bg;
 }
 
+// image followed by em for captioning
+img + em {
+  font-size: 75%;
+}
