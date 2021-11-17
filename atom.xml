@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-11-17T09:28:36-08:00</updated>
+ <updated>2021-11-17T09:34:29-08:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -23,12 +23,12 @@
 
 &lt;p&gt;&lt;img src=&quot;/public/images/gitdiff.png&quot; alt=&quot;Large Git Diff&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;Sometimes this is just unavoidable. Some projects can’t be done without large, sweeping changes that touch many parts of a codebase. For cases like these, I try to explicitly budget time with a reviewer (or multiple!) to walk through the changeset, to make sure they know what they’re getting into, have all the context, and are allocated sufficient time to give a thoughtful review.&lt;/p&gt;
+&lt;p&gt;Sometimes large, sweeping changes are unavoidable. For those cases, you should proactively schedule time with a reviewer (or multiple!) to walk through the changeset, make sure they have all the context, and are allocated sufficient time to give a thoughtful review.&lt;/p&gt;
+
+&lt;p&gt;But often this happens by accident, as we Git-amari Damacy our way through a handful of unrelated changes. This adds unnecessary strain on a reviewer, and makes it more likely they’ll miss the important parts of what might be an otherwise simple diff.&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;/public/images/git_curve.jpg&quot; alt=&quot;Git review curve&quot; /&gt;
 &lt;em&gt;Many reviewers won’t have time to thoughtfully review a large diff, and will have to throw their hands up and YOLO it.&lt;/em&gt;&lt;/p&gt;
-
-&lt;p&gt;But often this happens by accident, as we Git-amari Damacy our way through a handful of unrelated changes. This adds unnecessary strain on a reviewer, and makes it more likely they’ll miss the important parts of what might be an otherwise simple diff.&lt;/p&gt;
 
 &lt;p&gt;The obvious answer is to split things up. But this poses another problem: our work in later steps often relies on the prior steps:&lt;/p&gt;
 

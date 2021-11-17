@@ -4,7 +4,7 @@
   <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="last-modified" content="2021-11-17T09:28:36-08:00" />
+  <meta http-equiv="last-modified" content="2021-11-17T09:34:29-08:00" />
 
   <title>
     
@@ -60,12 +60,12 @@
 
 <p><img src="/public/images/gitdiff.png" alt="Large Git Diff" /></p>
 
-<p>Sometimes this is just unavoidable. Some projects can’t be done without large, sweeping changes that touch many parts of a codebase. For cases like these, I try to explicitly budget time with a reviewer (or multiple!) to walk through the changeset, to make sure they know what they’re getting into, have all the context, and are allocated sufficient time to give a thoughtful review.</p>
+<p>Sometimes large, sweeping changes are unavoidable. For those cases, you should proactively schedule time with a reviewer (or multiple!) to walk through the changeset, make sure they have all the context, and are allocated sufficient time to give a thoughtful review.</p>
+
+<p>But often this happens by accident, as we Git-amari Damacy our way through a handful of unrelated changes. This adds unnecessary strain on a reviewer, and makes it more likely they’ll miss the important parts of what might be an otherwise simple diff.</p>
 
 <p><img src="/public/images/git_curve.jpg" alt="Git review curve" />
 <em>Many reviewers won’t have time to thoughtfully review a large diff, and will have to throw their hands up and YOLO it.</em></p>
-
-<p>But often this happens by accident, as we Git-amari Damacy our way through a handful of unrelated changes. This adds unnecessary strain on a reviewer, and makes it more likely they’ll miss the important parts of what might be an otherwise simple diff.</p>
 
 <p>The obvious answer is to split things up. But this poses another problem: our work in later steps often relies on the prior steps:</p>
 
