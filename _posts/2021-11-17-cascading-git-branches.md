@@ -9,13 +9,12 @@ Before you know it you end up with one of those mega PRs that gives reviewers ni
 
 ![Large Git Diff](/public/images/gitdiff.png)
 
+Sometimes large, sweeping changes are unavoidable. For those cases, you should proactively schedule time with a reviewer (or multiple!) to walk through the changeset, make sure they have all the context, and are allocated sufficient time to give a thoughtful review.
 
-Sometimes this is just unavoidable. Some projects can't be done without large, sweeping changes that touch many parts of a codebase. For cases like these, I try to explicitly budget time with a reviewer (or multiple!) to walk through the changeset, to make sure they know what they're getting into, have all the context, and are allocated sufficient time to give a thoughtful review.
+But often this happens by accident, as we Git-amari Damacy our way through a handful of unrelated changes. This adds unnecessary strain on a reviewer, and makes it more likely they'll miss the important parts of what might be an otherwise simple diff.
 
 ![Git review curve](/public/images/git_curve.jpg)
 *Many reviewers won't have time to thoughtfully review a large diff, and will have to throw their hands up and YOLO it.*
-
-But often this happens by accident, as we Git-amari Damacy our way through a handful of unrelated changes. This adds unnecessary strain on a reviewer, and makes it more likely they'll miss the important parts of what might be an otherwise simple diff.
 
 The obvious answer is to split things up. But this poses another problem: our work in later steps often relies on the prior steps:
 
