@@ -44,6 +44,14 @@ Another useful trick to help keep track of a bunch of in-flight WIP branches lik
 
 ![Pull Request Branch B to A](/public/images/gh_pr_b_to_a.png)
 
-Then, after you merge the initial PR (Branch A to Main), you can come back to this one, change the base branch (to main), and set it to non-draft.
+Then, after you merge the initial PR (Branch A to Main), you can come back to this one, change the base branch (to main), and set it to non-draft. I try to keep only one non-draft PR out of the cascade active at a time, since this helps reviewers avoid confusion about which PR needs to be reviewed and merged next.
+
+### Dividing and Sequencing Changes
+
+Figuring out exactly how to break up a large changeset can be its own challenge. Here are some rules I try to follow:
+
+* Automated diffs like formatter or linter fixes should go in their own PRs. It's very distracting to review a "real" changeset which has formatting or other automated changes mixed in. If you're making a large "run formatter" commit, don't forget you can also add it to [git-blame-ignore-revs](https://michaelheap.com/git-ignore-rev/) to preserve git blame.
+* Refactoring existing code, as much as possible, should be put on its own PR. Try to start your "real" changeset from a clean slate, with a stable codebase, passing CI, etc.
+* Use [feature flags](https://launchdarkly.com/blog/what-are-feature-flags/) to enable staggered merges of individual portions of a feature where possible.
 
 Handling large diffs this way requires a little foresight and some extra git finagling, but your review process will be much smoother, and your reviewers will thank you for it.
