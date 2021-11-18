@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2021-11-17T09:34:29-08:00</updated>
+ <updated>2021-11-17T16:33:13-08:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -58,7 +58,17 @@
 
 &lt;p&gt;&lt;img src=&quot;/public/images/gh_pr_b_to_a.png&quot; alt=&quot;Pull Request Branch B to A&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;Then, after you merge the initial PR (Branch A to Main), you can come back to this one, change the base branch (to main), and set it to non-draft.&lt;/p&gt;
+&lt;p&gt;Then, after you merge the initial PR (Branch A to Main), you can come back to this one, change the base branch (to main), and set it to non-draft. I try to keep only one non-draft PR out of the cascade active at a time, since this helps reviewers avoid confusion about which PR needs to be reviewed and merged next.&lt;/p&gt;
+
+&lt;h3 id=&quot;dividing-and-sequencing-changes&quot;&gt;Dividing and Sequencing Changes&lt;/h3&gt;
+
+&lt;p&gt;Figuring out exactly how to break up a large changeset can be its own challenge. Here are some rules I try to follow:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Automated diffs like formatter or linter fixes should go in their own PRs. It’s very distracting to review a “real” changeset which has formatting or other automated changes mixed in. If you’re making a large “run formatter” commit, don’t forget you can also add it to &lt;a href=&quot;https://michaelheap.com/git-ignore-rev/&quot;&gt;git-blame-ignore-revs&lt;/a&gt; to preserve git blame.&lt;/li&gt;
+  &lt;li&gt;Refactoring existing code, as much as possible, should be put on its own PR. Try to start your “real” changeset from a clean slate, with a stable codebase, passing CI, etc.&lt;/li&gt;
+  &lt;li&gt;Use &lt;a href=&quot;https://launchdarkly.com/blog/what-are-feature-flags/&quot;&gt;feature flags&lt;/a&gt; to enable staggered merges of individual portions of a feature where possible.&lt;/li&gt;
+&lt;/ul&gt;
 
 &lt;p&gt;Handling large diffs this way requires a little foresight and some extra git finagling, but your review process will be much smoother, and your reviewers will thank you for it.&lt;/p&gt;
 </content>
