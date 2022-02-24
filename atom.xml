@@ -4,7 +4,7 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2022-02-23T18:49:24-08:00</updated>
+ <updated>2022-02-23T18:55:36-08:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
@@ -17,7 +17,7 @@
    <link href="http://worace.works/2022/02/23/kicking-the-tires-flatgeobuf/"/>
    <updated>2022-02-23T00:00:00-08:00</updated>
    <id>http://worace.works/2022/02/23/kicking-the-tires-flatgeobuf</id>
-   <content type="html">&lt;p&gt;&lt;img src=&quot;/public/gradient_studio.jpeg&quot; alt=&quot;Misty morning at Gradient Retreat&quot; /&gt;&lt;/p&gt;
+   <content type="html">&lt;p&gt;&lt;img src=&quot;/public/images/gradient_studio.jpeg&quot; alt=&quot;Misty morning at Gradient Retreat&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;This week I’ve been out in the woods on an island at &lt;a href=&quot;https://www.gradientretreat.com&quot;&gt;Gradient Retreat&lt;/a&gt; and it’s given me a chance to finally finish some research and experiments with &lt;a href=&quot;http://flatgeobuf.org&quot;&gt;Flatgeobuf&lt;/a&gt;, a new(ish) file format for storing geospatial vector data. In this post I’ll give a quick overview of the format and why I think it’s so interesting.&lt;/p&gt;
 
