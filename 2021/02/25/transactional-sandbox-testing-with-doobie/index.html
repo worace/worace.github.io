@@ -4,7 +4,7 @@
   <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="last-modified" content="2021-11-17T16:33:13-08:00" />
+  <meta http-equiv="last-modified" content="2022-02-23T18:47:26-08:00" />
 
   <title>
     
@@ -64,48 +64,48 @@
 
 <h2 id="transaction-based-tests-with-doobie">Transaction-based Tests with Doobie</h2>
 
-<p>Doobie does provide an API (<a href="https://javadoc.io/doc/org.tpolecat/doobie-core_2.12/latest/doobie/util/transactor$$Transactor$.html">Transactor.after.set</a>) for disabling the default “commit after transact” behavior temporarily. However I found this to be a little finicky, especially if I had tests that involved multiple <code class="highlighter-rouge">ConnectionIO</code>s which might get committed separately. There’s <a href="https://github.com/tpolecat/doobie/issues/535#issuecomment-311202214">a bit of discussion in this issue</a>, but in my case I wanted to be able to run a “full slice” of my application, which might involve many different <code class="highlighter-rouge">ConnectionIO</code>s as well as some invocations of my application-level effect, which in this case is <code class="highlighter-rouge">cats.effect.IO</code>.</p>
+<p>Doobie does provide an API (<a href="https://javadoc.io/doc/org.tpolecat/doobie-core_2.12/latest/doobie/util/transactor$$Transactor$.html">Transactor.after.set</a>) for disabling the default “commit after transact” behavior temporarily. However I found this to be a little finicky, especially if I had tests that involved multiple <code class="language-plaintext highlighter-rouge">ConnectionIO</code>s which might get committed separately. There’s <a href="https://github.com/tpolecat/doobie/issues/535#issuecomment-311202214">a bit of discussion in this issue</a>, but in my case I wanted to be able to run a “full slice” of my application, which might involve many different <code class="language-plaintext highlighter-rouge">ConnectionIO</code>s as well as some invocations of my application-level effect, which in this case is <code class="language-plaintext highlighter-rouge">cats.effect.IO</code>.</p>
 
-<p>So I wired up a base <code class="highlighter-rouge">SandboxTest</code> which provides this functionality by manipulating a setting on a JDBC connection before passing it off to doobie. Note that I’m also using <a href="https://github.com/typelevel/munit-cats-effect">munit-cats-effect</a> here which allows tests to return <code class="highlighter-rouge">IO[Assertion]</code>.</p>
+<p>So I wired up a base <code class="language-plaintext highlighter-rouge">SandboxTest</code> which provides this functionality by manipulating a setting on a JDBC connection before passing it off to doobie. Note that I’m also using <a href="https://github.com/typelevel/munit-cats-effect">munit-cats-effect</a> here which allows tests to return <code class="language-plaintext highlighter-rouge">IO[Assertion]</code>.</p>
 
-<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Base test for providing non-commiting Transactor[IO] as an munit Fixture
-</span><span class="k">abstract</span> <span class="k">class</span> <span class="nc">SandboxTest</span> <span class="k">extends</span> <span class="n">munit</span><span class="o">.</span><span class="nc">CatsEffectSuite</span> <span class="o">{</span>
-  <span class="c1">// set up a connection pool to your test DB like normal
-</span>  <span class="k">def</span> <span class="n">startPool</span><span class="k">:</span> <span class="kt">HikariDataSource</span> <span class="o">=</span> <span class="o">???</span>
-  <span class="c1">// munit Suite-level fixtures for holding the connection pool
-</span>  <span class="c1">// this happens once for each test class
-</span>  <span class="k">private</span> <span class="k">var</span> <span class="n">pool</span><span class="k">:</span> <span class="kt">HikariDataSource</span> <span class="o">=</span> <span class="kc">null</span>
-  <span class="k">override</span> <span class="k">def</span> <span class="n">beforeAll</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span> <span class="n">pool</span> <span class="k">=</span> <span class="n">startPool</span> <span class="o">}</span>
-  <span class="k">override</span> <span class="k">def</span> <span class="n">afterAll</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="o">()</span>
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Base test for providing non-commiting Transactor[IO] as an munit Fixture</span>
+<span class="k">abstract</span> <span class="k">class</span> <span class="nc">SandboxTest</span> <span class="k">extends</span> <span class="nv">munit</span><span class="o">.</span><span class="py">CatsEffectSuite</span> <span class="o">{</span>
+  <span class="c1">// set up a connection pool to your test DB like normal</span>
+  <span class="k">def</span> <span class="nf">startPool</span><span class="k">:</span> <span class="kt">HikariDataSource</span> <span class="o">=</span> <span class="o">???</span>
+  <span class="c1">// munit Suite-level fixtures for holding the connection pool</span>
+  <span class="c1">// this happens once for each test class</span>
+  <span class="k">private</span> <span class="k">var</span> <span class="n">pool</span><span class="k">:</span> <span class="kt">HikariDataSource</span> <span class="o">=</span> <span class="kc">null</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">beforeAll</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span> <span class="n">pool</span> <span class="k">=</span> <span class="n">startPool</span> <span class="o">}</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">afterAll</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="nv">pool</span><span class="o">.</span><span class="py">close</span><span class="o">()</span>
 
-  <span class="c1">// Context to provide into the individual tests as a scenario
-</span>  <span class="c1">// This can be expanded to include an instance of your application,
-</span>  <span class="c1">// some custom fixture instances, or whatever else you need to support your test examples
-</span>  <span class="c1">// Note the connection itself must be passed through so it's available in teardown
-</span>  <span class="k">case</span> <span class="k">class</span> <span class="nc">Context</span><span class="o">(</span><span class="n">conn</span><span class="k">:</span> <span class="kt">Connection</span><span class="o">,</span> <span class="n">xa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">])</span>
-  <span class="k">val</span> <span class="n">fixture</span> <span class="k">=</span> <span class="nc">FunFixture</span><span class="o">[</span><span class="kt">Context</span><span class="o">](</span>
+  <span class="c1">// Context to provide into the individual tests as a scenario</span>
+  <span class="c1">// This can be expanded to include an instance of your application,</span>
+  <span class="c1">// some custom fixture instances, or whatever else you need to support your test examples</span>
+  <span class="c1">// Note the connection itself must be passed through so it's available in teardown</span>
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">Context</span><span class="o">(</span><span class="n">conn</span><span class="k">:</span> <span class="kt">Connection</span><span class="o">,</span> <span class="n">xa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">])</span>
+  <span class="k">val</span> <span class="nv">fixture</span> <span class="k">=</span> <span class="nc">FunFixture</span><span class="o">[</span><span class="kt">Context</span><span class="o">](</span>
     <span class="n">setup</span> <span class="k">=</span> <span class="o">{</span> <span class="n">test</span> <span class="k">=&gt;</span>
-      <span class="k">val</span> <span class="n">conn</span> <span class="k">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">getConnection</span><span class="o">()</span>
-      <span class="c1">// Prevent the connection from committing early on your behalf
-</span>      <span class="n">conn</span><span class="o">.</span><span class="n">setAutoCommit</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
-      <span class="c1">// Make a transactor wrapping this single connection instance, rather than the whole pool
-</span>      <span class="k">val</span> <span class="n">xa</span> <span class="k">=</span> <span class="nc">Transactor</span><span class="o">.</span><span class="n">fromConnection</span><span class="o">[</span><span class="kt">IO</span><span class="o">](</span>
+      <span class="k">val</span> <span class="nv">conn</span> <span class="k">=</span> <span class="nv">pool</span><span class="o">.</span><span class="py">getConnection</span><span class="o">()</span>
+      <span class="c1">// Prevent the connection from committing early on your behalf</span>
+      <span class="nv">conn</span><span class="o">.</span><span class="py">setAutoCommit</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+      <span class="c1">// Make a transactor wrapping this single connection instance, rather than the whole pool</span>
+      <span class="k">val</span> <span class="nv">xa</span> <span class="k">=</span> <span class="nv">Transactor</span><span class="o">.</span><span class="py">fromConnection</span><span class="o">[</span><span class="kt">IO</span><span class="o">](</span>
         <span class="n">conn</span><span class="o">,</span>
-        <span class="nc">Blocker</span><span class="o">.</span><span class="n">liftExecutionContext</span><span class="o">(</span><span class="n">doobie</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">ExecutionContexts</span><span class="o">.</span><span class="n">synchronous</span><span class="o">)</span>
+        <span class="nv">Blocker</span><span class="o">.</span><span class="py">liftExecutionContext</span><span class="o">(</span><span class="nv">doobie</span><span class="o">.</span><span class="py">util</span><span class="o">.</span><span class="py">ExecutionContexts</span><span class="o">.</span><span class="py">synchronous</span><span class="o">)</span>
       <span class="o">)</span>
-      <span class="k">val</span> <span class="n">rollbackXa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Transactor</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">set</span><span class="o">(</span>
+      <span class="k">val</span> <span class="nv">rollbackXa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">]</span> <span class="k">=</span> <span class="nv">Transactor</span><span class="o">.</span><span class="py">strategy</span><span class="o">.</span><span class="py">set</span><span class="o">(</span>
         <span class="n">xa</span><span class="o">,</span>
-        <span class="c1">// Disable Doobie's default commit behavior
-</span>        <span class="nc">Strategy</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">copy</span><span class="o">(</span><span class="n">after</span> <span class="k">=</span> <span class="nc">DoNothing</span><span class="o">,</span> <span class="n">oops</span> <span class="k">=</span> <span class="nc">DoNothing</span><span class="o">,</span> <span class="n">always</span> <span class="k">=</span> <span class="nc">DoNothing</span><span class="o">)</span>
+        <span class="c1">// Disable Doobie's default commit behavior</span>
+        <span class="nv">Strategy</span><span class="o">.</span><span class="py">default</span><span class="o">.</span><span class="py">copy</span><span class="o">(</span><span class="n">after</span> <span class="k">=</span> <span class="nc">DoNothing</span><span class="o">,</span> <span class="n">oops</span> <span class="k">=</span> <span class="nc">DoNothing</span><span class="o">,</span> <span class="n">always</span> <span class="k">=</span> <span class="nc">DoNothing</span><span class="o">)</span>
       <span class="o">)</span>
       <span class="nc">Context</span><span class="o">(</span><span class="n">conn</span><span class="o">,</span> <span class="n">rollbackXa</span><span class="o">)</span>
     <span class="o">},</span>
     <span class="n">teardown</span> <span class="k">=</span> <span class="o">{</span> <span class="n">ctx</span> <span class="k">=&gt;</span>
-      <span class="c1">// After the test, rollback and close the connection
-</span>      <span class="c1">// This cleans up any changes you made to the DB during your test
-</span>      <span class="n">ctx</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">rollback</span>
-      <span class="k">if</span> <span class="o">(!</span><span class="n">ctx</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">isClosed</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="o">()</span>
+      <span class="c1">// After the test, rollback and close the connection</span>
+      <span class="c1">// This cleans up any changes you made to the DB during your test</span>
+      <span class="nv">ctx</span><span class="o">.</span><span class="py">conn</span><span class="o">.</span><span class="py">rollback</span>
+      <span class="nf">if</span> <span class="o">(!</span><span class="nv">ctx</span><span class="o">.</span><span class="py">conn</span><span class="o">.</span><span class="py">isClosed</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nv">ctx</span><span class="o">.</span><span class="py">conn</span><span class="o">.</span><span class="py">close</span><span class="o">()</span>
       <span class="o">}</span>
     <span class="o">}</span>
   <span class="o">)</span>
@@ -115,15 +115,15 @@
 <p>Now each test class that uses this base can use its fixture to get a wrapped doobie transactor:</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TransactionalExampleTest</span> <span class="k">extends</span> <span class="nc">SandboxTest</span> <span class="o">{</span>
-  <span class="n">fixture</span><span class="o">.</span><span class="n">test</span><span class="o">(</span><span class="s">"transactional test"</span><span class="o">)</span> <span class="o">{</span> <span class="n">ctx</span><span class="k">:</span> <span class="kt">Context</span> <span class="o">=&gt;</span>
-    <span class="k">val</span> <span class="n">xa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">]</span>
+  <span class="nv">fixture</span><span class="o">.</span><span class="py">test</span><span class="o">(</span><span class="s">"transactional test"</span><span class="o">)</span> <span class="o">{</span> <span class="n">ctx</span><span class="k">:</span> <span class="kt">Context</span> <span class="o">=&gt;</span>
+    <span class="k">val</span> <span class="nv">xa</span><span class="k">:</span> <span class="kt">Transactor</span><span class="o">[</span><span class="kt">IO</span><span class="o">]</span>
     <span class="k">for</span> <span class="o">{</span>
-      <span class="c1">// these queries will actually run against your database and yield real results
-</span>      <span class="c1">// but any changes they make will be cleaned up at the end of the test
-</span>      <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">sql</span><span class="s">"insert into foods (name) values ('pizza')"</span><span class="o">.</span><span class="n">update</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="n">transact</span><span class="o">(</span><span class="n">xa</span><span class="o">)</span>
-      <span class="n">names</span> <span class="k">&lt;-</span> <span class="n">sql</span><span class="s">"select name from foods"</span><span class="o">.</span><span class="n">query</span><span class="o">[</span><span class="kt">String</span><span class="o">].</span><span class="n">to</span><span class="o">[</span><span class="kt">Vector</span><span class="o">].</span><span class="n">transact</span><span class="o">(</span><span class="n">xa</span><span class="o">)</span>
+      <span class="c1">// these queries will actually run against your database and yield real results</span>
+      <span class="c1">// but any changes they make will be cleaned up at the end of the test</span>
+      <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">sql</span><span class="s">"insert into foods (name) values ('pizza')"</span><span class="o">.</span><span class="py">update</span><span class="o">.</span><span class="py">run</span><span class="o">.</span><span class="py">transact</span><span class="o">(</span><span class="n">xa</span><span class="o">)</span>
+      <span class="n">names</span> <span class="k">&lt;-</span> <span class="n">sql</span><span class="s">"select name from foods"</span><span class="o">.</span><span class="py">query</span><span class="o">[</span><span class="kt">String</span><span class="o">].</span><span class="py">to</span><span class="o">[</span><span class="kt">Vector</span><span class="o">].</span><span class="py">transact</span><span class="o">(</span><span class="n">xa</span><span class="o">)</span>
     <span class="o">}</span> <span class="k">yield</span> <span class="o">{</span>
-      <span class="n">assertEquals</span><span class="o">(</span><span class="n">names</span><span class="o">,</span> <span class="nc">Vector</span><span class="o">(</span><span class="s">"pizza"</span><span class="o">))</span>
+      <span class="nf">assertEquals</span><span class="o">(</span><span class="n">names</span><span class="o">,</span> <span class="nc">Vector</span><span class="o">(</span><span class="s">"pizza"</span><span class="o">))</span>
     <span class="o">}</span>
   <span class="o">}</span>
 <span class="o">}</span>
@@ -166,13 +166,13 @@
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">com.dimafeng.testcontainers.PostgreSQLContainer</span>
 <span class="k">import</span> <span class="nn">com.dimafeng.testcontainers.munit.TestContainerForEach</span>
 
-<span class="k">class</span> <span class="nc">TestContainersExampleTest</span> <span class="k">extends</span> <span class="n">munit</span><span class="o">.</span><span class="nc">FunSuite</span> <span class="k">with</span> <span class="nc">TestContainerForEach</span> <span class="o">{</span>
-  <span class="k">override</span> <span class="k">val</span> <span class="n">containerDef</span> <span class="k">=</span> <span class="nc">PostgreSQLContainer</span><span class="o">.</span><span class="nc">Def</span><span class="o">()</span>
+<span class="k">class</span> <span class="nc">TestContainersExampleTest</span> <span class="k">extends</span> <span class="nv">munit</span><span class="o">.</span><span class="py">FunSuite</span> <span class="k">with</span> <span class="nc">TestContainerForEach</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">val</span> <span class="nv">containerDef</span> <span class="k">=</span> <span class="nv">PostgreSQLContainer</span><span class="o">.</span><span class="py">Def</span><span class="o">()</span>
 
-  <span class="n">test</span><span class="o">(</span><span class="s">"test postgres with testcontainer"</span><span class="o">)</span> <span class="o">{</span>
+  <span class="nf">test</span><span class="o">(</span><span class="s">"test postgres with testcontainer"</span><span class="o">)</span> <span class="o">{</span>
     <span class="n">withContainers</span> <span class="o">{</span> <span class="n">postgresContainer</span> <span class="k">=&gt;</span>
-      <span class="o">???</span> <span class="c1">// Do stuff with postgres
-</span>    <span class="o">}</span>
+      <span class="o">???</span> <span class="c1">// Do stuff with postgres</span>
+    <span class="o">}</span>
   <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div></div>

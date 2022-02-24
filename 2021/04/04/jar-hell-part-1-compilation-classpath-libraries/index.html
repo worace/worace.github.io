@@ -4,7 +4,7 @@
   <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="last-modified" content="2021-11-17T16:33:13-08:00" />
+  <meta http-equiv="last-modified" content="2022-02-23T18:47:26-08:00" />
 
   <title>
     
@@ -56,7 +56,7 @@
   <time datetime="2021-04-04T19:26:00-07:00" class="post-date">04 Apr 2021</time>
   <p>The JVM is a big tent. Maybe you’re a seasoned veteran who’s lived through everything from Applets to J2EE. Or maybe you’re a weirdo who came in through Clojure, only to find that love for parentheses and immutable data structures was a slippery slope into Classpath troubleshooting (🙋).</p>
 
-<p>This article is targeted at the latter group, and aims to provide a crash course in JVM app packaging for newcomers to the platform. We’ll cover compilation basics, the Classpath, JARs, <code class="highlighter-rouge">pom.xml</code>, and the Maven dependency model. This is less about accomplishing specific build tasks and more about developing a mental model for how code gets packaged and distributed on the JVM.</p>
+<p>This article is targeted at the latter group, and aims to provide a crash course in JVM app packaging for newcomers to the platform. We’ll cover compilation basics, the Classpath, JARs, <code class="language-plaintext highlighter-rouge">pom.xml</code>, and the Maven dependency model. This is less about accomplishing specific build tasks and more about developing a mental model for how code gets packaged and distributed on the JVM.</p>
 
 <p>This is Part 1 in a series, so stay tuned for Part 2, which will cover deployment strategies for JVM applications, and Part 3, which will look at the many ways your Classpath can get screwy in larger projects.</p>
 
@@ -64,30 +64,30 @@
 
 <p>As you may recall from “Java 101”, Java code runs on the <strong>J</strong>ava <strong>V</strong>irtual <strong>M</strong>achine. These days, the JVM has evolved into a powerful <a href="http://openjdk.java.net/projects/mlvm/summit2019/">polyglot runtime</a> that hosts a variety of non-Java languages. But it was originally created expressly for the purpose of running Java, and the 2 share a lot of common design choices.</p>
 
-<p>On the JVM, as in Java, <em>everything</em> is a class, and the fundamental unit of code for the JVM is a <code class="highlighter-rouge">.class</code> file. The JVM can’t run <code class="highlighter-rouge">.java</code> (or any other language) source files directly – they must first be turned into <code class="highlighter-rouge">.class</code> files by a compiler.</p>
+<p>On the JVM, as in Java, <em>everything</em> is a class, and the fundamental unit of code for the JVM is a <code class="language-plaintext highlighter-rouge">.class</code> file. The JVM can’t run <code class="language-plaintext highlighter-rouge">.java</code> (or any other language) source files directly – they must first be turned into <code class="language-plaintext highlighter-rouge">.class</code> files by a compiler.</p>
 
 <p>A Classfile contains a binary representation of a class, following a structure defined by the <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html">JVM Spec</a>. It includes slots for Class-y things like constructors, constants, fields, and methods. Most importantly, it contains our actual code, represented as <a href="https://en.wikipedia.org/wiki/Java_bytecode">JVM Bytecode</a>, which describes our program using the JVM’s internal <a href="https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html">instruction set</a>, analogous to the machine-level instruction set hardwired into your <a href="https://en.wikipedia.org/wiki/X86_instruction_listings">x86</a> or <a href="https://en.wikipedia.org/wiki/ARM_architecture#Instruction_set">ARM</a> CPU. The definition of a “Class” can get surprisingly elastic on the JVM, but all code we run ultimately gets funneled through this format.</p>
 
-<p>Java Class? Turned into a <code class="highlighter-rouge">.class</code>. Scala <a href="https://www.toptal.com/scala/scala-bytecode-and-the-jvm">Anonymous Function</a>? Given a funny name and turned into a <code class="highlighter-rouge">.class</code>.
-Clojure REPL expressions? Processed by the Clojure compiler and turned into a <code class="highlighter-rouge">.class</code>, albeit <a href="http://blog.kdgregory.com/2016/05/how-and-when-clojure-compiles-your-code.html">at runtime, and probably without even writing it to disk</a>.</p>
+<p>Java Class? Turned into a <code class="language-plaintext highlighter-rouge">.class</code>. Scala <a href="https://www.toptal.com/scala/scala-bytecode-and-the-jvm">Anonymous Function</a>? Given a funny name and turned into a <code class="language-plaintext highlighter-rouge">.class</code>.
+Clojure REPL expressions? Processed by the Clojure compiler and turned into a <code class="language-plaintext highlighter-rouge">.class</code>, albeit <a href="http://blog.kdgregory.com/2016/05/how-and-when-clojure-compiles-your-code.html">at runtime, and probably without even writing it to disk</a>.</p>
 
-<p>Of course, this is just scratching the surface of a complex topic full of nuances. For one thing the conventions and state of the art around these things continue to evolve (newer versions of Scala actually <em>don’t</em> generate <a href="https://www.scala-lang.org/news/2.12.0/#java-8-style-bytecode-for-lambdas">standalone classes for anonymous functions</a> because they use Java 8’s <a href="https://www.infoq.com/articles/Invokedynamic-Javas-secret-weapon/">invokedynamic</a> instead). And for another there are always exceptions (as the Clojure example demonstrates, you can in fact generate Bytecode at runtime rather than including it in a pre-compiled <code class="highlighter-rouge">.class</code> file, and this is especially common in dynamic languages like Clojure or <a href="https://realjenius.com/2009/10/06/distilling-jruby-the-jit-compiler/">JRuby</a>). So we often use the term “Classfile” to describe the JVM’s class model and binary format, even though it doesn’t always require a physical <code class="highlighter-rouge">.class</code> file</p>
+<p>Of course, this is just scratching the surface of a complex topic full of nuances. For one thing the conventions and state of the art around these things continue to evolve (newer versions of Scala actually <em>don’t</em> generate <a href="https://www.scala-lang.org/news/2.12.0/#java-8-style-bytecode-for-lambdas">standalone classes for anonymous functions</a> because they use Java 8’s <a href="https://www.infoq.com/articles/Invokedynamic-Javas-secret-weapon/">invokedynamic</a> instead). And for another there are always exceptions (as the Clojure example demonstrates, you can in fact generate Bytecode at runtime rather than including it in a pre-compiled <code class="language-plaintext highlighter-rouge">.class</code> file, and this is especially common in dynamic languages like Clojure or <a href="https://realjenius.com/2009/10/06/distilling-jruby-the-jit-compiler/">JRuby</a>). So we often use the term “Classfile” to describe the JVM’s class model and binary format, even though it doesn’t always require a physical <code class="language-plaintext highlighter-rouge">.class</code> file</p>
 
-<p>But, <em>in general</em>, especially if you’re working in a statically compiled language like Java or Scala, most things will get turned into a <code class="highlighter-rouge">.class</code> file at compile time. As we’ll see, managing the generation, organization, and interaction of Classfiles is one of the fundamental tasks for JVM build tools and deployment workflows, so keeping them in mind is a useful model to understand how these processes work.</p>
+<p>But, <em>in general</em>, especially if you’re working in a statically compiled language like Java or Scala, most things will get turned into a <code class="language-plaintext highlighter-rouge">.class</code> file at compile time. As we’ll see, managing the generation, organization, and interaction of Classfiles is one of the fundamental tasks for JVM build tools and deployment workflows, so keeping them in mind is a useful model to understand how these processes work.</p>
 
 <h2 id="making-classes">Making Classes</h2>
 
-<p>In practice, we usually deal with <code class="highlighter-rouge">.class</code> compilation through build tools, but the simplest way to produce one is by invoking <code class="highlighter-rouge">javac</code> (or another JVM lang compiler) directly:</p>
+<p>In practice, we usually deal with <code class="language-plaintext highlighter-rouge">.class</code> compilation through build tools, but the simplest way to produce one is by invoking <code class="language-plaintext highlighter-rouge">javac</code> (or another JVM lang compiler) directly:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Hello.java</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">Hello</span> <span class="o">{</span>
-  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Hello, World!"</span><span class="o">);</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Hello, World!"</span><span class="o">);</span>
   <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ javac Hello.java
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ javac Hello.java
 
 $ ls
 Hello.class     Hello.java
@@ -96,49 +96,49 @@ $ java Hello # run our newly compiled program
 Hello, World!
 </code></pre></div></div>
 
-<p><code class="highlighter-rouge">javac</code> compiles our <code class="highlighter-rouge">Hello.java</code> source into a corresponding <code class="highlighter-rouge">Hello.class</code>. When we run a java command like <code class="highlighter-rouge">java Hello</code>, the <code class="highlighter-rouge">Hello</code> we’re specifying is actually the name of a Class, and the JVM will execute the code it contains (specifically, starting with its <a href="http://tutorials.jenkov.com/java/main-method.html"><code class="highlighter-rouge">main</code> method</a>).</p>
+<p><code class="language-plaintext highlighter-rouge">javac</code> compiles our <code class="language-plaintext highlighter-rouge">Hello.java</code> source into a corresponding <code class="language-plaintext highlighter-rouge">Hello.class</code>. When we run a java command like <code class="language-plaintext highlighter-rouge">java Hello</code>, the <code class="language-plaintext highlighter-rouge">Hello</code> we’re specifying is actually the name of a Class, and the JVM will execute the code it contains (specifically, starting with its <a href="http://tutorials.jenkov.com/java/main-method.html"><code class="language-plaintext highlighter-rouge">main</code> method</a>).</p>
 
 <p><strong>Aside:</strong> <a href="https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javap.html">javap</a> is a disassembler for Classfiles, which can give you some interesting output on these files if you want to poke around further.</p>
 
 <h2 id="classloading-and-the-classpath">Classloading and the Classpath</h2>
 
-<p>We gave the <code class="highlighter-rouge">java</code> executable 1 argument, the name of our class, <code class="highlighter-rouge">Hello</code>, and it was able to run our program. How does this work?</p>
+<p>We gave the <code class="language-plaintext highlighter-rouge">java</code> executable 1 argument, the name of our class, <code class="language-plaintext highlighter-rouge">Hello</code>, and it was able to run our program. How does this work?</p>
 
-<p>Just as your shell has a <code class="highlighter-rouge">$PATH</code> variable which tells it where to look for executables, the JVM uses a setting called the <a href="https://docs.oracle.com/javase/tutorial/essential/environment/paths.html">“Classpath”</a> to determine where to find <code class="highlighter-rouge">.class</code> files corresponding to new classes. The Classpath is a simple concept, but it’s fundamental to how real-world JVM applications run (or, frequently, crash due to Classpath problems).</p>
+<p>Just as your shell has a <code class="language-plaintext highlighter-rouge">$PATH</code> variable which tells it where to look for executables, the JVM uses a setting called the <a href="https://docs.oracle.com/javase/tutorial/essential/environment/paths.html">“Classpath”</a> to determine where to find <code class="language-plaintext highlighter-rouge">.class</code> files corresponding to new classes. The Classpath is a simple concept, but it’s fundamental to how real-world JVM applications run (or, frequently, crash due to Classpath problems).</p>
 
-<p>By default the Classpath is simply <code class="highlighter-rouge">"."</code>, the current directory. Our previous example works because the <code class="highlighter-rouge">Hello.class</code> definition matching the class named <code class="highlighter-rouge">Hello</code> (<code class="highlighter-rouge">.class</code> files are named for the Class they contain) is sitting in the current directory, which is on the Classpath, and the JVM is able to find it.</p>
+<p>By default the Classpath is simply <code class="language-plaintext highlighter-rouge">"."</code>, the current directory. Our previous example works because the <code class="language-plaintext highlighter-rouge">Hello.class</code> definition matching the class named <code class="language-plaintext highlighter-rouge">Hello</code> (<code class="language-plaintext highlighter-rouge">.class</code> files are named for the Class they contain) is sitting in the current directory, which is on the Classpath, and the JVM is able to find it.</p>
 
 <h3 id="package-and-directory-conventions">Package and Directory Conventions</h3>
 
 <p>So we can compile and run a trivial example with 1 class, but what about when there are more of them, and they want to interact?</p>
 
-<p>In practice, Java code is usually organized into packages (that’s the <code class="highlighter-rouge"><span class="k">package</span> <span class="n">com</span><span class="p">.</span><span class="n">mycorp</span><span class="p">.</span><span class="n">foo</span></code> you see at the top of all your company’s Java files), and there’s a <a href="https://docs.oracle.com/javase/tutorial/java/package/managingfiles.html">convention</a> of expecting <code class="highlighter-rouge">.class</code> files on the Classpath to be organized in a directory structure that matches their package hierarchy.</p>
+<p>In practice, Java code is usually organized into packages (that’s the <code class="language-plaintext highlighter-rouge">package com.mycorp.foo</code> you see at the top of all your company’s Java files), and there’s a <a href="https://docs.oracle.com/javase/tutorial/java/package/managingfiles.html">convention</a> of expecting <code class="language-plaintext highlighter-rouge">.class</code> files on the Classpath to be organized in a directory structure that matches their package hierarchy.</p>
 
 <p>So, a more realistic example of a simple source / class tree might be:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ./example/Pizza.java</span>
-<span class="kn">package</span> <span class="n">example</span><span class="o">;</span>
+<span class="kn">package</span> <span class="nn">example</span><span class="o">;</span>
 
 <span class="kn">import</span> <span class="nn">example.Calzone</span><span class="o">;</span>
 
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">Pizza</span> <span class="o">{</span>
-  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">Calzone</span><span class="o">.</span><span class="na">yum</span><span class="o">);</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="nc">Calzone</span><span class="o">.</span><span class="na">yum</span><span class="o">);</span>
   <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ./example/Calzone.java</span>
-<span class="kn">package</span> <span class="n">example</span><span class="o">;</span>
+<span class="kn">package</span> <span class="nn">example</span><span class="o">;</span>
 
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">Calzone</span> <span class="o">{</span>
-  <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="n">yum</span> <span class="o">=</span> <span class="s">"yummm"</span><span class="o">;</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="nc">String</span> <span class="n">yum</span> <span class="o">=</span> <span class="s">"yummm"</span><span class="o">;</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
 <p>Now we have 2 classes interacting via an import. We can compile the whole structure:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ javac example/*.java
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ javac example/*.java
 $ tree .
 .
 └── example
@@ -150,35 +150,35 @@ $ tree .
 
 <p>And execute it:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ java example.Pizza
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ java example.Pizza
 yummm
 </code></pre></div></div>
 
-<p>This loads 2 of our classes: <code class="highlighter-rouge">example.Pizza</code>, which we triggered explicitly, and <code class="highlighter-rouge">example.Calzone</code>, which <code class="highlighter-rouge">example.Pizza</code> imports. In both cases, the JVM is able to find these by traversing the classpath (<code class="highlighter-rouge">"."</code>, the default) to find the corresponding class files (<code class="highlighter-rouge">Pizza.class</code> and <code class="highlighter-rouge">Calzone.class</code>, matching their class names) under the directory (<code class="highlighter-rouge">./example/</code>) which corresponds to their package name.</p>
+<p>This loads 2 of our classes: <code class="language-plaintext highlighter-rouge">example.Pizza</code>, which we triggered explicitly, and <code class="language-plaintext highlighter-rouge">example.Calzone</code>, which <code class="language-plaintext highlighter-rouge">example.Pizza</code> imports. In both cases, the JVM is able to find these by traversing the classpath (<code class="language-plaintext highlighter-rouge">"."</code>, the default) to find the corresponding class files (<code class="language-plaintext highlighter-rouge">Pizza.class</code> and <code class="language-plaintext highlighter-rouge">Calzone.class</code>, matching their class names) under the directory (<code class="language-plaintext highlighter-rouge">./example/</code>) which corresponds to their package name.</p>
 
-<p>You can actually watch the JVM work through this process on the fly using the <code class="highlighter-rouge">-XX:+TraceClassLoading</code> debug flag. Running it on even a simple program will include a lot of noise from various system classes being loaded, but if you filter the results to our package you’ll see it loading the 2 classes:</p>
+<p>You can actually watch the JVM work through this process on the fly using the <code class="language-plaintext highlighter-rouge">-XX:+TraceClassLoading</code> debug flag. Running it on even a simple program will include a lot of noise from various system classes being loaded, but if you filter the results to our package you’ll see it loading the 2 classes:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ java -XX:+TraceClassLoading example.Pizza | rg example
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ java -XX:+TraceClassLoading example.Pizza | rg example
 [Loaded example.Pizza from file:/home/worace/scratch/jar-hell/]
 [Loaded example.Calzone from file:/home/worace/scratch/jar-hell/]
 </code></pre></div></div>
 
 <h2 id="packaging-classes-into-jar-files">Packaging Classes into JAR Files</h2>
 
-<p>So using manual <code class="highlighter-rouge">javac</code> commands and some careful directory organization, we can produce a Classpath which gives the runtime what it wants:</p>
+<p>So using manual <code class="language-plaintext highlighter-rouge">javac</code> commands and some careful directory organization, we can produce a Classpath which gives the runtime what it wants:</p>
 
 <ul>
   <li>One (or more) searchable base directories containing…</li>
   <li>Class files organized into subdirectories according to their package hierarchy</li>
 </ul>
 
-<p>If needed, we could even wire up a crude deployment system from this by just <code class="highlighter-rouge">scp</code>-ing our whole directory to a server, <code class="highlighter-rouge">ssh</code>-ing into it, and running <code class="highlighter-rouge">java Foo</code>. And JVM code certainly <em>can</em> be deployed this way.</p>
+<p>If needed, we could even wire up a crude deployment system from this by just <code class="language-plaintext highlighter-rouge">scp</code>-ing our whole directory to a server, <code class="language-plaintext highlighter-rouge">ssh</code>-ing into it, and running <code class="language-plaintext highlighter-rouge">java Foo</code>. And JVM code certainly <em>can</em> be deployed this way.</p>
 
-<p>But, carting around <code class="highlighter-rouge">.class</code> trees manually gets tedious, so they created a specification for packaging them into more organized bundles, called <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jarGuide.html">JAR files</a>.</p>
+<p>But, carting around <code class="language-plaintext highlighter-rouge">.class</code> trees manually gets tedious, so they created a specification for packaging them into more organized bundles, called <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jarGuide.html">JAR files</a>.</p>
 
-<p>A JAR is basically a Zip archive (you can literally unpack them with <code class="highlighter-rouge">unzip</code>) containing a tree of class files along with some metadata. You can see how they work yourself by pulling one from a public package archive and unpacking it:</p>
+<p>A JAR is basically a Zip archive (you can literally unpack them with <code class="language-plaintext highlighter-rouge">unzip</code>) containing a tree of class files along with some metadata. You can see how they work yourself by pulling one from a public package archive and unpacking it:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ wget https://repo1.maven.org/maven2/ch/hsr/geohash/1.3.0/geohash-1.3.0.jar
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ wget https://repo1.maven.org/maven2/ch/hsr/geohash/1.3.0/geohash-1.3.0.jar
 $ unzip geohash-1.3.0.jar
 Archive:  geohash-1.3.0.jar
    creating: META-INF/
@@ -202,9 +202,9 @@ ch
             # etc...
 </code></pre></div></div>
 
-<p>You can also use the <a href="https://docs.oracle.com/javase/tutorial/deployment/jar/view.html"><code class="highlighter-rouge">jar</code> executable</a> to see similar output without actually unzipping the file: <code class="highlighter-rouge">jar tf blah.jar</code> for example will list out all of the contained files.</p>
+<p>You can also use the <a href="https://docs.oracle.com/javase/tutorial/deployment/jar/view.html"><code class="language-plaintext highlighter-rouge">jar</code> executable</a> to see similar output without actually unzipping the file: <code class="language-plaintext highlighter-rouge">jar tf blah.jar</code> for example will list out all of the contained files.</p>
 
-<p>Everything under <code class="highlighter-rouge">META-INF/</code> is metadata describing the packaged code, while the tree of class files corresponds to the compiled representations of the Java sources you can find <a href="https://github.com/kungfoo/geohash-java">here on github</a>. If you examine the code in that repo, you’ll see the package names and source directory structure match the <code class="highlighter-rouge">.class</code> tree in this JAR, just like our <code class="highlighter-rouge">example.Calzone</code> and <code class="highlighter-rouge">./example/Calzone.class</code> tree matched before.</p>
+<p>Everything under <code class="language-plaintext highlighter-rouge">META-INF/</code> is metadata describing the packaged code, while the tree of class files corresponds to the compiled representations of the Java sources you can find <a href="https://github.com/kungfoo/geohash-java">here on github</a>. If you examine the code in that repo, you’ll see the package names and source directory structure match the <code class="language-plaintext highlighter-rouge">.class</code> tree in this JAR, just like our <code class="language-plaintext highlighter-rouge">example.Calzone</code> and <code class="language-plaintext highlighter-rouge">./example/Calzone.class</code> tree matched before.</p>
 
 <p>Many JVM tools understand JARs, meaning you <strong>can use them directly as part of your classpath</strong>:</p>
 
@@ -215,7 +215,7 @@ scala&gt; import ch.hsr.geohash.GeoHash
 import ch.hsr.geohash.GeoHash
 </code></pre></div></div>
 
-<p>As with your shell’s <code class="highlighter-rouge">$PATH</code> variable, you can include multiple Classpath entries by separating them with <code class="highlighter-rouge">:</code>. For example, if your project depended on several external libraries, you could utilize them all like this: <code class="highlighter-rouge">java -cp /path/to/lib1.jar:/path/to/lib2.jar:/path/to/lib3.jar com.example.MyClass</code>.</p>
+<p>As with your shell’s <code class="language-plaintext highlighter-rouge">$PATH</code> variable, you can include multiple Classpath entries by separating them with <code class="language-plaintext highlighter-rouge">:</code>. For example, if your project depended on several external libraries, you could utilize them all like this: <code class="language-plaintext highlighter-rouge">java -cp /path/to/lib1.jar:/path/to/lib2.jar:/path/to/lib3.jar com.example.MyClass</code>.</p>
 
 <p>But, managing lists of JARs for a Classpath by hand also gets tedious, so in practice most of this generally gets done using a build tool…</p>
 
@@ -243,9 +243,9 @@ import ch.hsr.geohash.GeoHash
   <li>A list of dependencies, expressed in the same Group/Artifact/Version format</li>
 </ol>
 
-<p>Maven uses an XML-based Manifest format, called the <a href="https://maven.apache.org/guides/introduction/introduction-to-the-pom.html">POM</a>, or Project Object Model, to describe items 2 and 3. A project’s POM gets written into a <code class="highlighter-rouge">pom.xml</code> file, often in the root of a project, and functions similarly to things like <code class="highlighter-rouge">package.json</code>, <code class="highlighter-rouge">Cargo.toml</code>, <code class="highlighter-rouge">Gemfile</code> + <code class="highlighter-rouge">gemspec</code>, or <code class="highlighter-rouge">mix.exs</code> that you may have seen in other build systems.</p>
+<p>Maven uses an XML-based Manifest format, called the <a href="https://maven.apache.org/guides/introduction/introduction-to-the-pom.html">POM</a>, or Project Object Model, to describe items 2 and 3. A project’s POM gets written into a <code class="language-plaintext highlighter-rouge">pom.xml</code> file, often in the root of a project, and functions similarly to things like <code class="language-plaintext highlighter-rouge">package.json</code>, <code class="language-plaintext highlighter-rouge">Cargo.toml</code>, <code class="language-plaintext highlighter-rouge">Gemfile</code> + <code class="language-plaintext highlighter-rouge">gemspec</code>, or <code class="language-plaintext highlighter-rouge">mix.exs</code> that you may have seen in other build systems.</p>
 
-<p>Here’s an example <code class="highlighter-rouge">pom.xml</code> that defines a project with group <code class="highlighter-rouge">com.example</code>, artifact <code class="highlighter-rouge">my-app</code>, version <code class="highlighter-rouge">1.0</code>, and a single dependency, <code class="highlighter-rouge">ch.hsr.geohash</code> version 1.3.0:</p>
+<p>Here’s an example <code class="language-plaintext highlighter-rouge">pom.xml</code> that defines a project with group <code class="language-plaintext highlighter-rouge">com.example</code>, artifact <code class="language-plaintext highlighter-rouge">my-app</code>, version <code class="language-plaintext highlighter-rouge">1.0</code>, and a single dependency, <code class="language-plaintext highlighter-rouge">ch.hsr.geohash</code> version 1.3.0:</p>
 
 <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;project&gt;</span>
   <span class="nt">&lt;modelVersion&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
@@ -264,38 +264,38 @@ import ch.hsr.geohash.GeoHash
 
 <h3 id="dependency-resolution--classpath-management">Dependency Resolution + Classpath Management</h3>
 
-<p>The POM <code class="highlighter-rouge">&lt;dependencies/&gt;</code> list allows us to encode dependency graphs alongside JARs of compiled code. To share a Java library, you can publish your JAR plus a POM to a public package repository like <a href="https://repo.maven.apache.org/maven2/">Maven Central</a>. (Aside: package repositories often rename this file to <code class="highlighter-rouge">&lt;group&gt;-&lt;artifact&gt;-&lt;version.pom</code> instead of <code class="highlighter-rouge">pom.xml</code>, which is helpful because you don’t end up with 100 identically named <code class="highlighter-rouge">pom.xml</code> files, so you can e.g. package them into a JAR as resource files). Then, other users can retrieve both of these files, use the attached <code class="highlighter-rouge">.pom</code> to identify additional transitive dependencies, and repeat the process until they’ve resolved the full tree.</p>
+<p>The POM <code class="language-plaintext highlighter-rouge">&lt;dependencies/&gt;</code> list allows us to encode dependency graphs alongside JARs of compiled code. To share a Java library, you can publish your JAR plus a POM to a public package repository like <a href="https://repo.maven.apache.org/maven2/">Maven Central</a>. (Aside: package repositories often rename this file to <code class="language-plaintext highlighter-rouge">&lt;group&gt;-&lt;artifact&gt;-&lt;version.pom</code> instead of <code class="language-plaintext highlighter-rouge">pom.xml</code>, which is helpful because you don’t end up with 100 identically named <code class="language-plaintext highlighter-rouge">pom.xml</code> files, so you can e.g. package them into a JAR as resource files). Then, other users can retrieve both of these files, use the attached <code class="language-plaintext highlighter-rouge">.pom</code> to identify additional transitive dependencies, and repeat the process until they’ve resolved the full tree.</p>
 
 <p>Finally, once the build tool has resolved and downloaded all your dependencies, it can use the POM tree to automatically assemble a Classpath for compiling and running your project’s code. <strong>One of the build tool’s many responsibilities is flattening your dependency <em>tree</em>, via deduplication and version conflict resolution, into a <em>list</em>, where each individual package only appears once</strong>.</p>
 
 <p>There are certainly a lot of pitfalls along this path (e.g. what happens if you depend on 2 libraries A and B which both depend on different versions of library C), which we’ll look at more in Part 3. But optimistically, on the happy path, this process allows Maven (or another build tool) to programmatically turn a list of libraries contained in a dependency list into a usable Classpath.</p>
 
-<p>So while we looked before at specifying a Classpath manually, like <code class="highlighter-rouge">java -cp /path/to/lib1.jar:/path/to/lib2.jar com.example.MyClass</code>, in practice that process will almost always be managed by a build tool. When you run something like <code class="highlighter-rouge">mvn test</code> or <code class="highlighter-rouge">mvn compile</code>, the Classpath is still there. But Maven is handling it for you, automatically, based on the information in your <code class="highlighter-rouge">pom.xml</code>.</p>
+<p>So while we looked before at specifying a Classpath manually, like <code class="language-plaintext highlighter-rouge">java -cp /path/to/lib1.jar:/path/to/lib2.jar com.example.MyClass</code>, in practice that process will almost always be managed by a build tool. When you run something like <code class="language-plaintext highlighter-rouge">mvn test</code> or <code class="language-plaintext highlighter-rouge">mvn compile</code>, the Classpath is still there. But Maven is handling it for you, automatically, based on the information in your <code class="language-plaintext highlighter-rouge">pom.xml</code>.</p>
 
 <p>You can see this at work by examining your project’s Classpath directly. Here’s an example from the geohash-java project we saw before:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ mvn dependency:build-classpath
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ mvn dependency:build-classpath
 # ...
 [INFO] Dependencies classpath:
 /Users/worace/.m2/repository/junit/junit/4.13.1/junit-4.13.1.jar:/Users/worace/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
 </code></pre></div></div>
 
-<p>Most build tools use some sort of local cache directory to save copies of remote dependencies, which for Maven is <code class="highlighter-rouge">~/.m2</code>. So the packages we see here in directories like <code class="highlighter-rouge">/Users/&lt;ME&gt;/.m2/repository/...</code> are libraries that it has fetched from a remote source.</p>
+<p>Most build tools use some sort of local cache directory to save copies of remote dependencies, which for Maven is <code class="language-plaintext highlighter-rouge">~/.m2</code>. So the packages we see here in directories like <code class="language-plaintext highlighter-rouge">/Users/&lt;ME&gt;/.m2/repository/...</code> are libraries that it has fetched from a remote source.</p>
 
 <h3 id="maven-and-the-broader-ecosystem">Maven and the Broader Ecosystem</h3>
 
 <p>Over the years a number of other build tools have been developed for the JVM: <a href="https://leiningen.org/">Leiningen (Clojure)</a>, <a href="https://www.scala-sbt.org/">sbt (scala)</a>, <a href="https://gradle.org/">Gradle (groovy, kotlin, etc)</a>, not to mention the “monorepo” tools like <a href="https://www.pantsbuild.org/">Pants</a> and <a href="https://bazel.build/">Bazel</a>. But they all follow the same basic model: use a project spec to recursively retrieve library JAR files + dependency manifests, then generate a Classpath to use these libraries for compiling and running local source code.</p>
 
-<p>And while these tools all have their own semantics, special features, and configuration files (<code class="highlighter-rouge">build.sbt</code>, <code class="highlighter-rouge">project.clj</code>, <code class="highlighter-rouge">build.gradle</code>, etc), they generally still support Maven’s <code class="highlighter-rouge">pom.xml</code> as a standard interoperable dependency manifest format. So often when we speak of “Maven libraries”, we don’t necessarily mean “projects directly managed by the Maven build tool”, but simply libraries built and distributed in keeping with the conventions Maven established.</p>
+<p>And while these tools all have their own semantics, special features, and configuration files (<code class="language-plaintext highlighter-rouge">build.sbt</code>, <code class="language-plaintext highlighter-rouge">project.clj</code>, <code class="language-plaintext highlighter-rouge">build.gradle</code>, etc), they generally still support Maven’s <code class="language-plaintext highlighter-rouge">pom.xml</code> as a standard interoperable dependency manifest format. So often when we speak of “Maven libraries”, we don’t necessarily mean “projects directly managed by the Maven build tool”, but simply libraries built and distributed in keeping with the conventions Maven established.</p>
 
 <h2 id="summary-and-next-steps">Summary and Next Steps</h2>
 
 <p>So to recap:</p>
 
 <ul>
-  <li>Compilers (<code class="highlighter-rouge">javac</code>, <code class="highlighter-rouge">scalac</code>, etc) turn language source code into bytecode (<code class="highlighter-rouge">.class</code> files) which the JVM can run</li>
-  <li>JAR files bundle compiled <code class="highlighter-rouge">.class</code> files into manageable packages</li>
-  <li>Project manifests like a <code class="highlighter-rouge">pom.xml</code> attach library versioning + dependency semantics to bundled JAR packages</li>
+  <li>Compilers (<code class="language-plaintext highlighter-rouge">javac</code>, <code class="language-plaintext highlighter-rouge">scalac</code>, etc) turn language source code into bytecode (<code class="language-plaintext highlighter-rouge">.class</code> files) which the JVM can run</li>
+  <li>JAR files bundle compiled <code class="language-plaintext highlighter-rouge">.class</code> files into manageable packages</li>
+  <li>Project manifests like a <code class="language-plaintext highlighter-rouge">pom.xml</code> attach library versioning + dependency semantics to bundled JAR packages</li>
   <li>Build tools use this dependency info to retrieve required packages for your project and programmatically assemble a Classpath for compiling, testing, and running your code</li>
 </ul>
 

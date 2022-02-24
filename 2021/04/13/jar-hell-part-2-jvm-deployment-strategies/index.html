@@ -4,7 +4,7 @@
   <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="last-modified" content="2021-11-17T16:33:13-08:00" />
+  <meta http-equiv="last-modified" content="2022-02-23T18:47:26-08:00" />
 
   <title>
     
@@ -56,7 +56,7 @@
   <time datetime="2021-04-13T09:40:00-07:00" class="post-date">13 Apr 2021</time>
   <p>In <a href="/2021/04/04/jar-hell-part-1-compilation-classpath-libraries/">Part 1</a>, we looked at the basic model for loading and executing code on the JVM.</p>
 
-<p>We saw how Classes (usually represented by <code class="highlighter-rouge">.class</code> files) provide the basic unit for JVM code, and how the Classpath makes classes (usually organized into JARs) available to the JVM at compile- and runtime. And we saw how tools like Maven help us use external libraries by fetching them from package repositories and incorporating them into the local Classpath.</p>
+<p>We saw how Classes (usually represented by <code class="language-plaintext highlighter-rouge">.class</code> files) provide the basic unit for JVM code, and how the Classpath makes classes (usually organized into JARs) available to the JVM at compile- and runtime. And we saw how tools like Maven help us use external libraries by fetching them from package repositories and incorporating them into the local Classpath.</p>
 
 <p>But what about production deployments?</p>
 
@@ -68,11 +68,11 @@
 
 <p>Software projects can be coarsely divided into 2 groups: Libraries and Applications. Libraries are consumed by other code, while Applications are meant to run on their own. On the JVM, both types of software can be packaged as JARs, but there are some common conventions around how each gets handled.</p>
 
-<p>In general, library JARs only contain a “shallow” bundle of compiled <code class="highlighter-rouge">.class</code> files, meaning they include <em>their own</em> direct code but not that of their dependencies. This is sometimes also called a “skinny” JAR.</p>
+<p>In general, library JARs only contain a “shallow” bundle of compiled <code class="language-plaintext highlighter-rouge">.class</code> files, meaning they include <em>their own</em> direct code but not that of their dependencies. This is sometimes also called a “skinny” JAR.</p>
 
 <p>You might ask how this is useful, since if we depend on library A, and A depends on B, we obviously can’t run our application without also having B. But the answer is that the developers of A expect you to retrieve B on your own after consulting A’s dependency manifest (i.e. its Maven POM). When dealing with <em>libraries</em> we prefer smaller, granular packages that can be managed programmatically by a build tool. This gives downstream users more flexibility to cache packages, handle dependency conflicts, etc.</p>
 
-<p><em>Applications</em>, by contrast, are not intended for distribution to other developers or consumption by other code. Rather, they’re meant to run as standalone artifacts (e.g. they probably include a <code class="highlighter-rouge">main</code> method).</p>
+<p><em>Applications</em>, by contrast, are not intended for distribution to other developers or consumption by other code. Rather, they’re meant to run as standalone artifacts (e.g. they probably include a <code class="language-plaintext highlighter-rouge">main</code> method).</p>
 
 <p>Applications require a deployment strategy which, one way or another, gets the application’s own code, along with a fully resolved Classpath containing any necessary libraries, into the target runtime environment. This type of deployment – running compiled applications along with their dependencies – is what we’re focused on in this article.</p>
 
@@ -94,7 +94,7 @@
 
 <p>For starters we can always just do a straightforward upload of the library JARs our build tool resolves for our Classpath, along with the one it has create for our own code.</p>
 
-<p>For example if we’re using Maven, we’ll end up with a classpath / run command (locally) that looks something like <code class="highlighter-rouge">java -cp ./target/my-app.jar:~/.m2/repository/foo.jar:~/.m2/repository/bar.jar com.mycorp.MyMainClass</code>. So to run in prod, we have to push those same 3 JARs into our target environment, and run a <code class="highlighter-rouge">java</code> command with them in the same Classpath arrangement.</p>
+<p>For example if we’re using Maven, we’ll end up with a classpath / run command (locally) that looks something like <code class="language-plaintext highlighter-rouge">java -cp ./target/my-app.jar:~/.m2/repository/foo.jar:~/.m2/repository/bar.jar com.mycorp.MyMainClass</code>. So to run in prod, we have to push those same 3 JARs into our target environment, and run a <code class="language-plaintext highlighter-rouge">java</code> command with them in the same Classpath arrangement.</p>
 
 <p>There are a lot of ways to achieve this, so I tend to think of it as a rough pattern more than a specific implementation.</p>
 
@@ -108,7 +108,7 @@
 
 <p>It turns out JARs <em>can</em> be used (abused?) in this way, by creating what’s called an “Uber” JAR (AKA “Assembly” or “Fat” JAR). An uberjar flattens out the compiled code from your project’s JAR, <em>plus the compiled code from all the JARs on its classpath</em> into a single output JAR. It’s basically a whole bunch of JARs squished into one.</p>
 
-<p>The benefit of this is that the final product no longer has any dependencies. Its whole Classpath is just the one resulting JAR, and your whole deployment model can consist of uploading the uberjar to production and invoking <code class="highlighter-rouge">java -jar my-application.jar</code>. It’s sort of the JAR equivalent of building a single executable binary out of a language like Go or Rust.</p>
+<p>The benefit of this is that the final product no longer has any dependencies. Its whole Classpath is just the one resulting JAR, and your whole deployment model can consist of uploading the uberjar to production and invoking <code class="language-plaintext highlighter-rouge">java -jar my-application.jar</code>. It’s sort of the JAR equivalent of building a single executable binary out of a language like Go or Rust.</p>
 
 <p>The simplicity of the single-file deployment strategy has made uberjars popular in recent years. They’re especially common in the Hadoop/Spark ecosystem, but get used a lot for web services or other server applications as well.</p>
 
@@ -120,11 +120,11 @@
 
 <h5 id="resource-deduplication">Resource Deduplication</h5>
 
-<p>In addition to the usual <code class="highlighter-rouge">.class</code> files, JARs can also contain other non-code files called “resources”. These could be configuration files, static assets, etc., and can be accessed programmatically via Java <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/lang/resources.html">APIs</a>.</p>
+<p>In addition to the usual <code class="language-plaintext highlighter-rouge">.class</code> files, JARs can also contain other non-code files called “resources”. These could be configuration files, static assets, etc., and can be accessed programmatically via Java <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/lang/resources.html">APIs</a>.</p>
 
 <p>The catch is that resource files in a JAR have to be unique (by path), so when you squash all your deps into a single uberjar, you’ll likely run into conflicts that have to be resolved. Different tools have different ways of configuring this, but it’s common to specify a “Merge Strategy” for handling these conflicts. For example here’s <a href="https://github.com/sbt/sbt-assembly#merge-strategy">sbt-assembly’s docs on the subject</a>.</p>
 
-<p>Depending on your application and what libraries you’re using, Resource Deduplication can either be a minor annoyance or a huge headache. For example a lot of JARs include metadata files like <code class="highlighter-rouge">META-INF/manifest.mf</code> that can be discarded – no big deal. But you can also find collisions between important configuration files which lead to creative workarounds like concatenating and hoping the combined file will satisfy both of the libraries that provided it.</p>
+<p>Depending on your application and what libraries you’re using, Resource Deduplication can either be a minor annoyance or a huge headache. For example a lot of JARs include metadata files like <code class="language-plaintext highlighter-rouge">META-INF/manifest.mf</code> that can be discarded – no big deal. But you can also find collisions between important configuration files which lead to creative workarounds like concatenating and hoping the combined file will satisfy both of the libraries that provided it.</p>
 
 <p><strong>Edit:</strong> This article has prompted some interesting discussion around the Pros and Cons of the mult-JAR vs Uberjar strategies with regard to resource collisions. <a href="https://github.com/worace/multi-jar-vs-uberjar-resources">Here is an example Github Repo</a> demonstrating some of these issues. TL;DR multi-JAR Classpaths are still prone to resource collisions, they just will often happen silently with a “first one wins” strategy. So building an Uberjar <em>can</em> be a benefit in these cases because most build tools will warn you about these conflicts force you to resolve them at build time.</p>
 
@@ -147,7 +147,7 @@
 
 <p><a href="https://docs.oracle.com/cd/E19199-01/816-6774-10/a_war.html">WAR Files</a> are a special JAR variant used for deploying certain types of Java web applications in the J2EE ecosystem. J2EE is a whole can of worms that I honestly don’t know much about, nor am I very interested in learning. But it does come up a lot so it’s worth touching on here.</p>
 
-<p>In short, these applications are designed to deploy not to generic VMs (like a bare Ubuntu EC2 instance with <code class="highlighter-rouge">java</code> installed) but rather into specialized Java-based <a href="https://en.wikipedia.org/wiki/List_of_application_servers#Java">Application Servers</a>, like <a href="http://tomcat.apache.org/">Apache Tomcat</a>. Your company would run one or more of these Tomcat instances, which get treated as shared infrastructure, and individual applications get pacakged into WARs and deployed into a pre-existing App Server, probably along with a bunch of other application WAR files.</p>
+<p>In short, these applications are designed to deploy not to generic VMs (like a bare Ubuntu EC2 instance with <code class="language-plaintext highlighter-rouge">java</code> installed) but rather into specialized Java-based <a href="https://en.wikipedia.org/wiki/List_of_application_servers#Java">Application Servers</a>, like <a href="http://tomcat.apache.org/">Apache Tomcat</a>. Your company would run one or more of these Tomcat instances, which get treated as shared infrastructure, and individual applications get pacakged into WARs and deployed into a pre-existing App Server, probably along with a bunch of other application WAR files.</p>
 
 <p>The Application Server manages your app’s lifecycle, along with providing some shared system services, and because of these interactions extra care must be taken to ensure the 2 components cooperate well, which is what the WAR spec provides.</p>
 
@@ -155,7 +155,7 @@
 
 <p>Despite my skepticism and poorly masked disdain for all this, it is kind of amusing to read about. If you squint right, running WARs via Tomcat isn’t so different from running “pods” of “containers” on abstracted machines via kubernetes, just with a lot more enterprise-y pocket protector vibes.</p>
 
-<p>And the decline of one is certainly related to the rise of the other – while there are plenty of J2EE deployments running out there, much of the industry has moved away from this model. These days people care more about cloud portability and deployment standardization (e.g. running with Docker or deploying via the <a href="https://12factor.net/">12 Factor Model</a>). This makes highly customized, language-specific infrastructure less appealing than a giant uberjar you can run with a single <code class="highlighter-rouge">java -jar</code> command.</p>
+<p>And the decline of one is certainly related to the rise of the other – while there are plenty of J2EE deployments running out there, much of the industry has moved away from this model. These days people care more about cloud portability and deployment standardization (e.g. running with Docker or deploying via the <a href="https://12factor.net/">12 Factor Model</a>). This makes highly customized, language-specific infrastructure less appealing than a giant uberjar you can run with a single <code class="language-plaintext highlighter-rouge">java -jar</code> command.</p>
 
 <h3 id="docker-and-container-images">Docker and Container Images</h3>
 
@@ -169,7 +169,7 @@
 
 <ul>
   <li>Put your compiled code and all your dependencies into a docker image and include an entrypoint command that invokes them with the proper settings and Classpath. Basically the “Push &amp; Script” strategy but in Docker. (sbt’s <a href="https://www.scala-sbt.org/sbt-native-packager/formats/docker.html">native-packager</a> plugin does this)</li>
-  <li>Build an uberjar and put it in a JDK docker image. Your Dockerfile <code class="highlighter-rouge">CMD</code> setting will be something like <code class="highlighter-rouge">java -jar /path/to/that.jar</code></li>
+  <li>Build an uberjar and put it in a JDK docker image. Your Dockerfile <code class="language-plaintext highlighter-rouge">CMD</code> setting will be something like <code class="language-plaintext highlighter-rouge">java -jar /path/to/that.jar</code></li>
   <li>Use a dedicated Java-to-Container build plugin like <a href="https://github.com/GoogleContainerTools/jib">Google’s Jib</a>.</li>
 </ul>
 
@@ -177,7 +177,7 @@
 
 <p><a href="https://github.com/GoogleContainerTools/jib">Jib</a> is a new-ish project providing a pure-Java build tool for the <a href="https://github.com/opencontainers/image-spec">OCI Image Spec</a>. This is interesting for a few reasons.</p>
 
-<p>First, because it’s implemented in Java, Jib integrates into existing JVM build tools. Normally, running <code class="highlighter-rouge">docker build</code> requires an RPC connection to a Docker daemon process on your machine. You need to have Docker installed, and the build process has to copy things back and forth between the daemon and the docker client. Jib allows you to sidestep all this and keep things entirely within your Maven or Gradle build.</p>
+<p>First, because it’s implemented in Java, Jib integrates into existing JVM build tools. Normally, running <code class="language-plaintext highlighter-rouge">docker build</code> requires an RPC connection to a Docker daemon process on your machine. You need to have Docker installed, and the build process has to copy things back and forth between the daemon and the docker client. Jib allows you to sidestep all this and keep things entirely within your Maven or Gradle build.</p>
 
 <p>Second, by targeting Java applications specifically (rather than providing a general-purpose container build tool) Jib is able to make some creative optimizations like:</p>
 
@@ -202,7 +202,7 @@
 
 <p>Traditionally, the JVM uses a JIT compiler to turn bytecode into native machine code at runtime. But Graal lets us do this at build time, which opens up the possibility of packaging JVM applications into self-contained, platform-specific executables, called <a href="https://www.graalvm.org/reference-manual/native-image/">Native Images</a>.</p>
 
-<p>A native image includes all of your application’s code, its dependencies, plus the necessary Java Runtime bits like the standard library and the garbage collector. It’s all there in one standalone binary package, so you don’t even need to have <code class="highlighter-rouge">java</code> installed anymore.</p>
+<p>A native image includes all of your application’s code, its dependencies, plus the necessary Java Runtime bits like the standard library and the garbage collector. It’s all there in one standalone binary package, so you don’t even need to have <code class="language-plaintext highlighter-rouge">java</code> installed anymore.</p>
 
 <p>Because the runtime doesn’t have to JIT all your code at startup, the resulting program also starts <em>much</em> faster and requires less memory than traditional JVM programs, making it appealing for use cases like CLI utilities where the JVM previously was not a great fit.</p>
 
@@ -225,7 +225,7 @@
 
 <p>What’s next? I’m sure you must be thinking: “<em>Wow, with a rock-solid runtime and so many great deployment options, surely everything must work perfectly in production?</em>”</p>
 
-<p>Ha! If only! Just whisper the words <code class="highlighter-rouge">ClassNotFoundException</code> to a Java developer and see how they react.</p>
+<p>Ha! If only! Just whisper the words <code class="language-plaintext highlighter-rouge">ClassNotFoundException</code> to a Java developer and see how they react.</p>
 
 <p>Unfortunately, it does not, in fact, all work perfectly in production. To learn more about this, stay tuned for <strong>Part 3</strong>, in which we will descend into Classpath Hell, and hopefully emerge singed, but enlightened.</p>
 

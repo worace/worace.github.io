@@ -4,7 +4,7 @@
   <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="last-modified" content="2021-11-17T16:33:13-08:00" />
+  <meta http-equiv="last-modified" content="2022-02-23T18:47:26-08:00" />
 
   <title>
     
@@ -71,56 +71,56 @@
 
 <p>Then add some extensions and helpers to integrate the new model with existing types:</p>
 
-<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Mixin for your Play controllers
-</span><span class="k">trait</span> <span class="nc">PipelineHelpers</span> <span class="o">{</span>
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Mixin for your Play controllers</span>
+<span class="k">trait</span> <span class="nc">PipelineHelpers</span> <span class="o">{</span>
   <span class="k">import</span> <span class="nn">PipelineTypes._</span>
 
-  <span class="k">def</span> <span class="n">cc</span><span class="k">:</span> <span class="kt">play.api.mvc.ControllerComponents</span> <span class="c1">// Provide this from your controller instances
-</span>
-  <span class="k">def</span> <span class="nc">Handler</span><span class="o">(</span><span class="n">h</span><span class="k">:</span> <span class="o">(</span><span class="kt">Request</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">])</span> <span class="k">=&gt;</span> <span class="nc">PipelineRes</span><span class="o">)</span><span class="k">:</span> <span class="kt">Action</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
-    <span class="n">cc</span><span class="o">.</span><span class="n">actionBuilder</span><span class="o">.</span><span class="n">async</span> <span class="o">{</span> <span class="n">req</span><span class="k">:</span> <span class="kt">Request</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">]</span> <span class="k">=&gt;</span>
-      <span class="n">h</span><span class="o">(</span><span class="n">req</span><span class="o">).</span><span class="n">fold</span><span class="o">(</span><span class="n">a</span> <span class="k">=&gt;</span> <span class="n">a</span><span class="o">,</span> <span class="n">b</span> <span class="k">=&gt;</span> <span class="n">b</span><span class="o">).</span><span class="n">unsafeToFuture</span><span class="o">()</span>
+  <span class="k">def</span> <span class="nf">cc</span><span class="k">:</span> <span class="kt">play.api.mvc.ControllerComponents</span> <span class="c1">// Provide this from your controller instances</span>
+
+  <span class="k">def</span> <span class="nf">Handler</span><span class="o">(</span><span class="n">h</span><span class="k">:</span> <span class="o">(</span><span class="kt">Request</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">])</span> <span class="k">=&gt;</span> <span class="nc">PipelineRes</span><span class="o">)</span><span class="k">:</span> <span class="kt">Action</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="nv">cc</span><span class="o">.</span><span class="py">actionBuilder</span><span class="o">.</span><span class="py">async</span> <span class="o">{</span> <span class="n">req</span><span class="k">:</span> <span class="kt">Request</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">]</span> <span class="k">=&gt;</span>
+      <span class="nf">h</span><span class="o">(</span><span class="n">req</span><span class="o">).</span><span class="py">fold</span><span class="o">(</span><span class="n">a</span> <span class="k">=&gt;</span> <span class="n">a</span><span class="o">,</span> <span class="n">b</span> <span class="k">=&gt;</span> <span class="n">b</span><span class="o">).</span><span class="py">unsafeToFuture</span><span class="o">()</span>
     <span class="o">}</span>
   <span class="o">}</span>
 <span class="o">}</span>
 
-<span class="c1">// Extension methods to adapt common types into pipelines
-</span><span class="k">object</span> <span class="nc">PipelineExtensions</span> <span class="o">{</span>
+<span class="c1">// Extension methods to adapt common types into pipelines</span>
+<span class="k">object</span> <span class="nc">PipelineExtensions</span> <span class="o">{</span>
   <span class="k">implicit</span> <span class="k">class</span> <span class="nc">IOOptionExts</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">r</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">A</span><span class="o">]])</span> <span class="o">{</span>
-    <span class="c1">// IO[Option[MyRecord]](None).orNotFound
-</span>    <span class="c1">// Handles the very common "load this record from DB and give 404 if it's not there"
-</span>    <span class="k">def</span> <span class="n">orNotFound</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="n">orRes</span><span class="o">(</span><span class="nc">NotFound</span><span class="o">(</span><span class="s">"Not Found"</span><span class="o">))</span>
+    <span class="c1">// IO[Option[MyRecord]](None).orNotFound</span>
+    <span class="c1">// Handles the very common "load this record from DB and give 404 if it's not there"</span>
+    <span class="k">def</span> <span class="nf">orNotFound</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nf">orRes</span><span class="o">(</span><span class="nc">NotFound</span><span class="o">(</span><span class="s">"Not Found"</span><span class="o">))</span>
 
-    <span class="c1">// IO[Option[MyRecord]](None).orRes(Redirect("/pizza"))
-</span>    <span class="k">def</span> <span class="n">orRes</span><span class="o">(</span><span class="n">res</span><span class="k">:</span> <span class="kt">Result</span><span class="o">)</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span> <span class="o">{</span>
-      <span class="n">r</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">o</span> <span class="k">=&gt;</span> <span class="nc">Either</span><span class="o">.</span><span class="n">fromOption</span><span class="o">(</span><span class="n">o</span><span class="o">,</span> <span class="n">res</span><span class="o">))</span>
+    <span class="c1">// IO[Option[MyRecord]](None).orRes(Redirect("/pizza"))</span>
+    <span class="k">def</span> <span class="nf">orRes</span><span class="o">(</span><span class="n">res</span><span class="k">:</span> <span class="kt">Result</span><span class="o">)</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span> <span class="o">{</span>
+      <span class="nv">r</span><span class="o">.</span><span class="py">map</span><span class="o">(</span><span class="n">o</span> <span class="k">=&gt;</span> <span class="nv">Either</span><span class="o">.</span><span class="py">fromOption</span><span class="o">(</span><span class="n">o</span><span class="o">,</span> <span class="n">res</span><span class="o">))</span>
     <span class="o">}</span>
   <span class="o">}</span>
 
-  <span class="c1">// pass any IO[A] through to a pipeline context by calling .piped
-</span>  <span class="c1">// IO("some data").piped -&gt; EitherT[IO, Result, String]
-</span>  <span class="k">implicit</span> <span class="k">class</span> <span class="nc">IOToPipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">r</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="o">{</span>
-    <span class="k">def</span> <span class="n">piped</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span> <span class="o">{</span>
-      <span class="n">r</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">a</span> <span class="k">=&gt;</span> <span class="nc">Either</span><span class="o">.</span><span class="n">right</span><span class="o">[</span><span class="kt">Result</span>, <span class="kt">A</span><span class="o">](</span><span class="n">a</span><span class="o">))</span>
+  <span class="c1">// pass any IO[A] through to a pipeline context by calling .piped</span>
+  <span class="c1">// IO("some data").piped -&gt; EitherT[IO, Result, String]</span>
+  <span class="k">implicit</span> <span class="k">class</span> <span class="nc">IOToPipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">r</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="o">{</span>
+    <span class="k">def</span> <span class="nf">piped</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span> <span class="o">{</span>
+      <span class="nv">r</span><span class="o">.</span><span class="py">map</span><span class="o">(</span><span class="n">a</span> <span class="k">=&gt;</span> <span class="nv">Either</span><span class="o">.</span><span class="py">right</span><span class="o">[</span><span class="kt">Result</span>, <span class="kt">A</span><span class="o">](</span><span class="n">a</span><span class="o">))</span>
     <span class="o">}</span>
   <span class="o">}</span>
 
-  <span class="c1">// ...add your own as needed
-</span><span class="o">}</span>
+  <span class="c1">// ...add your own as needed</span>
+<span class="o">}</span>
 </code></pre></div></div>
 
-<p>Then use it in a controller for nice clean <code class="highlighter-rouge">for / yield</code> request pipelines:</p>
+<p>Then use it in a controller for nice clean <code class="language-plaintext highlighter-rouge">for / yield</code> request pipelines:</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyController</span> <span class="o">{</span>
-  <span class="k">def</span> <span class="n">download</span><span class="o">(</span><span class="n">fileId</span><span class="k">:</span> <span class="kt">UUID</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Handler</span> <span class="o">{</span> <span class="k">implicit</span> <span class="n">req</span> <span class="k">=&gt;</span>
+  <span class="k">def</span> <span class="nf">download</span><span class="o">(</span><span class="n">fileId</span><span class="k">:</span> <span class="kt">UUID</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Handler</span> <span class="o">{</span> <span class="k">implicit</span> <span class="n">req</span> <span class="k">=&gt;</span>
     <span class="k">for</span> <span class="o">{</span>
-      <span class="n">u</span> <span class="k">&lt;-</span> <span class="nc">Pipeline</span><span class="o">.</span><span class="n">authed</span> <span class="c1">// reusable auth pipeline: PipelineStage[User]
-</span>      <span class="n">savedFile</span> <span class="k">&lt;-</span> <span class="n">myApp</span><span class="o">.</span><span class="n">uploads</span><span class="o">.</span><span class="n">get</span><span class="o">(</span><span class="n">uploadId</span><span class="o">).</span><span class="n">orNotFound</span>
-      <span class="c1">// Permission helper I have added -- gives PipelineStage[E] for the permitted entity
-</span>      <span class="k">_</span> <span class="k">&lt;-</span> <span class="nc">Pipeline</span><span class="o">.</span><span class="n">permitted</span><span class="o">(</span><span class="n">u</span><span class="o">,</span> <span class="nc">Permission</span><span class="o">.</span><span class="nc">View</span><span class="o">,</span> <span class="n">savedFile</span><span class="o">)</span>
-      <span class="n">url</span> <span class="k">&lt;-</span> <span class="n">myApp</span><span class="o">.</span><span class="n">cloudStorage</span><span class="o">.</span><span class="n">signedDownloadUrl</span><span class="o">(</span><span class="n">upload</span><span class="o">).</span><span class="n">piped</span>
+      <span class="n">u</span> <span class="k">&lt;-</span> <span class="nv">Pipeline</span><span class="o">.</span><span class="py">authed</span> <span class="c1">// reusable auth pipeline: PipelineStage[User]</span>
+      <span class="n">savedFile</span> <span class="k">&lt;-</span> <span class="nv">myApp</span><span class="o">.</span><span class="py">uploads</span><span class="o">.</span><span class="py">get</span><span class="o">(</span><span class="n">uploadId</span><span class="o">).</span><span class="py">orNotFound</span>
+      <span class="c1">// Permission helper I have added -- gives PipelineStage[E] for the permitted entity</span>
+      <span class="k">_</span> <span class="k">&lt;-</span> <span class="nv">Pipeline</span><span class="o">.</span><span class="py">permitted</span><span class="o">(</span><span class="n">u</span><span class="o">,</span> <span class="nv">Permission</span><span class="o">.</span><span class="py">View</span><span class="o">,</span> <span class="n">savedFile</span><span class="o">)</span>
+      <span class="n">url</span> <span class="k">&lt;-</span> <span class="nv">myApp</span><span class="o">.</span><span class="py">cloudStorage</span><span class="o">.</span><span class="py">signedDownloadUrl</span><span class="o">(</span><span class="n">upload</span><span class="o">).</span><span class="py">piped</span>
     <span class="o">}</span> <span class="k">yield</span> <span class="o">{</span>
-      <span class="nc">Redirect</span><span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="n">toString</span><span class="o">)</span>
+      <span class="nc">Redirect</span><span class="o">(</span><span class="nv">url</span><span class="o">.</span><span class="py">toString</span><span class="o">)</span>
     <span class="o">}</span>
   <span class="o">}</span>
 <span class="o">}</span>
@@ -136,7 +136,7 @@
   <li>Solid implementation of MVC patterns</li>
   <li>Built-in support for all the web handling goodies you need (sessions, CORS, CSRF, Forms, Flash, Response Formats, etc)</li>
   <li>Statically typed routing + parameter handling – Seriously, if you forget a route or mis-match a parameter between your routes and your controller, your app won’t compile</li>
-  <li>Statically typed web templates – No more <code class="highlighter-rouge">ActionView::TemplateError</code> b/c you mis-named an instance variable in your template</li>
+  <li>Statically typed web templates – No more <code class="language-plaintext highlighter-rouge">ActionView::TemplateError</code> b/c you mis-named an instance variable in your template</li>
   <li>Helpers and Plugins for common web tasks like asset digesting</li>
   <li>Fast Enough (TM) for most use-cases, as long as you don’t get too sloppy blocking threads when you shouldn’t</li>
 </ul>
@@ -155,7 +155,7 @@
 
 <p>A pattern in many web frameworks is to provide some sort of abstraction for modeling this process as a pipeline of steps. Each step can either modify the working context and continue the pipeline (loading the current user is a classic example), or abort the pipeline by providing an HTTP response.</p>
 
-<p>The “abort and provide a response” path often represents an error state: for example a pipeline requiring an authenticated user might abort and redirect to the <code class="highlighter-rouge">/login</code> path if there was none. This pattern can be applied outside the context of web programming as well – sometimes it’s called <a href="https://fsharpforfunandprofit.com/rop/">Railway Oriented Programming</a>.</p>
+<p>The “abort and provide a response” path often represents an error state: for example a pipeline requiring an authenticated user might abort and redirect to the <code class="language-plaintext highlighter-rouge">/login</code> path if there was none. This pattern can be applied outside the context of web programming as well – sometimes it’s called <a href="https://fsharpforfunandprofit.com/rop/">Railway Oriented Programming</a>.</p>
 
 <p>Different web frameworks have different approaches to modeling request pipelines. In Rails you have <a href="https://guides.rubyonrails.org/action_controller_overview.html#filters">filters</a> which can modify request context by manipulating the current controller instance state. Elixir’s Phoenix has a well-developed API for defining <a href="https://hexdocs.pm/phoenix/routing.html#pipelines">pipelines</a> consisting of <a href="https://hexdocs.pm/phoenix/plug.html">plugs</a>. Django follows the Python pattern of using method <a href="https://docs.djangoproject.com/en/3.1/topics/http/decorators/">decorators</a> to wrap request handlers in re-usable pipeline logic. Http4s, another popular Scala web library, takes a heavily functional and type-driven approach by modeling <a href="https://http4s.org/v0.18/middleware/">middleware</a> using <a href="https://typelevel.org/cats/datatypes/kleisli.html">Kleisli</a> + <a href="https://typelevel.org/cats/datatypes/optiont.html">OptionT</a>.</p>
 
@@ -172,7 +172,7 @@
 
 <h3 id="plays-approach">Play’s Approach</h3>
 
-<p>In Play, <a href="https://www.playframework.com/documentation/2.8.x/ScalaActions">Action</a> is the core abstraction representing the HTTP request/response lifecycle. An Action represents the transformation <code class="highlighter-rouge">play.api.mvc.Request =&gt; play.api.mvc.Result</code>, which makes sense.</p>
+<p>In Play, <a href="https://www.playframework.com/documentation/2.8.x/ScalaActions">Action</a> is the core abstraction representing the HTTP request/response lifecycle. An Action represents the transformation <code class="language-plaintext highlighter-rouge">play.api.mvc.Request =&gt; play.api.mvc.Result</code>, which makes sense.</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Action</span> <span class="o">{</span> <span class="n">request</span> <span class="k">=&gt;</span>
   <span class="nc">Ok</span><span class="o">(</span><span class="s">"Turning a Request into a Result!"</span><span class="o">)</span>
@@ -198,41 +198,41 @@
 <p>I’m not sure I really understand all of the API design subtleties at play (ha!) with these features, but my hunch is that it comes down to some combination of these:</p>
 
 <ol>
-  <li>The <code class="highlighter-rouge">Action*</code> APIs are all generic over the type of the incoming request body, as well as over the type of the Request being handled. For example in <code class="highlighter-rouge">trait ActionBuilder[+R[_], B]</code>, the <code class="highlighter-rouge">B</code> represents an HTTP Body, for which you must provide a corresponding <code class="highlighter-rouge">BodyParser[B]</code>, while the <code class="highlighter-rouge">+R[_]</code> represents a Request. The request has to be generic because you might have to swap it out for your own (more on that in a second). This may be a reasonable and correct way to model this stuff, but for inexperienced users it becomes unwieldy quickly.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">Action*</code> APIs are all generic over the type of the incoming request body, as well as over the type of the Request being handled. For example in <code class="language-plaintext highlighter-rouge">trait ActionBuilder[+R[_], B]</code>, the <code class="language-plaintext highlighter-rouge">B</code> represents an HTTP Body, for which you must provide a corresponding <code class="language-plaintext highlighter-rouge">BodyParser[B]</code>, while the <code class="language-plaintext highlighter-rouge">+R[_]</code> represents a Request. The request has to be generic because you might have to swap it out for your own (more on that in a second). This may be a reasonable and correct way to model this stuff, but for inexperienced users it becomes unwieldy quickly.</li>
   <li>These APIs are all inheritance (trait) based which means you have to interface with them via defining new classes of your own. This leads to a lot of boilerplate, and makes it hard to quickly spin up ad-hoc implementations as you go. Especially once you start wanting to introduce your own parameters (to allow call-site customization of the Actions you’re building), it gets really hard to keep your definitions inline with the inheritance interfaces required by the base traits.</li>
   <li>As a statically typed framework, Play faces a challenge of what to do with new <strong>contextual data</strong> during Request processing.</li>
 </ol>
 
 <p>Even if you can master enough of the type hierarchy awareness required to confidently develop around points 1 and 2, point 3 turns out to be a pretty significant hurdle in providing a convenient developer API.</p>
 
-<p>Why is this such a problem for Play? Well, in dynamic language web frameworks, it’s common to stuff arbitrary data into the request context. For example in a Rails controller any object can be stashed as an instance variable at any point and thus retrieved via subsequent steps. Elixir’s Plug provides an <a href="https://hexdocs.pm/plug/Plug.Conn.html#assign/3">assigns</a> field on its <code class="highlighter-rouge">Conn</code> type for a similar purpose.</p>
+<p>Why is this such a problem for Play? Well, in dynamic language web frameworks, it’s common to stuff arbitrary data into the request context. For example in a Rails controller any object can be stashed as an instance variable at any point and thus retrieved via subsequent steps. Elixir’s Plug provides an <a href="https://hexdocs.pm/plug/Plug.Conn.html#assign/3">assigns</a> field on its <code class="language-plaintext highlighter-rouge">Conn</code> type for a similar purpose.</p>
 
-<p>Play provides a statically typed solution in the form of <a href="https://www.playframework.com/documentation/2.8.x/api/scala/play/api/mvc/WrappedRequest.html">WrappedRequest</a>. For example it’s very common to see applications define a <code class="highlighter-rouge">UserRequest</code> for tracking the authentication state of the request:</p>
+<p>Play provides a statically typed solution in the form of <a href="https://www.playframework.com/documentation/2.8.x/api/scala/play/api/mvc/WrappedRequest.html">WrappedRequest</a>. For example it’s very common to see applications define a <code class="language-plaintext highlighter-rouge">UserRequest</code> for tracking the authentication state of the request:</p>
 
-<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserRequest</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="k">val</span> <span class="n">user</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">User</span><span class="o">],</span> <span class="n">request</span><span class="k">:</span> <span class="kt">Request</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="k">extends</span> <span class="nc">WrappedRequest</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">request</span><span class="o">)</span>
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserRequest</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="k">val</span> <span class="nv">user</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">User</span><span class="o">],</span> <span class="n">request</span><span class="k">:</span> <span class="kt">Request</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="k">extends</span> <span class="nc">WrappedRequest</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">request</span><span class="o">)</span>
 </code></pre></div></div>
 
-<p>Then you’d define a custom <code class="highlighter-rouge">ActionBuilder</code> which takes an existing request, fetches your user, and wraps it:</p>
+<p>Then you’d define a custom <code class="language-plaintext highlighter-rouge">ActionBuilder</code> which takes an existing request, fetches your user, and wraps it:</p>
 
-<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserAction</span> <span class="c1">// Some constructor boilerplate elided here...
-</span>  <span class="c1">// mapping from a Request to a UserRequest
-</span>  <span class="k">extends</span> <span class="nc">ActionTransformer</span><span class="o">[</span><span class="kt">Request</span>, <span class="kt">UserRequest</span><span class="o">]</span> <span class="o">{</span>
-  <span class="k">def</span> <span class="n">transform</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">baseRequest</span><span class="k">:</span> <span class="kt">Request</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="k">=</span> <span class="o">{</span>
-    <span class="k">val</span> <span class="n">user</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">User</span><span class="o">]]</span> <span class="k">=</span> <span class="o">???</span> <span class="c1">// go get your user
-</span>    <span class="n">user</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="n">u</span> <span class="k">=&gt;</span> <span class="k">new</span> <span class="nc">UserRequest</span><span class="o">(</span><span class="n">u</span><span class="o">,</span> <span class="n">baseRequest</span><span class="o">)</span> <span class="o">}</span>
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UserAction</span> <span class="c1">// Some constructor boilerplate elided here...</span>
+  <span class="c1">// mapping from a Request to a UserRequest</span>
+  <span class="k">extends</span> <span class="nc">ActionTransformer</span><span class="o">[</span><span class="kt">Request</span>, <span class="kt">UserRequest</span><span class="o">]</span> <span class="o">{</span>
+  <span class="k">def</span> <span class="nf">transform</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">baseRequest</span><span class="k">:</span> <span class="kt">Request</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="nv">user</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">User</span><span class="o">]]</span> <span class="k">=</span> <span class="o">???</span> <span class="c1">// go get your user</span>
+    <span class="nv">user</span><span class="o">.</span><span class="py">map</span> <span class="o">{</span> <span class="n">u</span> <span class="k">=&gt;</span> <span class="k">new</span> <span class="nc">UserRequest</span><span class="o">(</span><span class="n">u</span><span class="o">,</span> <span class="n">baseRequest</span><span class="o">)</span> <span class="o">}</span>
   <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
 <p>Ok, makes sense I guess.</p>
 
-<p>But what if I need further composition? Maybe I have a <code class="highlighter-rouge">WidgetController</code> where I want to have a transformer to load a <code class="highlighter-rouge">Widget</code>. Well that could be an <code class="highlighter-rouge">ActionTransformer[UserRequest, WidgetRequest]</code>. And maybe there’s also a nested route where widgets can also have <code class="highlighter-rouge">Order</code>s I want to load, so that would be <code class="highlighter-rouge">ActionTransformer[WidgetRequest, OrderRequest]</code>.</p>
+<p>But what if I need further composition? Maybe I have a <code class="language-plaintext highlighter-rouge">WidgetController</code> where I want to have a transformer to load a <code class="language-plaintext highlighter-rouge">Widget</code>. Well that could be an <code class="language-plaintext highlighter-rouge">ActionTransformer[UserRequest, WidgetRequest]</code>. And maybe there’s also a nested route where widgets can also have <code class="language-plaintext highlighter-rouge">Order</code>s I want to load, so that would be <code class="language-plaintext highlighter-rouge">ActionTransformer[WidgetRequest, OrderRequest]</code>.</p>
 
-<p>So this is a little bit annoying, since I have to roll a new custom <code class="highlighter-rouge">WrappedRequest</code> instance for each of these scenarios. But it’s at least tractable.</p>
+<p>So this is a little bit annoying, since I have to roll a new custom <code class="language-plaintext highlighter-rouge">WrappedRequest</code> instance for each of these scenarios. But it’s at least tractable.</p>
 
-<p>However, what I if I also want to have an <code class="highlighter-rouge">OrderRequest</code> where I <em>didn’t</em> load the widget first? Well, requiring concrete implementations for each variant of Request context I need to model forces me to spin up new definitions for every <strong>combination</strong> of flow we’d need. It’s very challenging to do them ad-hoc.</p>
+<p>However, what I if I also want to have an <code class="language-plaintext highlighter-rouge">OrderRequest</code> where I <em>didn’t</em> load the widget first? Well, requiring concrete implementations for each variant of Request context I need to model forces me to spin up new definitions for every <strong>combination</strong> of flow we’d need. It’s very challenging to do them ad-hoc.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>UserRequest --&gt; WidgetRequest --&gt; WidgetOrderRequest
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>UserRequest --&gt; WidgetRequest --&gt; WidgetOrderRequest
 UserRequest --&gt; UserOrderRequest
 FooRequest --&gt; FooOrderRequest ---&gt; I can't just re-use my order-loading filter :(
 </code></pre></div></div>
@@ -249,7 +249,7 @@ FooRequest --&gt; FooOrderRequest ---&gt; I can't just re-use my order-loading f
 <span class="c1"># Framework checks for an early response between each stage</span>
 <span class="c1"># As long as you don't botch the return type from a stage too badly, you'll be ok</span>
 <span class="n">pipeline</span> <span class="ss">:browser</span> <span class="k">do</span>
-  <span class="n">plug</span> <span class="ss">:accepts</span><span class="p">,</span> <span class="p">[</span><span class="sd">"</span><span class="s2">html"</span><span class="p">]</span>
+  <span class="n">plug</span> <span class="ss">:accepts</span><span class="p">,</span> <span class="p">[</span><span class="s2">"html"</span><span class="p">]</span>
   <span class="n">plug</span> <span class="ss">:fetch_session</span>
   <span class="n">plug</span> <span class="ss">:fetch_flash</span>
   <span class="n">plug</span> <span class="ss">:protect_from_forgery</span>
@@ -257,13 +257,13 @@ FooRequest --&gt; FooOrderRequest ---&gt; I can't just re-use my order-loading f
 <span class="k">end</span>
 </code></pre></div></div>
 
-<p>But in Scala we need to express it statically, and one way to do it is using <code class="highlighter-rouge">Either</code>.</p>
+<p>But in Scala we need to express it statically, and one way to do it is using <code class="language-plaintext highlighter-rouge">Either</code>.</p>
 
-<p>Each intermediate stage of a web request “pipeline” can either return an early Response, or continue with new info: <code class="highlighter-rouge">Either[play.api.mvc.Result, A]</code>. For the final (non-intermediate) step of the pipeline, the righthand response must also be a <code class="highlighter-rouge">Result</code>, so you have <code class="highlighter-rouge">Either[play.api.mvc.Result, play.api.mvc.Result]</code>.</p>
+<p>Each intermediate stage of a web request “pipeline” can either return an early Response, or continue with new info: <code class="language-plaintext highlighter-rouge">Either[play.api.mvc.Result, A]</code>. For the final (non-intermediate) step of the pipeline, the righthand response must also be a <code class="language-plaintext highlighter-rouge">Result</code>, so you have <code class="language-plaintext highlighter-rouge">Either[play.api.mvc.Result, play.api.mvc.Result]</code>.</p>
 
-<p>Then, there’s 1 more hiccup, which is that most web programming in Scala is going to be done async, with an effect type. In Play this is usually <code class="highlighter-rouge">Future</code>, but in my own application I’m also using <code class="highlighter-rouge">cats.effect.IO</code>.</p>
+<p>Then, there’s 1 more hiccup, which is that most web programming in Scala is going to be done async, with an effect type. In Play this is usually <code class="language-plaintext highlighter-rouge">Future</code>, but in my own application I’m also using <code class="language-plaintext highlighter-rouge">cats.effect.IO</code>.</p>
 
-<p>So my types actually end up as <code class="highlighter-rouge">IO[Either[play.api.mvc.Result, A]]</code>. This nesting can be cumbersome, so I’ve brought in <a href="https://typelevel.org/cats/datatypes/eithert.html">EitherT</a> from Cats to manage it.</p>
+<p>So my types actually end up as <code class="language-plaintext highlighter-rouge">IO[Either[play.api.mvc.Result, A]]</code>. This nesting can be cumbersome, so I’ve brought in <a href="https://typelevel.org/cats/datatypes/eithert.html">EitherT</a> from Cats to manage it.</p>
 
 <p>So…in my app I have some custom types like:</p>
 
@@ -271,67 +271,67 @@ FooRequest --&gt; FooOrderRequest ---&gt; I can't just re-use my order-loading f
 <span class="k">import</span> <span class="nn">play.api.mvc.Result</span>
 
 <span class="k">object</span> <span class="nc">PipelineTypes</span> <span class="o">{</span>
-  <span class="c1">// As mentioned, I'm using cats.effect.IO here.
-</span>  <span class="c1">// But you could also achieve the same with Future
-</span>  <span class="c1">// Or if you want to be really fancy make this tagless final to generalize to other effects
-</span>  <span class="k">type</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span><span class="o">[</span><span class="kt">IO</span>, <span class="kt">Result</span>, <span class="kt">A</span><span class="o">]</span>
+  <span class="c1">// As mentioned, I'm using cats.effect.IO here.</span>
+  <span class="c1">// But you could also achieve the same with Future</span>
+  <span class="c1">// Or if you want to be really fancy make this tagless final to generalize to other effects</span>
+  <span class="k">type</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span><span class="o">[</span><span class="kt">IO</span>, <span class="kt">Result</span>, <span class="kt">A</span><span class="o">]</span>
   <span class="k">type</span> <span class="kt">PipelineRes</span> <span class="o">=</span> <span class="nc">PipelineStage</span><span class="o">[</span><span class="kt">Result</span><span class="o">]</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
-<p>And I add a helper to my controller to provide an alternative to the default <code class="highlighter-rouge">Action</code> builder:</p>
+<p>And I add a helper to my controller to provide an alternative to the default <code class="language-plaintext highlighter-rouge">Action</code> builder:</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">trait</span> <span class="nc">PipelineHelpers</span> <span class="o">{</span>
   <span class="k">import</span> <span class="nn">PipelineTypes._</span>
 
-  <span class="k">def</span> <span class="n">cc</span><span class="k">:</span> <span class="kt">play.api.mvc.ControllerComponents</span> <span class="c1">// Provide this from your controller instances
-</span>
-  <span class="k">def</span> <span class="nc">Handler</span><span class="o">(</span><span class="n">h</span><span class="k">:</span> <span class="o">(</span><span class="kt">Request</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">])</span> <span class="k">=&gt;</span> <span class="nc">PipelineRes</span><span class="o">)</span><span class="k">:</span> <span class="kt">Action</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
-    <span class="n">cc</span><span class="o">.</span><span class="n">actionBuilder</span><span class="o">.</span><span class="n">async</span> <span class="o">{</span> <span class="n">req</span><span class="k">:</span> <span class="kt">Request</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">]</span> <span class="k">=&gt;</span>
-      <span class="c1">// here is the "end of the world", where the Cats Effects
-</span>      <span class="c1">// get turned into side effects
-</span>      <span class="n">h</span><span class="o">(</span><span class="n">req</span><span class="o">).</span><span class="n">fold</span><span class="o">(</span><span class="n">a</span> <span class="k">=&gt;</span> <span class="n">a</span><span class="o">,</span> <span class="n">b</span> <span class="k">=&gt;</span> <span class="n">b</span><span class="o">).</span><span class="n">unsafeToFuture</span><span class="o">()</span>
+  <span class="k">def</span> <span class="nf">cc</span><span class="k">:</span> <span class="kt">play.api.mvc.ControllerComponents</span> <span class="c1">// Provide this from your controller instances</span>
+
+  <span class="k">def</span> <span class="nf">Handler</span><span class="o">(</span><span class="n">h</span><span class="k">:</span> <span class="o">(</span><span class="kt">Request</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">])</span> <span class="k">=&gt;</span> <span class="nc">PipelineRes</span><span class="o">)</span><span class="k">:</span> <span class="kt">Action</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="nv">cc</span><span class="o">.</span><span class="py">actionBuilder</span><span class="o">.</span><span class="py">async</span> <span class="o">{</span> <span class="n">req</span><span class="k">:</span> <span class="kt">Request</span><span class="o">[</span><span class="kt">AnyContent</span><span class="o">]</span> <span class="k">=&gt;</span>
+      <span class="c1">// here is the "end of the world", where the Cats Effects</span>
+      <span class="c1">// get turned into side effects</span>
+      <span class="nf">h</span><span class="o">(</span><span class="n">req</span><span class="o">).</span><span class="py">fold</span><span class="o">(</span><span class="n">a</span> <span class="k">=&gt;</span> <span class="n">a</span><span class="o">,</span> <span class="n">b</span> <span class="k">=&gt;</span> <span class="n">b</span><span class="o">).</span><span class="py">unsafeToFuture</span><span class="o">()</span>
     <span class="o">}</span>
   <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
-<p>So now your controllers can use <code class="highlighter-rouge">Handler</code> instead of <code class="highlighter-rouge">Action</code>, and skip the Play <code class="highlighter-rouge">ActionBuilder</code> machinery entirely.</p>
+<p>So now your controllers can use <code class="language-plaintext highlighter-rouge">Handler</code> instead of <code class="language-plaintext highlighter-rouge">Action</code>, and skip the Play <code class="language-plaintext highlighter-rouge">ActionBuilder</code> machinery entirely.</p>
 
-<p>And, since it uses <code class="highlighter-rouge">EitherT</code>…to chain pipeline stages you can just <code class="highlighter-rouge">for / yield</code> like normal:</p>
+<p>And, since it uses <code class="language-plaintext highlighter-rouge">EitherT</code>…to chain pipeline stages you can just <code class="language-plaintext highlighter-rouge">for / yield</code> like normal:</p>
 
-<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="n">download</span><span class="o">(</span><span class="n">fileId</span><span class="k">:</span> <span class="kt">UUID</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Handler</span> <span class="o">{</span> <span class="k">implicit</span> <span class="n">req</span> <span class="k">=&gt;</span>
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">download</span><span class="o">(</span><span class="n">fileId</span><span class="k">:</span> <span class="kt">UUID</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Handler</span> <span class="o">{</span> <span class="k">implicit</span> <span class="n">req</span> <span class="k">=&gt;</span>
     <span class="k">for</span> <span class="o">{</span>
-      <span class="n">u</span> <span class="k">&lt;-</span> <span class="nc">Pipeline</span><span class="o">.</span><span class="n">authed</span> <span class="c1">// reusable auth pipeline: PipelineStage[User]
-</span>      <span class="n">savedFile</span> <span class="k">&lt;-</span> <span class="n">myApp</span><span class="o">.</span><span class="n">uploads</span><span class="o">.</span><span class="n">get</span><span class="o">(</span><span class="n">uploadId</span><span class="o">).</span><span class="n">orNotFound</span>
-      <span class="c1">// Permission helper I have added -- gives PipelineStage[E] for the permitted entity
-</span>      <span class="k">_</span> <span class="k">&lt;-</span> <span class="nc">Pipeline</span><span class="o">.</span><span class="n">permitted</span><span class="o">(</span><span class="n">u</span><span class="o">,</span> <span class="nc">Permission</span><span class="o">.</span><span class="nc">View</span><span class="o">,</span> <span class="n">savedFile</span><span class="o">,</span> <span class="o">())</span>
-      <span class="n">url</span> <span class="k">&lt;-</span> <span class="n">myApp</span><span class="o">.</span><span class="n">cloudStorage</span><span class="o">.</span><span class="n">signedDownloadUrl</span><span class="o">(</span><span class="n">upload</span><span class="o">).</span><span class="n">piped</span>
+      <span class="n">u</span> <span class="k">&lt;-</span> <span class="nv">Pipeline</span><span class="o">.</span><span class="py">authed</span> <span class="c1">// reusable auth pipeline: PipelineStage[User]</span>
+      <span class="n">savedFile</span> <span class="k">&lt;-</span> <span class="nv">myApp</span><span class="o">.</span><span class="py">uploads</span><span class="o">.</span><span class="py">get</span><span class="o">(</span><span class="n">uploadId</span><span class="o">).</span><span class="py">orNotFound</span>
+      <span class="c1">// Permission helper I have added -- gives PipelineStage[E] for the permitted entity</span>
+      <span class="k">_</span> <span class="k">&lt;-</span> <span class="nv">Pipeline</span><span class="o">.</span><span class="py">permitted</span><span class="o">(</span><span class="n">u</span><span class="o">,</span> <span class="nv">Permission</span><span class="o">.</span><span class="py">View</span><span class="o">,</span> <span class="n">savedFile</span><span class="o">,</span> <span class="o">())</span>
+      <span class="n">url</span> <span class="k">&lt;-</span> <span class="nv">myApp</span><span class="o">.</span><span class="py">cloudStorage</span><span class="o">.</span><span class="py">signedDownloadUrl</span><span class="o">(</span><span class="n">upload</span><span class="o">).</span><span class="py">piped</span>
     <span class="o">}</span> <span class="k">yield</span> <span class="o">{</span>
-      <span class="nc">Redirect</span><span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="n">toString</span><span class="o">)</span>
+      <span class="nc">Redirect</span><span class="o">(</span><span class="nv">url</span><span class="o">.</span><span class="py">toString</span><span class="o">)</span>
     <span class="o">}</span>
   <span class="o">}</span>
 </code></pre></div></div>
 
-<p>What about <code class="highlighter-rouge">orNotFound</code> or <code class="highlighter-rouge">piped</code>? I added these extensions in my controllers to adapt common datatypes into this pipeline model.</p>
+<p>What about <code class="language-plaintext highlighter-rouge">orNotFound</code> or <code class="language-plaintext highlighter-rouge">piped</code>? I added these extensions in my controllers to adapt common datatypes into this pipeline model.</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">object</span> <span class="nc">PipelineExtensions</span> <span class="o">{</span>
   <span class="k">implicit</span> <span class="k">class</span> <span class="nc">IOOptionExts</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">r</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">A</span><span class="o">]])</span> <span class="o">{</span>
-    <span class="c1">// IO[Option[MyRecord]](None).orNotFound
-</span>    <span class="c1">// Handles the very common "load this record from DB and give 404 if it's not there"
-</span>    <span class="k">def</span> <span class="n">orNotFound</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="n">orRes</span><span class="o">(</span><span class="nc">NotFound</span><span class="o">(</span><span class="s">"Not Found"</span><span class="o">))</span>
+    <span class="c1">// IO[Option[MyRecord]](None).orNotFound</span>
+    <span class="c1">// Handles the very common "load this record from DB and give 404 if it's not there"</span>
+    <span class="k">def</span> <span class="nf">orNotFound</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nf">orRes</span><span class="o">(</span><span class="nc">NotFound</span><span class="o">(</span><span class="s">"Not Found"</span><span class="o">))</span>
 
-    <span class="c1">// IO[Option[MyRecord]](None).orRes(Redirect("/pizza"))
-</span>    <span class="k">def</span> <span class="n">orRes</span><span class="o">(</span><span class="n">res</span><span class="k">:</span> <span class="kt">Result</span><span class="o">)</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span> <span class="o">{</span>
-      <span class="n">r</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">o</span> <span class="k">=&gt;</span> <span class="nc">Either</span><span class="o">.</span><span class="n">fromOption</span><span class="o">(</span><span class="n">o</span><span class="o">,</span> <span class="n">res</span><span class="o">))</span>
+    <span class="c1">// IO[Option[MyRecord]](None).orRes(Redirect("/pizza"))</span>
+    <span class="k">def</span> <span class="nf">orRes</span><span class="o">(</span><span class="n">res</span><span class="k">:</span> <span class="kt">Result</span><span class="o">)</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span> <span class="o">{</span>
+      <span class="nv">r</span><span class="o">.</span><span class="py">map</span><span class="o">(</span><span class="n">o</span> <span class="k">=&gt;</span> <span class="nv">Either</span><span class="o">.</span><span class="py">fromOption</span><span class="o">(</span><span class="n">o</span><span class="o">,</span> <span class="n">res</span><span class="o">))</span>
     <span class="o">}</span>
   <span class="o">}</span>
 
-  <span class="c1">// pass any IO[A] through to a pipeline context by calling .piped
-</span>  <span class="c1">// IO("some data").piped -&gt; EitherT[IO, Result, String]
-</span>  <span class="k">implicit</span> <span class="k">class</span> <span class="nc">IOToPipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">r</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="o">{</span>
-    <span class="k">def</span> <span class="n">piped</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span> <span class="o">{</span>
-      <span class="n">r</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">a</span> <span class="k">=&gt;</span> <span class="nc">Either</span><span class="o">.</span><span class="n">right</span><span class="o">[</span><span class="kt">Result</span>, <span class="kt">A</span><span class="o">](</span><span class="n">a</span><span class="o">))</span>
+  <span class="c1">// pass any IO[A] through to a pipeline context by calling .piped</span>
+  <span class="c1">// IO("some data").piped -&gt; EitherT[IO, Result, String]</span>
+  <span class="k">implicit</span> <span class="k">class</span> <span class="nc">IOToPipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">r</span><span class="k">:</span> <span class="kt">IO</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="o">{</span>
+    <span class="k">def</span> <span class="nf">piped</span><span class="k">:</span> <span class="kt">PipelineStage</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">EitherT</span> <span class="o">{</span>
+      <span class="nv">r</span><span class="o">.</span><span class="py">map</span><span class="o">(</span><span class="n">a</span> <span class="k">=&gt;</span> <span class="nv">Either</span><span class="o">.</span><span class="py">right</span><span class="o">[</span><span class="kt">Result</span>, <span class="kt">A</span><span class="o">](</span><span class="n">a</span><span class="o">))</span>
     <span class="o">}</span>
   <span class="o">}</span>
 <span class="o">}</span>
@@ -339,11 +339,11 @@ FooRequest --&gt; FooOrderRequest ---&gt; I can't just re-use my order-loading f
 
 <p>Over time I’ve accumulated maybe 50 lines or so of these helpers, but they’ve been quite stable. Compared to the hours lost fighting with the built-in play framework Action builders, this approach has been quite productive for me. And, maybe best of all, my controller code is <em>much</em> cleaner.</p>
 
-<p>It’s very common in Play framework code to see big nested controller methods due to the complexities of handling effect types (<code class="highlighter-rouge">Future</code>) alongside the various error cases that can arise. But I just don’t have that anymore. Instead all my controller methods are nice linear stacks of <code class="highlighter-rouge">for { ... } yield { SomeResponse (...) }</code>.</p>
+<p>It’s very common in Play framework code to see big nested controller methods due to the complexities of handling effect types (<code class="language-plaintext highlighter-rouge">Future</code>) alongside the various error cases that can arise. But I just don’t have that anymore. Instead all my controller methods are nice linear stacks of <code class="language-plaintext highlighter-rouge">for { ... } yield { SomeResponse (...) }</code>.</p>
 
-<p>To me, <code class="highlighter-rouge">for / yield</code> (i.e. a bunch of <code class="highlighter-rouge">flatMap</code>s in a trenchcoat) is the natural way to handle this kind of railway chaining in Scala. It’s much nicer to compose these ad-hoc scopes on the fly rather than have to define a new concrete <code class="highlighter-rouge">WrappedRequest</code> and a bunch of OOP boilerplate for each permutation of re-usable scope you might want to chain.</p>
+<p>To me, <code class="language-plaintext highlighter-rouge">for / yield</code> (i.e. a bunch of <code class="language-plaintext highlighter-rouge">flatMap</code>s in a trenchcoat) is the natural way to handle this kind of railway chaining in Scala. It’s much nicer to compose these ad-hoc scopes on the fly rather than have to define a new concrete <code class="language-plaintext highlighter-rouge">WrappedRequest</code> and a bunch of OOP boilerplate for each permutation of re-usable scope you might want to chain.</p>
 
-<p>I’ve also found the experience of using <code class="highlighter-rouge">EitherT</code> in this way to actually be pretty good. I was nervous about relying on it so heavily because I know it can give terrible compiler messages in some cases. But I haven’t had too many issues. My hunch is that it helps to have the whole pipeline wrapped in the outer <code class="highlighter-rouge">Handler</code> helper: <code class="highlighter-rouge">def Handler(h: (Request[AnyContent]) =&gt; PipelineRes): Action[AnyContent]</code>, which keeps the type inference constrained compared to an open-ended <code class="highlighter-rouge">EitherT</code>.</p>
+<p>I’ve also found the experience of using <code class="language-plaintext highlighter-rouge">EitherT</code> in this way to actually be pretty good. I was nervous about relying on it so heavily because I know it can give terrible compiler messages in some cases. But I haven’t had too many issues. My hunch is that it helps to have the whole pipeline wrapped in the outer <code class="language-plaintext highlighter-rouge">Handler</code> helper: <code class="language-plaintext highlighter-rouge">def Handler(h: (Request[AnyContent]) =&gt; PipelineRes): Action[AnyContent]</code>, which keeps the type inference constrained compared to an open-ended <code class="language-plaintext highlighter-rouge">EitherT</code>.</p>
 
 <p>So, that’s the gist of it. This may seem like a lot of fuss about a narrow slice of the application, but in my experience the handling of request pipelines is one of the most fundamental points of ergonomics for a web framework. How this is handled sets the groundwork for how clean and reusable your web-layer code can be.</p>
 
@@ -353,17 +353,17 @@ FooRequest --&gt; FooOrderRequest ---&gt; I can't just re-use my order-loading f
 
 <h3 id="how-does-this-compare-with-http4s-kleisli-setup">How does this compare with http4s’ Kleisli setup?</h3>
 
-<p>Honestly I’m not sure and I’d like to understand it better. I have not used http4s much, and Kleisli has so far been a bridge too far in my own personal FP journey. Maybe I’ll get there evenutally but whenever I’ve looked at it I’ve found it too abstract. My hunch is that the <code class="highlighter-rouge">Kliesli</code> / <code class="highlighter-rouge">OptionT</code> approach to middleware used in http4s is solving a similar problem, and may even be isomorphic to what I’m doing with these <code class="highlighter-rouge">EitherT</code> helpers. Maybe someone who knows FP better can explain this to me.</p>
+<p>Honestly I’m not sure and I’d like to understand it better. I have not used http4s much, and Kleisli has so far been a bridge too far in my own personal FP journey. Maybe I’ll get there evenutally but whenever I’ve looked at it I’ve found it too abstract. My hunch is that the <code class="language-plaintext highlighter-rouge">Kliesli</code> / <code class="language-plaintext highlighter-rouge">OptionT</code> approach to middleware used in http4s is solving a similar problem, and may even be isomorphic to what I’m doing with these <code class="language-plaintext highlighter-rouge">EitherT</code> helpers. Maybe someone who knows FP better can explain this to me.</p>
 
 <h3 id="what-about-zio">What about ZIO?</h3>
 
 <p>I don’t really know. I haven’t tried to use it yet nor had a chance to research it thoroughly. I’m a touch put off by all the hype / marketing being poured on, but would like to take a look at some point.</p>
 
-<p>I’m not sure what the HTTP / Web Server situation is in ZIO but I could imagine some benefits from using the error channel to handle similar things to what I’m doing here (I know <code class="highlighter-rouge">ZIO</code> is often billed as a nicer <code class="highlighter-rouge">EitherT</code> alternative). However I’ve been pretty happy with <code class="highlighter-rouge">EitherT</code> in this scenario so I don’t feel a ton of need to branch out. And I tend to manage the Dependency Injection aspects of my apps with plain old arg passing and object constructors, so I’m not sure I would get as much value from the Reader / Env channel. But I hope to have a chance to learn more about this at some point.</p>
+<p>I’m not sure what the HTTP / Web Server situation is in ZIO but I could imagine some benefits from using the error channel to handle similar things to what I’m doing here (I know <code class="language-plaintext highlighter-rouge">ZIO</code> is often billed as a nicer <code class="language-plaintext highlighter-rouge">EitherT</code> alternative). However I’ve been pretty happy with <code class="language-plaintext highlighter-rouge">EitherT</code> in this scenario so I don’t feel a ton of need to branch out. And I tend to manage the Dependency Injection aspects of my apps with plain old arg passing and object constructors, so I’m not sure I would get as much value from the Reader / Env channel. But I hope to have a chance to learn more about this at some point.</p>
 
 <h3 id="what-about-eithert-overhead">What about EitherT overhead?</h3>
 
-<p>I’ve seen occasional discussion about the overhead introduced by all the wrapping involved with monad transformers like <code class="highlighter-rouge">EitherT</code> (oops I almost got through this whole post without saying the M-word). I’m sure there is some cost to this – you’re obviously allocating more objects and adding method calls to your code path. But most of my endpoints are doing at least 1 DB lookup already, if not many DB lookups, so it’s just hard for me to imagine this overhead adds up to anything significant in comparison.</p>
+<p>I’ve seen occasional discussion about the overhead introduced by all the wrapping involved with monad transformers like <code class="language-plaintext highlighter-rouge">EitherT</code> (oops I almost got through this whole post without saying the M-word). I’m sure there is some cost to this – you’re obviously allocating more objects and adding method calls to your code path. But most of my endpoints are doing at least 1 DB lookup already, if not many DB lookups, so it’s just hard for me to imagine this overhead adds up to anything significant in comparison.</p>
 
 <p>I have not taken the time to microbenchmark these aspects of the app, but I have certainly run load tests (via <a href="https://github.com/gatling/gatling">gatling</a>) and the results there have been perfectly fine.</p>
 
