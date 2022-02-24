@@ -3,7 +3,7 @@ title: "Kicking the Tires: Flatgeobuf"
 layout: post
 ---
 
-![Misty morning at Gradient Retreat](/public/gradient_studio.jpeg)
+![Misty morning at Gradient Retreat](/public/images/gradient_studio.jpeg)
 
 This week I’ve been out in the woods on an island at [Gradient Retreat](https://www.gradientretreat.com) and it’s given me a chance to finally finish some research and experiments with [Flatgeobuf](http://flatgeobuf.org), a new(ish) file format for storing geospatial vector data. In this post I’ll give a quick overview of the format and why I think it’s so interesting.
 
