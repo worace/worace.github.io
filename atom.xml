@@ -4,13 +4,145 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2022-02-23T18:47:26-08:00</updated>
+ <updated>2022-02-23T18:49:24-08:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
    <email>horace@worace.works</email>
  </author>
 
+ 
+ <entry>
+   <title>Kicking the Tires: Flatgeobuf</title>
+   <link href="http://worace.works/2022/02/23/kicking-the-tires-flatgeobuf/"/>
+   <updated>2022-02-23T00:00:00-08:00</updated>
+   <id>http://worace.works/2022/02/23/kicking-the-tires-flatgeobuf</id>
+   <content type="html">&lt;p&gt;&lt;img src=&quot;/public/gradient_studio.jpeg&quot; alt=&quot;Misty morning at Gradient Retreat&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;This week I’ve been out in the woods on an island at &lt;a href=&quot;https://www.gradientretreat.com&quot;&gt;Gradient Retreat&lt;/a&gt; and it’s given me a chance to finally finish some research and experiments with &lt;a href=&quot;http://flatgeobuf.org&quot;&gt;Flatgeobuf&lt;/a&gt;, a new(ish) file format for storing geospatial vector data. In this post I’ll give a quick overview of the format and why I think it’s so interesting.&lt;/p&gt;
+
+&lt;h3 id=&quot;what-is-it&quot;&gt;What is it?&lt;/h3&gt;
+
+&lt;p&gt;Flatgeobuf is a binary data format for storing spatial vector data. It’s meant as an alternative to things like Shapefiles, KML, or GeoJSON, meaning you can store the usual sort of stuff from the &lt;a href=&quot;http://wiki.gis.com/wiki/index.php/Simple_Features&quot;&gt;OGC Feature Model&lt;/a&gt; (lines, polygons, etc) along with related properties.&lt;/p&gt;
+
+&lt;p&gt;But FGB includes a few optimizations that make it especially interesting:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;The use of &lt;a href=&quot;https://google.github.io/flatbuffers/&quot;&gt;flatbuffers&lt;/a&gt; for efficient feature / geometry encoding&lt;/li&gt;
+  &lt;li&gt;Inclusion of a built-in &lt;em&gt;streamable&lt;/em&gt; spatial index as well as conventions around data layout to optimize remote retrieval using the index&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;optimization-1-flatbuffers-for-efficient-geometry-encoding&quot;&gt;Optimization 1: &lt;strong&gt;Flatbuffers for Efficient Geometry Encoding&lt;/strong&gt;&lt;/h3&gt;
+
+&lt;p&gt;Flatbuffers is a binary data serialization library. Similar to projects like &lt;a href=&quot;https://thrift.apache.org&quot;&gt;Apache Thrift&lt;/a&gt; or &lt;a href=&quot;https://developers.google.com/protocol-buffers&quot;&gt;Protocol Buffers&lt;/a&gt;, it provides an &lt;a href=&quot;https://google.github.io/flatbuffers/flatbuffers_guide_writing_schema.html&quot;&gt;IDL&lt;/a&gt; for specifying data schemas along with implementations for reading these data types to and from bytes in a variety of languages&lt;/p&gt;
+
+&lt;p&gt;Like thrift or protobuf, there’s a code generator that turns your &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.fbs&lt;/code&gt; IDL specs into concrete implementations in your chosen language, as well as a runtime library which provides some of the serialization/deserialization machinery.&lt;/p&gt;
+
+&lt;p&gt;As a binary format, flatbuffers already has a leg up on text-based formats like GeoJSON or WKT in terms of data compactness and serde speed: you don’t have to repeat a bunch of field names as strings in your data and you don’t have to run through a text parsing routine to deserialize. But fbs also goes a step further than thrift or protobuf in that it’s designed for “zero copy” serde.&lt;/p&gt;
+
+&lt;p&gt;This means that the flatbuffers spec and associated runtime libraries go to great lengths to design memory layouts that can be used directly by host languages without having to first copy into a corresponding “language native” format.&lt;/p&gt;
+
+&lt;p&gt;For example in a library like thrift, you might have an internal convention for representing an Array of Ints in binary. This is better than something like JSON since it’s much faster to read a custom binary Array representation than a text-based one, but you still find that in order to actually use the data you’ll need to copy to a local representation like, say, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;java.util.ArrayList&amp;lt;Integer&amp;gt;&lt;/code&gt; . So you end up with 2 steps: first buffer the thrift/pbf-encoded data into memory from disk or network, then translate this binary data into language-specific representations.&lt;/p&gt;
+
+&lt;p&gt;With flatbuffers, you skip the last step because the creators of the library have done binary magic to design memory layouts that can be used directly the same as other language-native datatypes. You can even read them directly from disk via mmap, etc. Of course, this tends to work best in languages like C++ or Rust which are used to giving you tight control over memory layouts, and it comes with a cost that the library can be complicated to use in comparison with thrift or protobuf (which already have their own non-trivial learning curve). But this is the price you pay to get sick sick serde speedups (you can see some related benchmarks &lt;a href=&quot;https://google.github.io/flatbuffers/flatbuffers_benchmarks.html&quot;&gt;here&lt;/a&gt;).&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/images/flatbuffers_benchmarks.png&quot; alt=&quot;Flatbuffers benchmarks&quot; /&gt;
+&lt;em&gt;&lt;a href=&quot;https://google.github.io/flatbuffers/flatbuffers_benchmarks.html&quot;&gt;Source&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;So the designers of Flatgeobuf decided to use this format for handling the encoding of feature geometries, which typically make up the bulk of a large vector dataset. As mentioned, this gives a lot of impact in particular on implementations in C++ or Rust, which is important since these versions often get integrated into other systems (e.g. using the C++ FGB implementation to add FGB handling to &lt;a href=&quot;https://postgis.net/docs/manual-dev/ST_FromFlatGeobuf.html&quot;&gt;PostGIS&lt;/a&gt; or &lt;a href=&quot;https://gdal.org/drivers/vector/flatgeobuf.html&quot;&gt;GDAL&lt;/a&gt;, or writing Python libraries which are just wrappers over native code implementations), so there’s a lot of leverage from this optimization.&lt;/p&gt;
+
+&lt;h3 id=&quot;optimization-2-streamable-hilbert-sorted-rtree-index&quot;&gt;Optimization 2: Streamable Hilbert-sorted RTree Index&lt;/h3&gt;
+
+&lt;p&gt;The second exciting piece of flatgeobuf, and honestly what makes the whole thing worth the price of admission alone, is its approach to indexing. Including a pre-built index with geospatial data isn’t new — Shapefile and &lt;a href=&quot;https://www.geopackage.org&quot;&gt;Geopackage&lt;/a&gt; support this, and there’s always &lt;a href=&quot;https://www.gaia-gis.it/fossil/libspatialite/index&quot;&gt;spatialite&lt;/a&gt; if you want to pack your data into a sqlite file.&lt;/p&gt;
+
+&lt;p&gt;However flatgeobuf’s indexing and layout strategy is uniquely optimized for &lt;em&gt;remote&lt;/em&gt; reading, i.e. consuming both the data and index piecemeal over the network, via HTTP requests. It targets the use case of “dump these files on S3 and read them directly from a client”.&lt;/p&gt;
+
+&lt;p&gt;To do this, the format combines an RTree index (the trusty workhorse of all geospatial indexing) with a compact and streamable encoding and a particular spatial ordering of the geometry data (using a &lt;a href=&quot;https://en.wikipedia.org/wiki/Hilbert_curve&quot;&gt;Hilbert Curve&lt;/a&gt;) to make the whole thing more efficient. Here’s how it works.&lt;/p&gt;
+
+&lt;p&gt;To write an indexed FGB file, you first sort your feature data along a Hilbert Curve. Space Filling Curves are a fascinating and brain-melting topic that merit a full post on their own, but in short they allow a linear encoding of multiple dimensions into 1 dimension (in our case, sorting a 2-dimensional xy space along a 1-dimensional curve). This is an optimization used in many spatial indexing systems to ensure that data with high storage locality also has high spatial locality.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/images/hilbert.png&quot; alt=&quot;Hilbert Curve Iterations&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;In flatgeobuf, the feature data is stored in a long buffer containing back-to-back Flatbuffers of encoded feature geometries + properties, and these features are hilbert-sorted before being indexed and written to allow for more efficient I/O batching when looking data up via the index.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;em&gt;Side Note:&lt;/em&gt; There’s a lot of research on different methodologies for spatial sorting for indexing. Flatgeobuf uses the Hilbert encoding of the center of each feature’s bounding box, referred to as “2D-C” in the literature. (&lt;a href=&quot;https://dl.acm.org/doi/10.1145/170088.170403&quot;&gt;https://dl.acm.org/doi/10.1145/170088.170403&lt;/a&gt;).&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Next, a “packed” RTree is built to represent these nodes, where “packed” means that the tree is maximally filled (no empty internal slots), which is possible since we are building it in bulk from a known static dataset (FGB is &lt;em&gt;not&lt;/em&gt; aimed at supporting updates in place).&lt;/p&gt;
+
+&lt;p&gt;The tree is built “bottom-up”, with the pre-sorted features making up the bottom layer. For this layer you construct a vector of Index Nodes containing a bounding box for the feature and its byte offset in the data section of the overall file.&lt;/p&gt;
+
+&lt;p&gt;Then a tree is built by adding upper layers of internal nodes as needed, with each internal node’s bounding box representing the superset of all its children’s bounding boxes, and its byte offset pointing to the location in the &lt;em&gt;index&lt;/em&gt; buffer where its list of child nodes begin.&lt;/p&gt;
+
+&lt;p&gt;Once the tree reduces down to a single root node, it is flattened out for storage with each layer stored sequentially one after the other.&lt;/p&gt;
+
+&lt;p&gt;Here’s a diagram showing an example tree. Note that since the tree is fully “packed”, its structure is determined purely by the number of features and node size (branching factor). For 4 features with a node size of 2 we get this:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/images/fgb_diagram_1.png&quot; alt=&quot;Flatgeobuf RTree Index Layout Diagram&quot; /&gt;
+&lt;em&gt;FGB RTree Index Layout Example&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;And here’s how that tree would be serialized into the final FGB file:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/images/fgb_diagram_2.png&quot; alt=&quot;Flatgeobuf File Layout Diagram&quot; /&gt;
+&lt;em&gt;FGB file layout after flattening tree&lt;/em&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;indexing-takeaways-cloud-native-gis-vector-data&quot;&gt;Indexing Takeaways: Cloud-native GIS Vector Data&lt;/h3&gt;
+
+&lt;p&gt;That’s a lot of detail about how the indexes are put together, but what does it actually mean?&lt;/p&gt;
+
+&lt;p&gt;The point is that both the index and the underlying feature data are designed to be loaded lazily — a client can stream the portions of the index they need to satisfy a bounding-box query, then use those results to stream the relevant portions of the Feature section. This can all be done either locally (reading from a potentially large file) or &lt;em&gt;remotely&lt;/em&gt; over HTTP using &lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests&quot;&gt;Range requests&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;This means you can literally chuck an FGB file on S3 and serve it directly to clients, without any persistent server process in the mix. It’s a piece of “serverless” tech which isn’t just marketing vapor-speak, and it has the potential to open a lot of new architectural patterns for managing Geospatial data.&lt;/p&gt;
+
+&lt;p&gt;To &lt;a href=&quot;https://protomaps.com/blog/dynamic-maps-static-storage#a-map-is-just-a-video&quot;&gt;quote&lt;/a&gt; &lt;a href=&quot;https://twitter.com/bdon&quot;&gt;Brandon Liu&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;A Map is just a Video&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;And formats like FGB drive that home: the way these cloud-native GIS formats incrementally pull data from remote storage is the same way that streaming video codecs lazily pull the next frames in your favorite Netflix movie. Panning around a &lt;a href=&quot;https://wiki.openstreetmap.org/wiki/Slippy_Map&quot;&gt;slippy map&lt;/a&gt; is like scrubbing forward and backward through a video of the earth.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://flatgeobuf.org/examples/leaflet/large.html&quot;&gt;Here’s a demo&lt;/a&gt; on the &lt;a href=&quot;http://flatgeobuf.org&quot;&gt;flatgeobuf.org&lt;/a&gt; site that shows this in action: live slippy map filtering of a 12GB US Census Block dataset direct from storage over HTTP&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/images/fgb_slippy_demo.png&quot; alt=&quot;[flatgeobuf.org](http://flatgeobuf.org) leaflet Census Block filtering demo&quot; /&gt;
+&lt;em&gt;flatgeobuf census blocks slippy map demo&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;I’m particularly hopeful about the potential to bridge the gap between offline “big data” use-cases, which want to consume static files from cloud storage, and online interactive use-cases like a simple slippy map viewer. Traditionally, the latter required an indexed server process like PostGIS, but now you might be able to have both of these systems reading from the same static cloud-storage-hosted datasets.&lt;/p&gt;
+
+&lt;h3 id=&quot;downsides&quot;&gt;Downsides?&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Complexity — No denying the format is pretty complicated. Between sophisticated binary encodings and optimized indexing strategies there is a lot going on in these bytes. Small errors in encoding or indexing can render files unreadable. To become more mainstream, the format will need better linting tools to validate structural correctness of without a lot of painful &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;hexdump&lt;/code&gt;-ing.&lt;/li&gt;
+  &lt;li&gt;Not human readable — Especially compared to simpler formats like GeoJSON and WKT this is always a downside. Of course the benefits are huge (smaller storage footprint, faster serde), but it will take really polished tooling to ease people off of text-based formats. On the other hand Shapefiles aren’t human-readable and ESRI has managed to jam those down everyone’s throats for several decades, so maybe there’s hope.&lt;/li&gt;
+  &lt;li&gt;Not designed for updates — Because of the intricacies of data layout and indexing, updates aren’t really a thing for FGB. It’s best used for static datasets.&lt;/li&gt;
+  &lt;li&gt;Non-spatial indexing — Currently the format doesn’t really have a way to add indexing on other dimensions besides the spatial one. Maybe this will evolve in the future (FGB’s first sidecar?)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;further-reading--prior-art&quot;&gt;Further Reading / Prior Art&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Big thank you to &lt;a href=&quot;https://twitter.com/bjornharrtell&quot;&gt;Björn Harrtell&lt;/a&gt; for designing this cool format&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/mourner/flatbush&quot;&gt;Flatbush&lt;/a&gt; and &lt;a href=&quot;https://github.com/mapbox/geobuf&quot;&gt;Geobuf&lt;/a&gt;, JS libraries from &lt;a href=&quot;https://twitter.com/mourner&quot;&gt;Vladimir Agafonkin&lt;/a&gt; inspired the Hilbert-sorted RTree indexing and binary format for Flatgeobuf&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/rawrunprotected/hilbert_curves&quot;&gt;rawrunprotected/hilbert_curves&lt;/a&gt;: Provides a very cool algorithm for fast encoding of X,Y values to Hilbert numbers used by many of these libraries. This in turn appears to be partially inspired by a similar algorithm in &lt;a href=&quot;https://en.wikipedia.org/wiki/Hacker%27s_Delight&quot;&gt;Hacker’s Delight&lt;/a&gt;, Chapter 16.&lt;/li&gt;
+  &lt;li&gt;RTree packing + Hilbert Sorting: There’s quite a lot of academic literature about this, focusing on different strategies for bulk-loading RTrees and different sorting approaches to optimize lookup locality. These 2 articles are a good starting point:
+    &lt;ul&gt;
+      &lt;li&gt;&lt;em&gt;&lt;a href=&quot;https://dl.acm.org/doi/10.1145/971699.318900&quot;&gt;Direct spatial search on pictorial databases using packed R-trees&lt;/a&gt;,&lt;/em&gt; Roussopoulos &amp;amp; Leifker&lt;/li&gt;
+      &lt;li&gt;&lt;em&gt;&lt;a href=&quot;https://dl.acm.org/doi/10.1145/170088.170403&quot;&gt;On packing R-trees&lt;/a&gt;,&lt;/em&gt; Kamel &amp;amp; Faloustos&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.cogeo.org&quot;&gt;Cloud Optimized GeoTIFF&lt;/a&gt;: Another data format that has been bringing similar benefits to geospatial Raster data.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;where-to-go-next&quot;&gt;Where to go next?&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf&quot;&gt;https://github.com/flatgeobuf/flatgeobuf&lt;/a&gt; for official support, including drivers for Rust, C++, JS, Java, and C#&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/worace/geoq&quot;&gt;https://github.com/worace/geoq&lt;/a&gt; - My own Rust-based GIS CLI now has a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fgb&lt;/code&gt; subcommand (&lt;a href=&quot;https://crates.io/crates/geoq&quot;&gt;version 0.0.21&lt;/a&gt; — hot off the press) for reading and writing flatgeobuf files from GeoJSON at the command-line – &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;echo '{&quot;type&quot;: &quot;Point&quot;, &quot;coordinates&quot;: [0,0]}' | geoq fgb write /tmp/myfirst.fgb&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;As part of writing this article I went through the exercise of writing my own fgb writer implementation. I plan to publish a more detailed “implementer’s guide” focusing on the nuances of the spec based on what I learned from this experience.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Cascading Git Branches to Reduce Mega Merges</title>

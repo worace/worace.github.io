@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="last-modified" content="2022-02-23T18:49:24-08:00" />
+
+  <title>
+    
+      Kicking the Tires: Flatgeobuf
+    
+  </title>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet"> 
+
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117025935-1"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+
+   gtag('config', 'UA-117025935-1');
+  </script>
+  
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a target="_blank" class="nav-twitter" href="https://twitter.com/worace"><svg xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 48 48"><path d="M 32 6 C 26.568583 6 22.160643 10.388731 22.042969 15.792969 C 17.240727 15.216998 14.113589 13.421507 12.195312 11.652344 C 10.067982 9.6903754 9.3945312 7.9472656 9.3945312 7.9472656 A 1.50015 1.50015 0 0 0 6.8007812 7.5996094 C 6.8007812 7.5996094 5 10 5 13.5 C 5 15.500985 5.6317952 16.981554 6.3847656 18.236328 C 6.3570276 18.223338 6.1699219 18.158203 6.1699219 18.158203 A 1.50015 1.50015 0 0 0 4.0058594 19.636719 C 4.0058594 19.636719 4.5832039 23.856843 8.5507812 26.941406 L 8.1367188 27.044922 A 1.50015 1.50015 0 0 0 7.1972656 29.244141 C 7.1972656 29.244141 7.8700527 30.382221 9.2792969 31.580078 C 10.11485 32.290298 11.34227 33.023169 12.789062 33.701172 C 11.012271 34.35044 8.362818 35 4.5 35 A 1.50015 1.50015 0 0 0 3.3710938 37.488281 C 3.3710938 37.488281 4.5173251 38.751002 6.7832031 39.849609 C 9.0490812 40.948217 12.539474 42 17.5 42 C 26.219697 42 32.484656 37.817151 36.394531 32.515625 C 40.304407 27.214099 42 20.861111 42 16 C 42 15.691547 41.980739 15.387437 41.953125 15.085938 C 44.064371 13.051602 44.856626 11.522235 44.894531 11.447266 C 45.084531 11.066266 45.01375 10.608688 44.71875 10.304688 C 44.42475 9.9996875 43.969031 9.9137969 43.582031 10.091797 L 43.419922 10.166016 C 43.280922 10.230016 43.141953 10.294422 43.001953 10.357422 C 43.408953 9.7084219 43.730125 9.014875 43.953125 8.296875 C 44.077125 7.900875 43.943234 7.4669375 43.615234 7.2109375 C 43.287234 6.9549375 42.835469 6.9275312 42.480469 7.1445312 C 41.258221 7.8873594 40.086652 8.40739 38.867188 8.7558594 C 37.072578 7.0534724 34.656873 6 32 6 z M 32 9 C 35.883178 9 39 12.116822 39 16 C 39 20.138889 37.445593 26.035901 33.980469 30.734375 C 30.515344 35.432849 25.280303 39 17.5 39 C 13.7348 39 11.230189 38.318942 9.3535156 37.582031 C 11.319341 37.276755 13.011947 36.869367 14.228516 36.398438 C 16.338182 35.581792 17.476563 34.638672 17.476562 34.638672 A 1.50015 1.50015 0 0 0 16.863281 32.044922 C 14.140556 31.364241 12.394328 30.263307 11.298828 29.345703 L 12.863281 28.955078 A 1.50015 1.50015 0 0 0 13.039062 26.099609 C 9.7939415 24.851486 8.4312292 23.086373 7.734375 21.607422 C 8.5823538 21.782967 9.3718961 22 10.5 22 A 1.50015 1.50015 0 0 0 11.169922 19.158203 C 11.169922 19.158203 8 17.7 8 13.5 C 8 12.745947 8.2088435 12.268355 8.3613281 11.697266 C 8.884507 12.400354 9.3156815 13.07859 10.160156 13.857422 C 12.734824 16.231954 16.990366 18.653154 23.419922 18.998047 A 1.50015 1.50015 0 0 0 25 17.5 L 25 16 C 25 12.116822 28.116822 9 32 9 z"/></svg>
+</a></li>
+        </ul>
+      </header>
+      
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Kicking the Tires: Flatgeobuf</h1>
+  <h2 class="post-subtitle"><em></em></h2>
+  <time datetime="2022-02-23T00:00:00-08:00" class="post-date">23 Feb 2022</time>
+  <p><img src="/public/gradient_studio.jpeg" alt="Misty morning at Gradient Retreat" /></p>
+
+<p>This week I’ve been out in the woods on an island at <a href="https://www.gradientretreat.com">Gradient Retreat</a> and it’s given me a chance to finally finish some research and experiments with <a href="http://flatgeobuf.org">Flatgeobuf</a>, a new(ish) file format for storing geospatial vector data. In this post I’ll give a quick overview of the format and why I think it’s so interesting.</p>
+
+<h3 id="what-is-it">What is it?</h3>
+
+<p>Flatgeobuf is a binary data format for storing spatial vector data. It’s meant as an alternative to things like Shapefiles, KML, or GeoJSON, meaning you can store the usual sort of stuff from the <a href="http://wiki.gis.com/wiki/index.php/Simple_Features">OGC Feature Model</a> (lines, polygons, etc) along with related properties.</p>
+
+<p>But FGB includes a few optimizations that make it especially interesting:</p>
+
+<ol>
+  <li>The use of <a href="https://google.github.io/flatbuffers/">flatbuffers</a> for efficient feature / geometry encoding</li>
+  <li>Inclusion of a built-in <em>streamable</em> spatial index as well as conventions around data layout to optimize remote retrieval using the index</li>
+</ol>
+
+<h3 id="optimization-1-flatbuffers-for-efficient-geometry-encoding">Optimization 1: <strong>Flatbuffers for Efficient Geometry Encoding</strong></h3>
+
+<p>Flatbuffers is a binary data serialization library. Similar to projects like <a href="https://thrift.apache.org">Apache Thrift</a> or <a href="https://developers.google.com/protocol-buffers">Protocol Buffers</a>, it provides an <a href="https://google.github.io/flatbuffers/flatbuffers_guide_writing_schema.html">IDL</a> for specifying data schemas along with implementations for reading these data types to and from bytes in a variety of languages</p>
+
+<p>Like thrift or protobuf, there’s a code generator that turns your <code class="language-plaintext highlighter-rouge">.fbs</code> IDL specs into concrete implementations in your chosen language, as well as a runtime library which provides some of the serialization/deserialization machinery.</p>
+
+<p>As a binary format, flatbuffers already has a leg up on text-based formats like GeoJSON or WKT in terms of data compactness and serde speed: you don’t have to repeat a bunch of field names as strings in your data and you don’t have to run through a text parsing routine to deserialize. But fbs also goes a step further than thrift or protobuf in that it’s designed for “zero copy” serde.</p>
+
+<p>This means that the flatbuffers spec and associated runtime libraries go to great lengths to design memory layouts that can be used directly by host languages without having to first copy into a corresponding “language native” format.</p>
+
+<p>For example in a library like thrift, you might have an internal convention for representing an Array of Ints in binary. This is better than something like JSON since it’s much faster to read a custom binary Array representation than a text-based one, but you still find that in order to actually use the data you’ll need to copy to a local representation like, say, <code class="language-plaintext highlighter-rouge">java.util.ArrayList&lt;Integer&gt;</code> . So you end up with 2 steps: first buffer the thrift/pbf-encoded data into memory from disk or network, then translate this binary data into language-specific representations.</p>
+
+<p>With flatbuffers, you skip the last step because the creators of the library have done binary magic to design memory layouts that can be used directly the same as other language-native datatypes. You can even read them directly from disk via mmap, etc. Of course, this tends to work best in languages like C++ or Rust which are used to giving you tight control over memory layouts, and it comes with a cost that the library can be complicated to use in comparison with thrift or protobuf (which already have their own non-trivial learning curve). But this is the price you pay to get sick sick serde speedups (you can see some related benchmarks <a href="https://google.github.io/flatbuffers/flatbuffers_benchmarks.html">here</a>).</p>
+
+<p><img src="/public/images/flatbuffers_benchmarks.png" alt="Flatbuffers benchmarks" />
+<em><a href="https://google.github.io/flatbuffers/flatbuffers_benchmarks.html">Source</a></em></p>
+
+<p>So the designers of Flatgeobuf decided to use this format for handling the encoding of feature geometries, which typically make up the bulk of a large vector dataset. As mentioned, this gives a lot of impact in particular on implementations in C++ or Rust, which is important since these versions often get integrated into other systems (e.g. using the C++ FGB implementation to add FGB handling to <a href="https://postgis.net/docs/manual-dev/ST_FromFlatGeobuf.html">PostGIS</a> or <a href="https://gdal.org/drivers/vector/flatgeobuf.html">GDAL</a>, or writing Python libraries which are just wrappers over native code implementations), so there’s a lot of leverage from this optimization.</p>
+
+<h3 id="optimization-2-streamable-hilbert-sorted-rtree-index">Optimization 2: Streamable Hilbert-sorted RTree Index</h3>
+
+<p>The second exciting piece of flatgeobuf, and honestly what makes the whole thing worth the price of admission alone, is its approach to indexing. Including a pre-built index with geospatial data isn’t new — Shapefile and <a href="https://www.geopackage.org">Geopackage</a> support this, and there’s always <a href="https://www.gaia-gis.it/fossil/libspatialite/index">spatialite</a> if you want to pack your data into a sqlite file.</p>
+
+<p>However flatgeobuf’s indexing and layout strategy is uniquely optimized for <em>remote</em> reading, i.e. consuming both the data and index piecemeal over the network, via HTTP requests. It targets the use case of “dump these files on S3 and read them directly from a client”.</p>
+
+<p>To do this, the format combines an RTree index (the trusty workhorse of all geospatial indexing) with a compact and streamable encoding and a particular spatial ordering of the geometry data (using a <a href="https://en.wikipedia.org/wiki/Hilbert_curve">Hilbert Curve</a>) to make the whole thing more efficient. Here’s how it works.</p>
+
+<p>To write an indexed FGB file, you first sort your feature data along a Hilbert Curve. Space Filling Curves are a fascinating and brain-melting topic that merit a full post on their own, but in short they allow a linear encoding of multiple dimensions into 1 dimension (in our case, sorting a 2-dimensional xy space along a 1-dimensional curve). This is an optimization used in many spatial indexing systems to ensure that data with high storage locality also has high spatial locality.</p>
+
+<p><img src="/public/images/hilbert.png" alt="Hilbert Curve Iterations" /></p>
+
+<p>In flatgeobuf, the feature data is stored in a long buffer containing back-to-back Flatbuffers of encoded feature geometries + properties, and these features are hilbert-sorted before being indexed and written to allow for more efficient I/O batching when looking data up via the index.</p>
+
+<blockquote>
+  <p><em>Side Note:</em> There’s a lot of research on different methodologies for spatial sorting for indexing. Flatgeobuf uses the Hilbert encoding of the center of each feature’s bounding box, referred to as “2D-C” in the literature. (<a href="https://dl.acm.org/doi/10.1145/170088.170403">https://dl.acm.org/doi/10.1145/170088.170403</a>).</p>
+</blockquote>
+
+<p>Next, a “packed” RTree is built to represent these nodes, where “packed” means that the tree is maximally filled (no empty internal slots), which is possible since we are building it in bulk from a known static dataset (FGB is <em>not</em> aimed at supporting updates in place).</p>
+
+<p>The tree is built “bottom-up”, with the pre-sorted features making up the bottom layer. For this layer you construct a vector of Index Nodes containing a bounding box for the feature and its byte offset in the data section of the overall file.</p>
+
+<p>Then a tree is built by adding upper layers of internal nodes as needed, with each internal node’s bounding box representing the superset of all its children’s bounding boxes, and its byte offset pointing to the location in the <em>index</em> buffer where its list of child nodes begin.</p>
+
+<p>Once the tree reduces down to a single root node, it is flattened out for storage with each layer stored sequentially one after the other.</p>
+
+<p>Here’s a diagram showing an example tree. Note that since the tree is fully “packed”, its structure is determined purely by the number of features and node size (branching factor). For 4 features with a node size of 2 we get this:</p>
+
+<p><img src="/public/images/fgb_diagram_1.png" alt="Flatgeobuf RTree Index Layout Diagram" />
+<em>FGB RTree Index Layout Example</em></p>
+
+<p>And here’s how that tree would be serialized into the final FGB file:</p>
+
+<p><img src="/public/images/fgb_diagram_2.png" alt="Flatgeobuf File Layout Diagram" />
+<em>FGB file layout after flattening tree</em></p>
+
+<h3 id="indexing-takeaways-cloud-native-gis-vector-data">Indexing Takeaways: Cloud-native GIS Vector Data</h3>
+
+<p>That’s a lot of detail about how the indexes are put together, but what does it actually mean?</p>
+
+<p>The point is that both the index and the underlying feature data are designed to be loaded lazily — a client can stream the portions of the index they need to satisfy a bounding-box query, then use those results to stream the relevant portions of the Feature section. This can all be done either locally (reading from a potentially large file) or <em>remotely</em> over HTTP using <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests">Range requests</a>.</p>
+
+<p>This means you can literally chuck an FGB file on S3 and serve it directly to clients, without any persistent server process in the mix. It’s a piece of “serverless” tech which isn’t just marketing vapor-speak, and it has the potential to open a lot of new architectural patterns for managing Geospatial data.</p>
+
+<p>To <a href="https://protomaps.com/blog/dynamic-maps-static-storage#a-map-is-just-a-video">quote</a> <a href="https://twitter.com/bdon">Brandon Liu</a>:</p>
+
+<blockquote>
+  <p>A Map is just a Video</p>
+</blockquote>
+
+<p>And formats like FGB drive that home: the way these cloud-native GIS formats incrementally pull data from remote storage is the same way that streaming video codecs lazily pull the next frames in your favorite Netflix movie. Panning around a <a href="https://wiki.openstreetmap.org/wiki/Slippy_Map">slippy map</a> is like scrubbing forward and backward through a video of the earth.</p>
+
+<p><a href="https://flatgeobuf.org/examples/leaflet/large.html">Here’s a demo</a> on the <a href="http://flatgeobuf.org">flatgeobuf.org</a> site that shows this in action: live slippy map filtering of a 12GB US Census Block dataset direct from storage over HTTP</p>
+
+<p><img src="/public/images/fgb_slippy_demo.png" alt="[flatgeobuf.org](http://flatgeobuf.org) leaflet Census Block filtering demo" />
+<em>flatgeobuf census blocks slippy map demo</em></p>
+
+<p>I’m particularly hopeful about the potential to bridge the gap between offline “big data” use-cases, which want to consume static files from cloud storage, and online interactive use-cases like a simple slippy map viewer. Traditionally, the latter required an indexed server process like PostGIS, but now you might be able to have both of these systems reading from the same static cloud-storage-hosted datasets.</p>
+
+<h3 id="downsides">Downsides?</h3>
+
+<ul>
+  <li>Complexity — No denying the format is pretty complicated. Between sophisticated binary encodings and optimized indexing strategies there is a lot going on in these bytes. Small errors in encoding or indexing can render files unreadable. To become more mainstream, the format will need better linting tools to validate structural correctness of without a lot of painful <code class="language-plaintext highlighter-rouge">hexdump</code>-ing.</li>
+  <li>Not human readable — Especially compared to simpler formats like GeoJSON and WKT this is always a downside. Of course the benefits are huge (smaller storage footprint, faster serde), but it will take really polished tooling to ease people off of text-based formats. On the other hand Shapefiles aren’t human-readable and ESRI has managed to jam those down everyone’s throats for several decades, so maybe there’s hope.</li>
+  <li>Not designed for updates — Because of the intricacies of data layout and indexing, updates aren’t really a thing for FGB. It’s best used for static datasets.</li>
+  <li>Non-spatial indexing — Currently the format doesn’t really have a way to add indexing on other dimensions besides the spatial one. Maybe this will evolve in the future (FGB’s first sidecar?)</li>
+</ul>
+
+<h3 id="further-reading--prior-art">Further Reading / Prior Art</h3>
+
+<ul>
+  <li>Big thank you to <a href="https://twitter.com/bjornharrtell">Björn Harrtell</a> for designing this cool format</li>
+  <li><a href="https://github.com/mourner/flatbush">Flatbush</a> and <a href="https://github.com/mapbox/geobuf">Geobuf</a>, JS libraries from <a href="https://twitter.com/mourner">Vladimir Agafonkin</a> inspired the Hilbert-sorted RTree indexing and binary format for Flatgeobuf</li>
+  <li><a href="https://github.com/rawrunprotected/hilbert_curves">rawrunprotected/hilbert_curves</a>: Provides a very cool algorithm for fast encoding of X,Y values to Hilbert numbers used by many of these libraries. This in turn appears to be partially inspired by a similar algorithm in <a href="https://en.wikipedia.org/wiki/Hacker%27s_Delight">Hacker’s Delight</a>, Chapter 16.</li>
+  <li>RTree packing + Hilbert Sorting: There’s quite a lot of academic literature about this, focusing on different strategies for bulk-loading RTrees and different sorting approaches to optimize lookup locality. These 2 articles are a good starting point:
+    <ul>
+      <li><em><a href="https://dl.acm.org/doi/10.1145/971699.318900">Direct spatial search on pictorial databases using packed R-trees</a>,</em> Roussopoulos &amp; Leifker</li>
+      <li><em><a href="https://dl.acm.org/doi/10.1145/170088.170403">On packing R-trees</a>,</em> Kamel &amp; Faloustos</li>
+    </ul>
+  </li>
+  <li><a href="https://www.cogeo.org">Cloud Optimized GeoTIFF</a>: Another data format that has been bringing similar benefits to geospatial Raster data.</li>
+</ul>
+
+<h2 id="where-to-go-next">Where to go next?</h2>
+
+<ul>
+  <li><a href="https://github.com/flatgeobuf/flatgeobuf">https://github.com/flatgeobuf/flatgeobuf</a> for official support, including drivers for Rust, C++, JS, Java, and C#</li>
+  <li><a href="https://github.com/worace/geoq">https://github.com/worace/geoq</a> - My own Rust-based GIS CLI now has a <code class="language-plaintext highlighter-rouge">fgb</code> subcommand (<a href="https://crates.io/crates/geoq">version 0.0.21</a> — hot off the press) for reading and writing flatgeobuf files from GeoJSON at the command-line – <code class="language-plaintext highlighter-rouge">echo '{"type": "Point", "coordinates": [0,0]}' | geoq fgb write /tmp/myfirst.fgb</code></li>
+  <li>As part of writing this article I went through the exercise of writing my own fgb writer implementation. I plan to publish a more detailed “implementer’s guide” focusing on the nuances of the spec based on what I learned from this experience.</li>
+</ul>
+
+</article>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>
