@@ -1,7 +1,7 @@
 <h3>Posts</h3>
 <div class="posts">
   <ul>
-  {% for post in paginator.pages %}
+  {% for page in posts.pages %}
     <li>
       <a href="{{ site.baseurl }}{{ post.url }}">
         {% if post.display_title %}
@@ -13,13 +13,4 @@
     </li>
   {% endfor %}
   </ul>
-</div>
-
-<div class="pagination">
-  {% if paginator.next_page %}
-    <a class="pagination-item older" href="{{site.baseurl}}{{ paginator.next_page_path}}">Older</a>
-  {% endif %}
-  {% if paginator.previous_page %}
-    <a class="pagination-item newer" href="{{site.baseurl}}{{ paginator.previous_page_path}}">Newer</a>
-  {% endif %}
 </div>
