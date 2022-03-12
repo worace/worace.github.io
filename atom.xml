@@ -4,13 +4,454 @@
  <title>Horace Williams</title>
  <link href="http://worace.works/atom.xml" rel="self"/>
  <link href="http://worace.works/"/>
- <updated>2022-02-23T18:55:36-08:00</updated>
+ <updated>2022-03-12T11:04:09-08:00</updated>
  <id>http://worace.works</id>
  <author>
    <name>Horace Williams</name>
    <email>horace@worace.works</email>
  </author>
 
+ 
+ <entry>
+   <title>Flatgeobuf: Implementer's Guide</title>
+   <link href="http://worace.works/2022/03/12/flatgeobuf-implementers-guide/"/>
+   <updated>2022-03-12T00:00:00-08:00</updated>
+   <id>http://worace.works/2022/03/12/flatgeobuf-implementers-guide</id>
+   <content type="html">&lt;p&gt;&lt;img src=&quot;/public/images/gradient_moss_header.jpeg&quot; alt=&quot;Mossy roof at Gradient Retreat&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Recently I went through the exercise of writing a flatgeobuf &lt;a href=&quot;https://github.com/worace/geoq/pull/45&quot;&gt;writer implementation&lt;/a&gt;, partly to add support for it to &lt;a href=&quot;https://github.com/worace/geoq&quot;&gt;geoq&lt;/a&gt; and partly to help myself understand the format more thoroughly. Here are some notes based on my experience, covering some of the questions I had about the spec and which I had to refer to the existing reference implementations to answer.&lt;/p&gt;
+
+&lt;p&gt;This isn’t a spec per se but may be a helpful reference for anyone else trying to understand how an FGB file works, or implementing their own version. If you’re not deep in the weeds of trying to implement or understand the FGB encoding, you may find a previous post more useful as an oveview: &lt;a href=&quot;https://worace.works/2022/02/23/kicking-the-tires-flatgeobuf&quot;&gt;Kicking the Tires: Flatgeobuf&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;fgb-file-structure&quot;&gt;FGB File Structure&lt;/h3&gt;
+
+&lt;p&gt;A flatgeobuf file is a binary data file made up of 4 parts:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;File Signature: 8 “magic bytes” indicating the file type and spec version&lt;/li&gt;
+  &lt;li&gt;Header: A length-prefixed flatbuffer containing a &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/header.fbs#L67-L82&quot;&gt;Header&lt;/a&gt; record from the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;FlatGeobuf&lt;/code&gt; fbs namespace.&lt;/li&gt;
+  &lt;li&gt;Index (optional): A flattened, packed RTree containing a spatial index for performing bounding-box filtering of Features in the subsequent Data section. If the index is omitted this is indicated by setting the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;index_node_size&lt;/code&gt; Header field to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0&lt;/code&gt;, and in this case the Features section will appear immediately after the Header.&lt;/li&gt;
+  &lt;li&gt;Features / Data: A buffer containing sequential length-prefixed &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/feature.fbs&quot;&gt;Feature&lt;/a&gt; flatbuffer records.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Here’s a diagram from the flatgeobuf site showing the full file layout:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/images/fgb_official_diagram.svg&quot; alt=&quot;layout.svg&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;In the rest of this post I’ll go through these sections giving more detail on each.&lt;/p&gt;
+
+&lt;h3 id=&quot;note-on-binary-encodings&quot;&gt;Note on Binary Encodings&lt;/h3&gt;
+
+&lt;p&gt;Here are 2 conventions used for encoding binary data in these files:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Flatbuffer records are used in several places, and they are always “size-prefixed”, meaning that each byte buffer includes 4 initial bytes to indicate the remaining size. The API for this varies a bit between languages, but they should be written with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;finish_size_prefixed&lt;/code&gt; or the equivalent.&lt;/li&gt;
+  &lt;li&gt;In a few cases numbers or other data are written to binary directly, outside of Flatbuffer records, and in these cases little-endian encodings are used. (e.g. &lt;a href=&quot;https://doc.rust-lang.org/std/primitive.f64.html#method.to_le_bytes&quot;&gt;f64.to_le_bytes&lt;/a&gt; in Rust)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;signature--magic-bytes&quot;&gt;Signature / Magic Bytes&lt;/h3&gt;
+
+&lt;p&gt;The first 8 bytes of a fgb file are a signature, containing: ASCII &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;F&lt;/code&gt; , &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;G&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;B&lt;/code&gt;, followed by the spec major version (currently &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;03&lt;/code&gt;), then F,G,B again, then the spec patch version (currently &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;01&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;So altogether this looks like:&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// Rust example&lt;/span&gt;
+&lt;span class=&quot;nd&quot;&gt;vec!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0x66&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0x67&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0x62&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0x03&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0x66&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0x67&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0x62&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0x01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Or just &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0x6667620366676201&lt;/code&gt; in Hex.&lt;/p&gt;
+
+&lt;h3 id=&quot;header&quot;&gt;Header&lt;/h3&gt;
+
+&lt;p&gt;The header contains general metadata about the file, including properties schema, information about the index, etc. Note that some of the data included in the header requires either making a pass through the feature data, or having it statically provided as configuration (e.g. to calculate the number of features or dynamically infer the properties schema). More on this in the Indexing section.&lt;/p&gt;
+
+&lt;p&gt;Here are the header fields from the &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/header.fbs#L67-L82&quot;&gt;spec&lt;/a&gt; with some notes on what they mean.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;name&lt;/code&gt; - String - arbitrary name given to your file. Many implementations will include this as a FeatureCollection-level property when converting to GeoJSON&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;envelope&lt;/code&gt;: f64/double array - 4 element bounding box encoded as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;minX,minY,maxX,maxY&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;geometry_type&lt;/code&gt;: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;GeometryType&lt;/code&gt; flatbuffer &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/header.fbs#L5-L24&quot;&gt;enum&lt;/a&gt; describing which geometry type appears in the file. If your FGB file only contains 1 type of geometry, you can specify it here. If the file is heterogeneous w/r/t geometry type, the header should specify geometry type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Unknown&lt;/code&gt; and then each &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/feature.fbs#L12&quot;&gt;individual Feature&lt;/a&gt; should specify their own geometry type.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;has_z&lt;/code&gt; : boolean - True if geometries in your file have Z coordinates. Note that additional coordinate dimensions are “all or nothing” for a geometry because they are stored in a &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/e2fb4173b8a3d365112491edd816bfe58644fb0d/src/fbs/feature.fbs#L8&quot;&gt;separate vector&lt;/a&gt;. So if you want to support z for even a few points, you need to populate these vectors with 0’s for the remaining points
+    &lt;ul&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;has_m&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;has_t&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;has_tm&lt;/code&gt; - same as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;has_z&lt;/code&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;columns&lt;/code&gt;: Array of flatbuffer &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/e2fb4173b8a3d365112491edd816bfe58644fb0d/src/fbs/header.fbs&quot;&gt;Columns&lt;/a&gt;. This represents the properties schema for your file. By default, flatgeobuf assumes a heterogeneous schema for your features, i.e. that each feature has the same set of properties, or at least that the set listed here covers the superset of all used properties (individual features can skip a property from this list if they don’t have it). You can see the list of available column types &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/e2fb4173b8a3d365112491edd816bfe58644fb0d/src/fbs/header.fbs#L26-L42&quot;&gt;in the spec&lt;/a&gt;.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;features_count&lt;/code&gt;: ulong (64bit unsigned int) - Number of features in the dataset. This has to either be provided as an argument or (more commonly) be calculated by first making a pass through all of the feature data before generating the header&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;index_node_size&lt;/code&gt;: ushort (16-bit unsigned int) - default 16 - This represents the branching factor of the RTree used for the flatgeobuf spatial index, i.e. the number of child nodes under each interior node in the tree. Higher branching factor = wider, shorter tree. Obviously this can impact the size of your tree and the performance of your index lookups but the exact characteristics will depend on your dataset.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;crs&lt;/code&gt;: Crs - custom &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/e2fb4173b8a3d365112491edd816bfe58644fb0d/src/fbs/header.fbs#L58-L65&quot;&gt;flatbuffer type&lt;/a&gt; - Specifies the CRS for the dataset. Most commonly this will be an org/code pair like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;org: EPSG, code: 4326&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;title&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;description&lt;/code&gt; - Arbitrary strings for dataset description. No clear convention in how these are used in most implementations&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;metadata&lt;/code&gt;: string, but expected to encode an arbitrary JSON object containing key/value metadata about the dataset&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;heterogeneous-vs-homogeneous-fgb-files&quot;&gt;Heterogeneous vs Homogeneous FGB files&lt;/h3&gt;
+
+&lt;p&gt;FGB supports heterogeneous or homogeneous files with regard to:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Geometry Type&lt;/li&gt;
+  &lt;li&gt;Feature properties schema, i.e. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;columns&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In the case of a homogeneous collection (a file that contains 1 single type of geometry, or 1 consistent properties schema for every feature), these fields will be set in the Header so that they can be omitted in the individual Feature records. This saves space since the same schema information doesn’t have to be repeated in every feature.&lt;/p&gt;
+
+&lt;p&gt;In the case of a heterogeneous collection, they can be set in the individual features. For Geometry type, a special type of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Unknown&lt;/code&gt; is used in the Header to indicate this.&lt;/p&gt;
+
+&lt;h3 id=&quot;features-buffer&quot;&gt;Features Buffer&lt;/h3&gt;
+
+&lt;p&gt;Technically the Index section comes next in terms of File order, but I’m going to start with the Features section since it sets the groundwork for the indexing.&lt;/p&gt;
+
+&lt;p&gt;The Features or “Data” section of the FGB file contains the bulk of the actual information. These are Features in the “OGC” sense, meaning a combination of a Vector Geometry and some set of properties.&lt;/p&gt;
+
+&lt;p&gt;The Geometry is encoded using its own Flatbuffer record type, while the properties use a custom binary encoding.&lt;/p&gt;
+
+&lt;p&gt;Here is the Feature schema:&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Feature&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;geometry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Geometry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;// Geometry&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;properties&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ubyte&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// Custom buffer, variable length collection of key/value pairs (key=ushort)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;columns&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Column&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;   &lt;span class=&quot;c1&quot;&gt;// Attribute columns schema (optional)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;To serialize features, translate them into this encoding, then use the Flatbuffers API to write the record to a size-prefixed byte buffer. The Features section of the file simply contains a series of these buffers back to back.&lt;/p&gt;
+
+&lt;h2 id=&quot;geometry-encoding&quot;&gt;&lt;strong&gt;Geometry Encoding&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;table Geometry {
+  ends: [uint];          // Array of end index in flat coordinates per geometry part
+  xy: [double];          // Flat x and y coordinate array (flat pairs)
+  z: [double];           // Flat z height array
+  m: [double];           // Flat m measurement array
+  t: [double];           // Flat t geodetic decimal year time array
+  tm: [ulong];           // Flat tm time nanosecond measurement array
+  type: GeometryType;    // Type of geometry (only relevant for elements in heterogeneous collection types)
+  parts: [Geometry];     // Array of parts (for heterogeneous collection types)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;In the interest of compactness and type consistency the Geometry encoding avoids nesting in favor of flattened arrays that are zipped together at read-time. XY coordinates are encoded together in a single alternating vector (even indices are X’s and odds are Y’s).&lt;/p&gt;
+
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ends&lt;/code&gt; field indicates stop-coordinate positions to divide individual rings or segments in the case of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Polygon&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MultiLineString&lt;/code&gt; geometries, meaning it’s a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Vec&amp;lt;f64&amp;gt;&lt;/code&gt; with a list of dividers rather than &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Vec&amp;lt;Vec&amp;lt;Vec&amp;lt;f64&amp;gt;&amp;gt;&amp;gt;&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Higher coordinate dimensions are optional and if used have their own separate vectors that align by index with the corresponding &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;xy&lt;/code&gt; pairs.&lt;/p&gt;
+
+&lt;p&gt;This is easier to show rather than explain so here are some worked examples of different Geometry types, from GeoJSON to FGB.&lt;/p&gt;
+
+&lt;h3 id=&quot;point&quot;&gt;&lt;strong&gt;Point&lt;/strong&gt;&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;{&quot;type&quot;:&quot;Point&quot;,&quot;coordinates&quot;:[1,2,3]}&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;Geometry&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;xy&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;z&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;linestring&quot;&gt;&lt;strong&gt;LineString&lt;/strong&gt;&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;{&quot;type&quot;:&quot;LineString&quot;,&quot;coordinates&quot;:[[1,2,3],[4,5,6]]}&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;Geometry&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;xy&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;z&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;polygon&quot;&gt;Polygon&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;Polygon (1 ring, shell-only)&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;For shell-only polygon, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ends&lt;/code&gt; is unused&lt;/li&gt;
+  &lt;li&gt;XY contains flat list of all coordinates&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;type&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Polygon&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;coordinates&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.4765625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;33.92578125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;33.92578125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.1015625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.4765625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.1015625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.4765625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;33.92578125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;Geometry&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// All coordinates from the ring flattened&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// First coordinate is still repeated to close the ring as in WKT/GeoJSON/etc&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;xy&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;118.4765625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;33.92578125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;118.125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;33.92578125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;118.125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.1015625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;118.4765625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.1015625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;118.4765625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;33.92578125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;Polygon (1 outer, 1 inner ring)&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ends&lt;/code&gt; are the cumulative coordinate number (1-indexed, i.e. the vector length) of the final coordinate from each ring. So a 4-sided polygon with 1 4-sided inner ring has 2 ends, first at 5 (5 coordinates for the outer ring) then at 10 (5 more coordinates for the inner ring, so the inner ring ends at coordinate number 10)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;type&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Polygon&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;coordinates&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.4765625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;33.92578125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;33.92578125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.1015625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.4765625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.1015625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.4765625&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;33.92578125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.24447631835938&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.0521240234375&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.24310302734375&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.0521240234375&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.24310302734375&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.053497314453125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.24447631835938&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.053497314453125&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-118.24447631835938&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;34.0521240234375&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Geometry {
+  // all coordinates from BOTH rings flattened
+  xy: [-118.4765625,33.92578125,-118.125,33.92578125,-118.125,34.1015625,-118.4765625,34.1015625,-118.4765625,33.92578125,-118.24447631835938,34.0521240234375,-118.24310302734375,34.0521240234375,-118.24310302734375,34.053497314453125,-118.24447631835938,34.053497314453125,-118.24447631835938,34.0521240234375]
+  ends: [5,10], // 1-indexed coordinate number for last point per ring
+  type: 3
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;similarre-used-encodings&quot;&gt;&lt;strong&gt;Similar/Re-used encodings&lt;/strong&gt;&lt;/h3&gt;
+
+&lt;p&gt;These 2 are structurally the same as previous ones, so they use the same representation with a different &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;type&lt;/code&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;MultiPoint is encoded like LineString&lt;/li&gt;
+  &lt;li&gt;MultiLineString is encoded like Polygon&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;collection-types&quot;&gt;Collection Types&lt;/h3&gt;
+
+&lt;p&gt;MultiPolygon and GeometryCollection make use of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;parts&lt;/code&gt; field. The sub-geometries are encoded using the previous rules, then inserted into the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;parts&lt;/code&gt; vector. The top-level coordinate fields are unused.&lt;/p&gt;
+
+&lt;h3 id=&quot;future-types&quot;&gt;Future Types&lt;/h3&gt;
+
+&lt;p&gt;So far I’ve only researched and implemented the FGB geometry types that correspond to GeoJSON geometry types. Hopefully I’ll expand to cover the remaining ones in future. I’m not actually sure if any of the existing FGB implementations cover these types. It’s possible the C++/GDAL one does.&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;err&quot;&gt;CircularString&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;8&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;CompoundCurve&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;9&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;CurvePolygon&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;MultiCurve&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;11&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;MultiSurface&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;12&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;Curve&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;13&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;Surface&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;14&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;PolyhedralSurface&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;TIN&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;Triangle&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;17&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;feature-property-encoding&quot;&gt;Feature Property Encoding&lt;/h2&gt;
+
+&lt;p&gt;FGB encodes Feature properties using a custom binary representation. In the Flatbuffer schema this appears as:&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;properties&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ubyte&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// Custom buffer, variable length collection of key/value pairs (key=ushort)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Meaning it’s just a byte vector embedded within the Flatbuffer record. This encoding is a compromise due to the challenges with representing highly polymorphic collections using Flatbuffers. It’s a tightly optimized format but this comes with some constraints, and to achieve the level of flexibility required here the designers decided to use a custom representation rather than lean on a Flatbuffer one.&lt;/p&gt;
+
+&lt;h3 id=&quot;properties-schema-representation-columns-and-columntypes&quot;&gt;Properties Schema Representation (Columns and ColumnTypes)&lt;/h3&gt;
+
+&lt;p&gt;Property Schemas in FGB are represented as a vector of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Column&lt;/code&gt; records. These are stored either in the Header (when the same schema is used across all features):&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Header&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;columns&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Column&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// truncated...&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Or in a Feature (if a custom schema per feature is needed):&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Feature&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;columns&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Column&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;A Column represents a single property field, like so:&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;enum&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ColumnType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ubyte&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Byte&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                         &lt;span class=&quot;c1&quot;&gt;// Signed 8-bit integer&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;UByte&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                        &lt;span class=&quot;c1&quot;&gt;// Unsigned 8-bit integer&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Bool&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                         &lt;span class=&quot;c1&quot;&gt;// Boolean&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Short&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                        &lt;span class=&quot;c1&quot;&gt;// Signed 16-bit integer&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;UShort&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                       &lt;span class=&quot;c1&quot;&gt;// Unsigned 16-bit integer&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                          &lt;span class=&quot;c1&quot;&gt;// Signed 32-bit integer&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;UInt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                         &lt;span class=&quot;c1&quot;&gt;// Unsigned 32-bit integer&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Long&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                         &lt;span class=&quot;c1&quot;&gt;// Signed 64-bit integer&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;ULong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                        &lt;span class=&quot;c1&quot;&gt;// Unsigned 64-bit integer&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                        &lt;span class=&quot;c1&quot;&gt;// Single precision floating point number&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                       &lt;span class=&quot;c1&quot;&gt;// Double precision floating point number&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                       &lt;span class=&quot;c1&quot;&gt;// UTF8 string&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Json&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                         &lt;span class=&quot;c1&quot;&gt;// General JSON type intended to be application specific&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;DateTime&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;                     &lt;span class=&quot;c1&quot;&gt;// ISO 8601 date time&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Binary&lt;/span&gt;                        &lt;span class=&quot;c1&quot;&gt;// General binary type intended to be application specific&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Column&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;required&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;      &lt;span class=&quot;c1&quot;&gt;// Column name&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ColumnType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;             &lt;span class=&quot;c1&quot;&gt;// Column type&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;title&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                &lt;span class=&quot;c1&quot;&gt;// Column title&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;description&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;          &lt;span class=&quot;c1&quot;&gt;// Column description (intended for free form long text)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;              &lt;span class=&quot;c1&quot;&gt;// Column values expected width (-1 = unknown) (currently only used to indicate the number of characters in strings)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;precision&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;          &lt;span class=&quot;c1&quot;&gt;// Column values expected precision (-1 = unknown) as defined by SQL&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;scale&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;              &lt;span class=&quot;c1&quot;&gt;// Column values expected scale (-1 = unknown) as defined by SQL&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;nullable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;        &lt;span class=&quot;c1&quot;&gt;// Column values expected nullability&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;unique&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;         &lt;span class=&quot;c1&quot;&gt;// Column values expected uniqueness&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;primary_key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;    &lt;span class=&quot;c1&quot;&gt;// Indicates this column has been (part of) a primary key&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;metadata&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;             &lt;span class=&quot;c1&quot;&gt;// Column metadata (intended to be application specific and suggested to be structured fx. JSON)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;As of today, many of these &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Column&lt;/code&gt; fields aren’t used or may be implementation-dependent. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;name&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;type&lt;/code&gt; are the most important.&lt;/p&gt;
+
+&lt;p&gt;Since the Columns contain the field names, the combination of Column vector + individual feature properties can be used to derive a name → value map for each Feature (for example if converting to a GeoJSON &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;properties&lt;/code&gt; JSON object).&lt;/p&gt;
+
+&lt;h3 id=&quot;per-property-encoding&quot;&gt;Per-property encoding&lt;/h3&gt;
+
+&lt;p&gt;Once the schema is established, encode individual properties as a byte buffer containing a sequence of:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;u16&lt;/code&gt; (2 bytes) column indices — this indicates the “key”, by way of pointing to the index of the appropriate column in the Columns vector&lt;/li&gt;
+  &lt;li&gt;Appropriate per-type binary representation (covered below). Depending on the ColumnType, sometimes these are statically sized and sometimes they include a length prefix. So for a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Bool&lt;/code&gt; column it will always be 3 bytes — 2 for the index and 1 for the bool itself (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;u8&lt;/code&gt;, little-endian). For a String, it’s variable, with 2 bytes for the column index, then a 4-byte unsigned length, then a UTF-8 encoding of the String.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;‼️ &lt;strong&gt;Note on field heterogeneity&lt;/strong&gt; - I don’t know if the spec explicitly states this, but it’s probably bad to repeat Column names in a schema. Technically the structure (since it’s a Vector and not a Map) could model encodings where the same field name appears multiple times with a different &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ColumnType&lt;/code&gt;. But this will probably be highly implementation-dependent.&lt;/p&gt;
+
+&lt;h3 id=&quot;column-type-binary-representations&quot;&gt;Column Type Binary Representations&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Numeric Types (Byte — Double)&lt;/strong&gt; - These are all fixed size (size is known based on the type, so they’re encoded as 2 bytes for column index + 1–8 bytes for the appropriate little-endian data.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;String + Json -&lt;/strong&gt; These are both written as UTF-8 Strings (Json is just an application-specific indication to use a String to contain serialized JSON data). So they are written as 2 bytes for index, 4 bytes for length, and N bytes for data.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;To encode the full properties for a feature, write all of the individual columns back-to-back into a byte buffer, and use this to populate the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;[ubyte]&lt;/code&gt; properties field. As far as I know there is not a requirement around ordering of properties within a single feature.&lt;/p&gt;
+
+&lt;p&gt;Once you have all this assembled (Geometry + Properties + Columns if needed), serialize it using the flatbuffers size-prefixed binary encoding.&lt;/p&gt;
+
+&lt;h2 id=&quot;feature-ordering-hilbert-sort&quot;&gt;Feature Ordering (Hilbert Sort)&lt;/h2&gt;
+
+&lt;p&gt;That covers how Features are represented individually, but not how they are ordered. As an optimization to improve Indexing, FGB sorts Features based on a &lt;a href=&quot;https://en.wikipedia.org/wiki/Hilbert_curve&quot;&gt;Hilbert encoding&lt;/a&gt; of their geometric centers. This technique is used in many spatial indexing systems to improve data locality for records that have high spatial locality. The heuristic isn’t perfect in all cases, but especially for I/O Bound systems, it can help minimize the number of disk pages (or HTTP requests) required to satisfy a given spatial query (with Bounding Box queries being the most common).&lt;/p&gt;
+
+&lt;p&gt;There are a lot of details around the specific Hilbert-sort used by FGB, so it’s hard to describe in a concrete “spec”. It largely comes down to matching the behavior of a reference implementation, such as the &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/tree/master/src/cpp&quot;&gt;official C++ implementation&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The code snippet for doing the actual Hilbert encoding was originally taken from &lt;a href=&quot;https://github.com/rawrunprotected/hilbert_curves&quot;&gt;this project&lt;/a&gt;. The use of this technique was heavily inspired by &lt;a href=&quot;https://twitter.com/mourner&quot;&gt;Vladimir Agafonkin&lt;/a&gt;’s &lt;a href=&quot;https://github.com/mourner/flatbush&quot;&gt;flatbush&lt;/a&gt; library.&lt;/p&gt;
+
+&lt;p&gt;So, follow a reference implementation for the details, but here’s a rough description of how FGB Hilbert-sorts Features:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Find the centroid of the feature geometry (X,Y only)&lt;/li&gt;
+  &lt;li&gt;Encode it to a single unsigned 32-bit Hilbert int using the &lt;a href=&quot;https://github.com/flatgeobuf/flatgeobuf/blob/master/src/cpp/packedrtree.cpp#L81-L128&quot;&gt;reference algorithm&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;(Aside: I’ve wondered if there is a name for this algorithm. The book &lt;a href=&quot;https://learning.oreilly.com/library/view/hackers-delight-second/9780133084993/&quot;&gt;Hacker’s Delight&lt;/a&gt; describes a similar algorithm as a “non-recursive algorithm for generating the Hilbert Curve”, so maybe that’s a start)&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Sort features according to those numbers&lt;/li&gt;
+  &lt;li&gt;Write these sorted, size-prefixed flatbuffers into the “Data” section of the final FGB File.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Important:&lt;/strong&gt; &lt;em&gt;As the features are written, each one’s Bounding Box and Byte Offset within the Data section must be recorded.&lt;/em&gt; These Bounding Box + Byte Offset pairs are used to build the bottom layer of the RTree which makes up an FGB index, which we’ll look at next. This is why in most implementations Feature writing comes first, even though they actually come after the Index in the final output file.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;❓ &lt;strong&gt;Note on Unindexed FGBs:&lt;/strong&gt; As mentioned in the “File Layout” section, the Index in FGB is optional. The spec isn’t entirely clear on whether the Hilbert-ordering is expected in an unindexed file. Technically it shouldn’t matter (the purpose of the Hilbert-ordering is to optimize the index) but this may end up being application-specific.&lt;/p&gt;
+
+&lt;h2 id=&quot;indexing&quot;&gt;Indexing&lt;/h2&gt;
+
+&lt;p&gt;So now we’ve written a byte buffer of back-to-back size-prefixed flatbuffer &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Feature&lt;/code&gt; records which are ordered by a centroid Hilbert encoding, and recorded the byte offsets and bounding boxes for each of those features.&lt;/p&gt;
+
+&lt;p&gt;The index starts with these BBox + Offset “Index Nodes” forming the bottom layer of a Packed R-Tree. Because the tree is built in bulk from a static dataset, and it is “packed” meaning no empty internal spaces are left, the structure of the tree is fully determined by number of features and the node size or branching factor (this is the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;index_node_size&lt;/code&gt; field from the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Header&lt;/code&gt;)&lt;/p&gt;
+
+&lt;p&gt;Basically, you lay out a bottom layer of all the Feature-representing index nodes pulled from writing that section:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// Bytes 0, 502, and 1029 would be the starting point of these respective Features
+// in the previously written Data section. They allow consumers of the file
+// to skip to the appropriate read position after consulting the index to
+// find a Feature matching a given Bounding Box query
+|Byte: 0, BBox:x1y1x2y2|Byte:502: BBox:x1y1x2y2|Byte: 1029, x1y1x2y2|
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Then stack as many layers of “interior” nodes on top of these as required to build the tree up to a single root node.&lt;/p&gt;
+
+&lt;p&gt;For the Interior Nodes, the structure is the same (BBox + Byte Offset). However for these nodes, the Byte Offset points to the location of that node’s first child within the tree. This location can be known in advance because the size of each node is fixed and the structure is derived from the number of features + the index node size.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/images/FGBTreeDiagram.png&quot; alt=&quot;FGB Tree Diagram&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Finally, all of this gets written to a flattened byte buffer layer by layer, starting from the Root.&lt;/p&gt;
+
+&lt;p&gt;Note that my descriptions of stacking tree layers on top of one another are more about the conceptual structure of the tree, since it’s actual encoding is “flat”…it’s modeled in memory via skipping around in a single byte buffer rather than storing a graph of pointers.&lt;/p&gt;
+
+&lt;h3 id=&quot;index-node-binary-encoding&quot;&gt;Index Node Binary Encoding&lt;/h3&gt;
+
+&lt;p&gt;Similar to properties, the tree index nodes use a custom binary encoding, but it’s fairly simple:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;4 little-endian Doubles for the bounding box (minX, minY, maxX, maxY)&lt;/li&gt;
+  &lt;li&gt;Byte Offset: 64-bit unsigned int&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For a total of 40 bytes per node.&lt;/p&gt;
+
+&lt;p&gt;So, to give a worked example, consider a FGB file with:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;179 features&lt;/li&gt;
+  &lt;li&gt;Index Node Size (branching factor) 16&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;You would end up with:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;3-level tree, with 1 node in the first (root), 12 nodes in the second, and 179 nodes in the last level (representing the actual features)&lt;/li&gt;
+  &lt;li&gt;192 total nodes&lt;/li&gt;
+  &lt;li&gt;7680 total bytes for the index&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;As mentioned, the node size is configurable, and can be used to make wider or narrower index trees. I’m not aware of any published analysis on this, but presumably it can have a big impact on how the index performs on different datasets.&lt;/p&gt;
+
+&lt;h2 id=&quot;full-file-layout-diagram&quot;&gt;Full File Layout Diagram&lt;/h2&gt;
+
+&lt;p&gt;So, with all these pieces in mind, here’s a diagram of what a complete FGB file looks like (obviously not to scale).&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/images/FGBFileLayout.png&quot; alt=&quot;FGB Full File Encoding Diagram&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Signature (static)&lt;/li&gt;
+  &lt;li&gt;Header (standalone flatbuffer)&lt;/li&gt;
+  &lt;li&gt;Index – back-to-back index nodes containing bounding boxes and either offsets to other nodes in the tree or to Features in the subsequent data section, depending on whether they are an interior or leaf node&lt;/li&gt;
+  &lt;li&gt;Features – Back-to-back flatbuffers containing the actual feature data&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;passes-and-buffer-ordering&quot;&gt;“Passes” and Buffer Ordering&lt;/h2&gt;
+
+&lt;p&gt;If you’ve made it this far, you may have noticed that some of the data dependencies between the different sections can pose a few challenges for generating an FGB file.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Depending on how you derive your column schema, feature count, and envelope for the Header, this likely requires a pass through the feature data to infer.&lt;/li&gt;
+  &lt;li&gt;To write the Index, you need to first sort, then write, the Features so that you have bounding boxes and known byte offsets for them to include in the Index Nodes&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;There are a few ways to handle this:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;In memory — If the data you’re writing fits in memory, it’s fairly easy. Buffer it all, do the schema checking and sorting, write additional byte buffers for the Features, then the Header and Index, and finally write it all to a file in the right order&lt;/li&gt;
+  &lt;li&gt;Partially in memory, with tempfiles — Read features into memory, sort them, write to a tempfile, then build the header and index, then copy all 3 into the final output file. This requires having enough memory to buffer all features in memory and do the sort.&lt;/li&gt;
+  &lt;li&gt;Partitioned memory with tempfiles — Read sequential feature buffers of a fixed max size, sort each one, record schema and bounding box, then write to a tempfile. Repeat for all features giving N locally-sorted feature tempfiles. Then merge-sort these into a single feature tempfile (will become the “data” section of your final file), recording byte offsets and bounding boxes. Write the Header and Index into the output file then concatenate the Feature section from its tempfile onto the end. I haven’t seen any implementations doing this yet but have been working on it for geoq. This approach should only require enough memory to store the index, which is fairly small. (An FGB index for 1 billion features with node-size of 64 would take 40GB…who knows if this would ever be practical or not)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Most of the implementations I have seen so far use either 1 or 2.&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Kicking the Tires: Flatgeobuf</title>

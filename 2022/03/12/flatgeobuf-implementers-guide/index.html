@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="last-modified" content="2022-03-12T11:04:09-08:00" />
+
+  <title>
+    
+      Flatgeobuf: Implementer's Guide
+    
+  </title>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet"> 
+
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/public/apple-touch-icon-precomposed.png">
+  <link rel="shortcut icon" href="/public/TroutIcon48x48.png">
+  <link rel="alternate" type="application/atom+xml" title="Horace Williams" href="/atom.xml">
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117025935-1"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+
+   gtag('config', 'UA-117025935-1');
+  </script>
+  
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home">Horace Williams</a>
+        </h3>
+        <ul class="nav-links">
+          <li><a href="/about">about</a></li>
+          <li><a target="_blank" class="nav-twitter" href="https://twitter.com/worace"><svg xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 48 48"><path d="M 32 6 C 26.568583 6 22.160643 10.388731 22.042969 15.792969 C 17.240727 15.216998 14.113589 13.421507 12.195312 11.652344 C 10.067982 9.6903754 9.3945312 7.9472656 9.3945312 7.9472656 A 1.50015 1.50015 0 0 0 6.8007812 7.5996094 C 6.8007812 7.5996094 5 10 5 13.5 C 5 15.500985 5.6317952 16.981554 6.3847656 18.236328 C 6.3570276 18.223338 6.1699219 18.158203 6.1699219 18.158203 A 1.50015 1.50015 0 0 0 4.0058594 19.636719 C 4.0058594 19.636719 4.5832039 23.856843 8.5507812 26.941406 L 8.1367188 27.044922 A 1.50015 1.50015 0 0 0 7.1972656 29.244141 C 7.1972656 29.244141 7.8700527 30.382221 9.2792969 31.580078 C 10.11485 32.290298 11.34227 33.023169 12.789062 33.701172 C 11.012271 34.35044 8.362818 35 4.5 35 A 1.50015 1.50015 0 0 0 3.3710938 37.488281 C 3.3710938 37.488281 4.5173251 38.751002 6.7832031 39.849609 C 9.0490812 40.948217 12.539474 42 17.5 42 C 26.219697 42 32.484656 37.817151 36.394531 32.515625 C 40.304407 27.214099 42 20.861111 42 16 C 42 15.691547 41.980739 15.387437 41.953125 15.085938 C 44.064371 13.051602 44.856626 11.522235 44.894531 11.447266 C 45.084531 11.066266 45.01375 10.608688 44.71875 10.304688 C 44.42475 9.9996875 43.969031 9.9137969 43.582031 10.091797 L 43.419922 10.166016 C 43.280922 10.230016 43.141953 10.294422 43.001953 10.357422 C 43.408953 9.7084219 43.730125 9.014875 43.953125 8.296875 C 44.077125 7.900875 43.943234 7.4669375 43.615234 7.2109375 C 43.287234 6.9549375 42.835469 6.9275312 42.480469 7.1445312 C 41.258221 7.8873594 40.086652 8.40739 38.867188 8.7558594 C 37.072578 7.0534724 34.656873 6 32 6 z M 32 9 C 35.883178 9 39 12.116822 39 16 C 39 20.138889 37.445593 26.035901 33.980469 30.734375 C 30.515344 35.432849 25.280303 39 17.5 39 C 13.7348 39 11.230189 38.318942 9.3535156 37.582031 C 11.319341 37.276755 13.011947 36.869367 14.228516 36.398438 C 16.338182 35.581792 17.476563 34.638672 17.476562 34.638672 A 1.50015 1.50015 0 0 0 16.863281 32.044922 C 14.140556 31.364241 12.394328 30.263307 11.298828 29.345703 L 12.863281 28.955078 A 1.50015 1.50015 0 0 0 13.039062 26.099609 C 9.7939415 24.851486 8.4312292 23.086373 7.734375 21.607422 C 8.5823538 21.782967 9.3718961 22 10.5 22 A 1.50015 1.50015 0 0 0 11.169922 19.158203 C 11.169922 19.158203 8 17.7 8 13.5 C 8 12.745947 8.2088435 12.268355 8.3613281 11.697266 C 8.884507 12.400354 9.3156815 13.07859 10.160156 13.857422 C 12.734824 16.231954 16.990366 18.653154 23.419922 18.998047 A 1.50015 1.50015 0 0 0 25 17.5 L 25 16 C 25 12.116822 28.116822 9 32 9 z"/></svg>
+</a></li>
+        </ul>
+      </header>
+      
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Flatgeobuf: Implementer's Guide</h1>
+  <h2 class="post-subtitle"><em></em></h2>
+  <time datetime="2022-03-12T00:00:00-08:00" class="post-date">12 Mar 2022</time>
+  <p><img src="/public/images/gradient_moss_header.jpeg" alt="Mossy roof at Gradient Retreat" /></p>
+
+<p>Recently I went through the exercise of writing a flatgeobuf <a href="https://github.com/worace/geoq/pull/45">writer implementation</a>, partly to add support for it to <a href="https://github.com/worace/geoq">geoq</a> and partly to help myself understand the format more thoroughly. Here are some notes based on my experience, covering some of the questions I had about the spec and which I had to refer to the existing reference implementations to answer.</p>
+
+<p>This isn’t a spec per se but may be a helpful reference for anyone else trying to understand how an FGB file works, or implementing their own version. If you’re not deep in the weeds of trying to implement or understand the FGB encoding, you may find a previous post more useful as an oveview: <a href="https://worace.works/2022/02/23/kicking-the-tires-flatgeobuf">Kicking the Tires: Flatgeobuf</a>.</p>
+
+<h3 id="fgb-file-structure">FGB File Structure</h3>
+
+<p>A flatgeobuf file is a binary data file made up of 4 parts:</p>
+
+<ol>
+  <li>File Signature: 8 “magic bytes” indicating the file type and spec version</li>
+  <li>Header: A length-prefixed flatbuffer containing a <a href="https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/header.fbs#L67-L82">Header</a> record from the <code class="language-plaintext highlighter-rouge">FlatGeobuf</code> fbs namespace.</li>
+  <li>Index (optional): A flattened, packed RTree containing a spatial index for performing bounding-box filtering of Features in the subsequent Data section. If the index is omitted this is indicated by setting the <code class="language-plaintext highlighter-rouge">index_node_size</code> Header field to <code class="language-plaintext highlighter-rouge">0</code>, and in this case the Features section will appear immediately after the Header.</li>
+  <li>Features / Data: A buffer containing sequential length-prefixed <a href="https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/feature.fbs">Feature</a> flatbuffer records.</li>
+</ol>
+
+<p>Here’s a diagram from the flatgeobuf site showing the full file layout:</p>
+
+<p><img src="/public/images/fgb_official_diagram.svg" alt="layout.svg" /></p>
+
+<p>In the rest of this post I’ll go through these sections giving more detail on each.</p>
+
+<h3 id="note-on-binary-encodings">Note on Binary Encodings</h3>
+
+<p>Here are 2 conventions used for encoding binary data in these files:</p>
+
+<ul>
+  <li>Flatbuffer records are used in several places, and they are always “size-prefixed”, meaning that each byte buffer includes 4 initial bytes to indicate the remaining size. The API for this varies a bit between languages, but they should be written with <code class="language-plaintext highlighter-rouge">finish_size_prefixed</code> or the equivalent.</li>
+  <li>In a few cases numbers or other data are written to binary directly, outside of Flatbuffer records, and in these cases little-endian encodings are used. (e.g. <a href="https://doc.rust-lang.org/std/primitive.f64.html#method.to_le_bytes">f64.to_le_bytes</a> in Rust)</li>
+</ul>
+
+<h3 id="signature--magic-bytes">Signature / Magic Bytes</h3>
+
+<p>The first 8 bytes of a fgb file are a signature, containing: ASCII <code class="language-plaintext highlighter-rouge">F</code> , <code class="language-plaintext highlighter-rouge">G</code>, <code class="language-plaintext highlighter-rouge">B</code>, followed by the spec major version (currently <code class="language-plaintext highlighter-rouge">03</code>), then F,G,B again, then the spec patch version (currently <code class="language-plaintext highlighter-rouge">01</code>).</p>
+
+<p>So altogether this looks like:</p>
+
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Rust example</span>
+<span class="nd">vec!</span><span class="p">[</span><span class="mi">0x66</span><span class="p">,</span> <span class="mi">0x67</span><span class="p">,</span> <span class="mi">0x62</span><span class="p">,</span> <span class="mi">0x03</span><span class="p">,</span> <span class="mi">0x66</span><span class="p">,</span> <span class="mi">0x67</span><span class="p">,</span> <span class="mi">0x62</span><span class="p">,</span> <span class="mi">0x01</span><span class="p">];</span>
+</code></pre></div></div>
+
+<p>Or just <code class="language-plaintext highlighter-rouge">0x6667620366676201</code> in Hex.</p>
+
+<h3 id="header">Header</h3>
+
+<p>The header contains general metadata about the file, including properties schema, information about the index, etc. Note that some of the data included in the header requires either making a pass through the feature data, or having it statically provided as configuration (e.g. to calculate the number of features or dynamically infer the properties schema). More on this in the Indexing section.</p>
+
+<p>Here are the header fields from the <a href="https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/header.fbs#L67-L82">spec</a> with some notes on what they mean.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">name</code> - String - arbitrary name given to your file. Many implementations will include this as a FeatureCollection-level property when converting to GeoJSON</li>
+  <li><code class="language-plaintext highlighter-rouge">envelope</code>: f64/double array - 4 element bounding box encoded as <code class="language-plaintext highlighter-rouge">minX,minY,maxX,maxY</code></li>
+  <li><code class="language-plaintext highlighter-rouge">geometry_type</code>: <code class="language-plaintext highlighter-rouge">GeometryType</code> flatbuffer <a href="https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/header.fbs#L5-L24">enum</a> describing which geometry type appears in the file. If your FGB file only contains 1 type of geometry, you can specify it here. If the file is heterogeneous w/r/t geometry type, the header should specify geometry type <code class="language-plaintext highlighter-rouge">Unknown</code> and then each <a href="https://github.com/flatgeobuf/flatgeobuf/blob/master/src/fbs/feature.fbs#L12">individual Feature</a> should specify their own geometry type.</li>
+  <li><code class="language-plaintext highlighter-rouge">has_z</code> : boolean - True if geometries in your file have Z coordinates. Note that additional coordinate dimensions are “all or nothing” for a geometry because they are stored in a <a href="https://github.com/flatgeobuf/flatgeobuf/blob/e2fb4173b8a3d365112491edd816bfe58644fb0d/src/fbs/feature.fbs#L8">separate vector</a>. So if you want to support z for even a few points, you need to populate these vectors with 0’s for the remaining points
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">has_m</code>, <code class="language-plaintext highlighter-rouge">has_t</code>, <code class="language-plaintext highlighter-rouge">has_tm</code> - same as <code class="language-plaintext highlighter-rouge">has_z</code></li>
+    </ul>
+  </li>
+  <li><code class="language-plaintext highlighter-rouge">columns</code>: Array of flatbuffer <a href="https://github.com/flatgeobuf/flatgeobuf/blob/e2fb4173b8a3d365112491edd816bfe58644fb0d/src/fbs/header.fbs">Columns</a>. This represents the properties schema for your file. By default, flatgeobuf assumes a heterogeneous schema for your features, i.e. that each feature has the same set of properties, or at least that the set listed here covers the superset of all used properties (individual features can skip a property from this list if they don’t have it). You can see the list of available column types <a href="https://github.com/flatgeobuf/flatgeobuf/blob/e2fb4173b8a3d365112491edd816bfe58644fb0d/src/fbs/header.fbs#L26-L42">in the spec</a>.</li>
+  <li><code class="language-plaintext highlighter-rouge">features_count</code>: ulong (64bit unsigned int) - Number of features in the dataset. This has to either be provided as an argument or (more commonly) be calculated by first making a pass through all of the feature data before generating the header</li>
+  <li><code class="language-plaintext highlighter-rouge">index_node_size</code>: ushort (16-bit unsigned int) - default 16 - This represents the branching factor of the RTree used for the flatgeobuf spatial index, i.e. the number of child nodes under each interior node in the tree. Higher branching factor = wider, shorter tree. Obviously this can impact the size of your tree and the performance of your index lookups but the exact characteristics will depend on your dataset.</li>
+  <li><code class="language-plaintext highlighter-rouge">crs</code>: Crs - custom <a href="https://github.com/flatgeobuf/flatgeobuf/blob/e2fb4173b8a3d365112491edd816bfe58644fb0d/src/fbs/header.fbs#L58-L65">flatbuffer type</a> - Specifies the CRS for the dataset. Most commonly this will be an org/code pair like <code class="language-plaintext highlighter-rouge">org: EPSG, code: 4326</code></li>
+  <li><code class="language-plaintext highlighter-rouge">title</code>, <code class="language-plaintext highlighter-rouge">description</code> - Arbitrary strings for dataset description. No clear convention in how these are used in most implementations</li>
+  <li><code class="language-plaintext highlighter-rouge">metadata</code>: string, but expected to encode an arbitrary JSON object containing key/value metadata about the dataset</li>
+</ul>
+
+<h3 id="heterogeneous-vs-homogeneous-fgb-files">Heterogeneous vs Homogeneous FGB files</h3>
+
+<p>FGB supports heterogeneous or homogeneous files with regard to:</p>
+
+<ul>
+  <li>Geometry Type</li>
+  <li>Feature properties schema, i.e. <code class="language-plaintext highlighter-rouge">columns</code></li>
+</ul>
+
+<p>In the case of a homogeneous collection (a file that contains 1 single type of geometry, or 1 consistent properties schema for every feature), these fields will be set in the Header so that they can be omitted in the individual Feature records. This saves space since the same schema information doesn’t have to be repeated in every feature.</p>
+
+<p>In the case of a heterogeneous collection, they can be set in the individual features. For Geometry type, a special type of <code class="language-plaintext highlighter-rouge">Unknown</code> is used in the Header to indicate this.</p>
+
+<h3 id="features-buffer">Features Buffer</h3>
+
+<p>Technically the Index section comes next in terms of File order, but I’m going to start with the Features section since it sets the groundwork for the indexing.</p>
+
+<p>The Features or “Data” section of the FGB file contains the bulk of the actual information. These are Features in the “OGC” sense, meaning a combination of a Vector Geometry and some set of properties.</p>
+
+<p>The Geometry is encoded using its own Flatbuffer record type, while the properties use a custom binary encoding.</p>
+
+<p>Here is the Feature schema:</p>
+
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">table</span> <span class="n">Feature</span> <span class="p">{</span>
+  <span class="n">geometry</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">;</span>  <span class="c1">// Geometry</span>
+  <span class="n">properties</span><span class="p">:</span> <span class="p">[</span><span class="n">ubyte</span><span class="p">];</span> <span class="c1">// Custom buffer, variable length collection of key/value pairs (key=ushort)</span>
+  <span class="n">columns</span><span class="p">:</span> <span class="p">[</span><span class="n">Column</span><span class="p">];</span>   <span class="c1">// Attribute columns schema (optional)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>To serialize features, translate them into this encoding, then use the Flatbuffers API to write the record to a size-prefixed byte buffer. The Features section of the file simply contains a series of these buffers back to back.</p>
+
+<h2 id="geometry-encoding"><strong>Geometry Encoding</strong></h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>table Geometry {
+  ends: [uint];          // Array of end index in flat coordinates per geometry part
+  xy: [double];          // Flat x and y coordinate array (flat pairs)
+  z: [double];           // Flat z height array
+  m: [double];           // Flat m measurement array
+  t: [double];           // Flat t geodetic decimal year time array
+  tm: [ulong];           // Flat tm time nanosecond measurement array
+  type: GeometryType;    // Type of geometry (only relevant for elements in heterogeneous collection types)
+  parts: [Geometry];     // Array of parts (for heterogeneous collection types)
+}
+</code></pre></div></div>
+
+<p>In the interest of compactness and type consistency the Geometry encoding avoids nesting in favor of flattened arrays that are zipped together at read-time. XY coordinates are encoded together in a single alternating vector (even indices are X’s and odds are Y’s).</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">ends</code> field indicates stop-coordinate positions to divide individual rings or segments in the case of <code class="language-plaintext highlighter-rouge">Polygon</code> and <code class="language-plaintext highlighter-rouge">MultiLineString</code> geometries, meaning it’s a <code class="language-plaintext highlighter-rouge">Vec&lt;f64&gt;</code> with a list of dividers rather than <code class="language-plaintext highlighter-rouge">Vec&lt;Vec&lt;Vec&lt;f64&gt;&gt;&gt;</code>.</p>
+
+<p>Higher coordinate dimensions are optional and if used have their own separate vectors that align by index with the corresponding <code class="language-plaintext highlighter-rouge">xy</code> pairs.</p>
+
+<p>This is easier to show rather than explain so here are some worked examples of different Geometry types, from GeoJSON to FGB.</p>
+
+<h3 id="point"><strong>Point</strong></h3>
+
+<p><code class="language-plaintext highlighter-rouge">{"type":"Point","coordinates":[1,2,3]}</code></p>
+
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Geometry</span> <span class="p">{</span>
+  <span class="n">xy</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+  <span class="n">z</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+  <span class="k">type</span><span class="p">:</span> <span class="mi">1</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="linestring"><strong>LineString</strong></h3>
+
+<p><code class="language-plaintext highlighter-rouge">{"type":"LineString","coordinates":[[1,2,3],[4,5,6]]}</code></p>
+
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Geometry</span> <span class="p">{</span>
+  <span class="n">xy</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">]</span>
+  <span class="n">z</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span>
+  <span class="k">type</span><span class="p">:</span> <span class="mi">2</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="polygon">Polygon</h3>
+
+<p><strong>Polygon (1 ring, shell-only)</strong></p>
+
+<ul>
+  <li>For shell-only polygon, <code class="language-plaintext highlighter-rouge">ends</code> is unused</li>
+  <li>XY contains flat list of all coordinates</li>
+</ul>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Polygon"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"coordinates"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">[</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.4765625</span><span class="p">,</span><span class="mf">33.92578125</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.125</span><span class="p">,</span><span class="w"> </span><span class="mf">33.92578125</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.125</span><span class="p">,</span><span class="w"> </span><span class="mf">34.1015625</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.4765625</span><span class="p">,</span><span class="w"> </span><span class="mf">34.1015625</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.4765625</span><span class="p">,</span><span class="w"> </span><span class="mf">33.92578125</span><span class="p">]</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Geometry</span> <span class="p">{</span>
+  <span class="c1">// All coordinates from the ring flattened</span>
+  <span class="c1">// First coordinate is still repeated to close the ring as in WKT/GeoJSON/etc</span>
+  <span class="n">xy</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mf">118.4765625</span><span class="p">,</span><span class="mf">33.92578125</span><span class="p">,</span><span class="o">-</span><span class="mf">118.125</span><span class="p">,</span><span class="mf">33.92578125</span><span class="p">,</span><span class="o">-</span><span class="mf">118.125</span><span class="p">,</span><span class="mf">34.1015625</span><span class="p">,</span><span class="o">-</span><span class="mf">118.4765625</span><span class="p">,</span><span class="mf">34.1015625</span><span class="p">,</span><span class="o">-</span><span class="mf">118.4765625</span><span class="p">,</span><span class="mf">33.92578125</span><span class="p">]</span>
+  <span class="k">type</span><span class="p">:</span> <span class="mi">3</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Polygon (1 outer, 1 inner ring)</strong></p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">ends</code> are the cumulative coordinate number (1-indexed, i.e. the vector length) of the final coordinate from each ring. So a 4-sided polygon with 1 4-sided inner ring has 2 ends, first at 5 (5 coordinates for the outer ring) then at 10 (5 more coordinates for the inner ring, so the inner ring ends at coordinate number 10)</li>
+</ul>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Polygon"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"coordinates"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">[</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.4765625</span><span class="p">,</span><span class="mf">33.92578125</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.125</span><span class="p">,</span><span class="w"> </span><span class="mf">33.92578125</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.125</span><span class="p">,</span><span class="w"> </span><span class="mf">34.1015625</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.4765625</span><span class="p">,</span><span class="w"> </span><span class="mf">34.1015625</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.4765625</span><span class="p">,</span><span class="w"> </span><span class="mf">33.92578125</span><span class="p">]</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="p">[</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.24447631835938</span><span class="p">,</span><span class="w"> </span><span class="mf">34.0521240234375</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.24310302734375</span><span class="p">,</span><span class="w"> </span><span class="mf">34.0521240234375</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.24310302734375</span><span class="p">,</span><span class="w"> </span><span class="mf">34.053497314453125</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.24447631835938</span><span class="p">,</span><span class="w"> </span><span class="mf">34.053497314453125</span><span class="p">],</span><span class="w">
+      </span><span class="p">[</span><span class="mf">-118.24447631835938</span><span class="p">,</span><span class="w"> </span><span class="mf">34.0521240234375</span><span class="p">]</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Geometry {
+  // all coordinates from BOTH rings flattened
+  xy: [-118.4765625,33.92578125,-118.125,33.92578125,-118.125,34.1015625,-118.4765625,34.1015625,-118.4765625,33.92578125,-118.24447631835938,34.0521240234375,-118.24310302734375,34.0521240234375,-118.24310302734375,34.053497314453125,-118.24447631835938,34.053497314453125,-118.24447631835938,34.0521240234375]
+  ends: [5,10], // 1-indexed coordinate number for last point per ring
+  type: 3
+}
+</code></pre></div></div>
+
+<h3 id="similarre-used-encodings"><strong>Similar/Re-used encodings</strong></h3>
+
+<p>These 2 are structurally the same as previous ones, so they use the same representation with a different <code class="language-plaintext highlighter-rouge">type</code></p>
+
+<ul>
+  <li>MultiPoint is encoded like LineString</li>
+  <li>MultiLineString is encoded like Polygon</li>
+</ul>
+
+<h3 id="collection-types">Collection Types</h3>
+
+<p>MultiPolygon and GeometryCollection make use of the <code class="language-plaintext highlighter-rouge">parts</code> field. The sub-geometries are encoded using the previous rules, then inserted into the <code class="language-plaintext highlighter-rouge">parts</code> vector. The top-level coordinate fields are unused.</p>
+
+<h3 id="future-types">Future Types</h3>
+
+<p>So far I’ve only researched and implemented the FGB geometry types that correspond to GeoJSON geometry types. Hopefully I’ll expand to cover the remaining ones in future. I’m not actually sure if any of the existing FGB implementations cover these types. It’s possible the C++/GDAL one does.</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">CircularString</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">8</span><span class="err">,</span><span class="w">
+</span><span class="err">CompoundCurve</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">9</span><span class="err">,</span><span class="w">
+</span><span class="err">CurvePolygon</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">10</span><span class="err">,</span><span class="w">
+</span><span class="err">MultiCurve</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">11</span><span class="err">,</span><span class="w">
+</span><span class="err">MultiSurface</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">12</span><span class="err">,</span><span class="w">
+</span><span class="err">Curve</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">13</span><span class="err">,</span><span class="w">
+</span><span class="err">Surface</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">14</span><span class="err">,</span><span class="w">
+</span><span class="err">PolyhedralSurface</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">15</span><span class="err">,</span><span class="w">
+</span><span class="err">TIN</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">16</span><span class="err">,</span><span class="w">
+</span><span class="err">Triangle</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">17</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="feature-property-encoding">Feature Property Encoding</h2>
+
+<p>FGB encodes Feature properties using a custom binary representation. In the Flatbuffer schema this appears as:</p>
+
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">properties</span><span class="p">:</span> <span class="p">[</span><span class="n">ubyte</span><span class="p">];</span> <span class="c1">// Custom buffer, variable length collection of key/value pairs (key=ushort)</span>
+</code></pre></div></div>
+
+<p>Meaning it’s just a byte vector embedded within the Flatbuffer record. This encoding is a compromise due to the challenges with representing highly polymorphic collections using Flatbuffers. It’s a tightly optimized format but this comes with some constraints, and to achieve the level of flexibility required here the designers decided to use a custom representation rather than lean on a Flatbuffer one.</p>
+
+<h3 id="properties-schema-representation-columns-and-columntypes">Properties Schema Representation (Columns and ColumnTypes)</h3>
+
+<p>Property Schemas in FGB are represented as a vector of <code class="language-plaintext highlighter-rouge">Column</code> records. These are stored either in the Header (when the same schema is used across all features):</p>
+
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">table</span> <span class="n">Header</span> <span class="p">{</span>
+  <span class="n">columns</span><span class="p">:</span> <span class="p">[</span><span class="n">Column</span><span class="p">];</span>
+  <span class="c1">// truncated...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Or in a Feature (if a custom schema per feature is needed):</p>
+
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">table</span> <span class="n">Feature</span> <span class="p">{</span>
+  <span class="n">columns</span><span class="p">:</span> <span class="p">[</span><span class="n">Column</span><span class="p">];</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>A Column represents a single property field, like so:</p>
+
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">enum</span> <span class="n">ColumnType</span><span class="p">:</span> <span class="n">ubyte</span> <span class="p">{</span>
+  <span class="n">Byte</span><span class="p">,</span>                         <span class="c1">// Signed 8-bit integer</span>
+  <span class="n">UByte</span><span class="p">,</span>                        <span class="c1">// Unsigned 8-bit integer</span>
+  <span class="n">Bool</span><span class="p">,</span>                         <span class="c1">// Boolean</span>
+  <span class="n">Short</span><span class="p">,</span>                        <span class="c1">// Signed 16-bit integer</span>
+  <span class="n">UShort</span><span class="p">,</span>                       <span class="c1">// Unsigned 16-bit integer</span>
+  <span class="n">Int</span><span class="p">,</span>                          <span class="c1">// Signed 32-bit integer</span>
+  <span class="n">UInt</span><span class="p">,</span>                         <span class="c1">// Unsigned 32-bit integer</span>
+  <span class="n">Long</span><span class="p">,</span>                         <span class="c1">// Signed 64-bit integer</span>
+  <span class="n">ULong</span><span class="p">,</span>                        <span class="c1">// Unsigned 64-bit integer</span>
+  <span class="n">Float</span><span class="p">,</span>                        <span class="c1">// Single precision floating point number</span>
+  <span class="n">Double</span><span class="p">,</span>                       <span class="c1">// Double precision floating point number</span>
+  <span class="nb">String</span><span class="p">,</span>                       <span class="c1">// UTF8 string</span>
+  <span class="n">Json</span><span class="p">,</span>                         <span class="c1">// General JSON type intended to be application specific</span>
+  <span class="n">DateTime</span><span class="p">,</span>                     <span class="c1">// ISO 8601 date time</span>
+  <span class="n">Binary</span>                        <span class="c1">// General binary type intended to be application specific</span>
+<span class="p">}</span>
+
+<span class="n">table</span> <span class="n">Column</span> <span class="p">{</span>
+  <span class="n">name</span><span class="p">:</span> <span class="nf">string</span> <span class="p">(</span><span class="n">required</span><span class="p">);</span>      <span class="c1">// Column name</span>
+  <span class="k">type</span><span class="p">:</span> <span class="n">ColumnType</span><span class="p">;</span>             <span class="c1">// Column type</span>
+  <span class="n">title</span><span class="p">:</span> <span class="n">string</span><span class="p">;</span>                <span class="c1">// Column title</span>
+  <span class="n">description</span><span class="p">:</span> <span class="n">string</span><span class="p">;</span>          <span class="c1">// Column description (intended for free form long text)</span>
+  <span class="n">width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>              <span class="c1">// Column values expected width (-1 = unknown) (currently only used to indicate the number of characters in strings)</span>
+  <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>          <span class="c1">// Column values expected precision (-1 = unknown) as defined by SQL</span>
+  <span class="n">scale</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>              <span class="c1">// Column values expected scale (-1 = unknown) as defined by SQL</span>
+  <span class="n">nullable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="k">true</span><span class="p">;</span>        <span class="c1">// Column values expected nullability</span>
+  <span class="n">unique</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>         <span class="c1">// Column values expected uniqueness</span>
+  <span class="n">primary_key</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>    <span class="c1">// Indicates this column has been (part of) a primary key</span>
+  <span class="n">metadata</span><span class="p">:</span> <span class="n">string</span><span class="p">;</span>             <span class="c1">// Column metadata (intended to be application specific and suggested to be structured fx. JSON)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>As of today, many of these <code class="language-plaintext highlighter-rouge">Column</code> fields aren’t used or may be implementation-dependent. <code class="language-plaintext highlighter-rouge">name</code> and <code class="language-plaintext highlighter-rouge">type</code> are the most important.</p>
+
+<p>Since the Columns contain the field names, the combination of Column vector + individual feature properties can be used to derive a name → value map for each Feature (for example if converting to a GeoJSON <code class="language-plaintext highlighter-rouge">properties</code> JSON object).</p>
+
+<h3 id="per-property-encoding">Per-property encoding</h3>
+
+<p>Once the schema is established, encode individual properties as a byte buffer containing a sequence of:</p>
+
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">u16</code> (2 bytes) column indices — this indicates the “key”, by way of pointing to the index of the appropriate column in the Columns vector</li>
+  <li>Appropriate per-type binary representation (covered below). Depending on the ColumnType, sometimes these are statically sized and sometimes they include a length prefix. So for a <code class="language-plaintext highlighter-rouge">Bool</code> column it will always be 3 bytes — 2 for the index and 1 for the bool itself (<code class="language-plaintext highlighter-rouge">u8</code>, little-endian). For a String, it’s variable, with 2 bytes for the column index, then a 4-byte unsigned length, then a UTF-8 encoding of the String.</li>
+</ol>
+
+<p>‼️ <strong>Note on field heterogeneity</strong> - I don’t know if the spec explicitly states this, but it’s probably bad to repeat Column names in a schema. Technically the structure (since it’s a Vector and not a Map) could model encodings where the same field name appears multiple times with a different <code class="language-plaintext highlighter-rouge">ColumnType</code>. But this will probably be highly implementation-dependent.</p>
+
+<h3 id="column-type-binary-representations">Column Type Binary Representations</h3>
+
+<ul>
+  <li><strong>Numeric Types (Byte — Double)</strong> - These are all fixed size (size is known based on the type, so they’re encoded as 2 bytes for column index + 1–8 bytes for the appropriate little-endian data.</li>
+  <li><strong>String + Json -</strong> These are both written as UTF-8 Strings (Json is just an application-specific indication to use a String to contain serialized JSON data). So they are written as 2 bytes for index, 4 bytes for length, and N bytes for data.</li>
+</ul>
+
+<p>To encode the full properties for a feature, write all of the individual columns back-to-back into a byte buffer, and use this to populate the <code class="language-plaintext highlighter-rouge">[ubyte]</code> properties field. As far as I know there is not a requirement around ordering of properties within a single feature.</p>
+
+<p>Once you have all this assembled (Geometry + Properties + Columns if needed), serialize it using the flatbuffers size-prefixed binary encoding.</p>
+
+<h2 id="feature-ordering-hilbert-sort">Feature Ordering (Hilbert Sort)</h2>
+
+<p>That covers how Features are represented individually, but not how they are ordered. As an optimization to improve Indexing, FGB sorts Features based on a <a href="https://en.wikipedia.org/wiki/Hilbert_curve">Hilbert encoding</a> of their geometric centers. This technique is used in many spatial indexing systems to improve data locality for records that have high spatial locality. The heuristic isn’t perfect in all cases, but especially for I/O Bound systems, it can help minimize the number of disk pages (or HTTP requests) required to satisfy a given spatial query (with Bounding Box queries being the most common).</p>
+
+<p>There are a lot of details around the specific Hilbert-sort used by FGB, so it’s hard to describe in a concrete “spec”. It largely comes down to matching the behavior of a reference implementation, such as the <a href="https://github.com/flatgeobuf/flatgeobuf/tree/master/src/cpp">official C++ implementation</a>.</p>
+
+<p>The code snippet for doing the actual Hilbert encoding was originally taken from <a href="https://github.com/rawrunprotected/hilbert_curves">this project</a>. The use of this technique was heavily inspired by <a href="https://twitter.com/mourner">Vladimir Agafonkin</a>’s <a href="https://github.com/mourner/flatbush">flatbush</a> library.</p>
+
+<p>So, follow a reference implementation for the details, but here’s a rough description of how FGB Hilbert-sorts Features:</p>
+
+<ul>
+  <li>Find the centroid of the feature geometry (X,Y only)</li>
+  <li>Encode it to a single unsigned 32-bit Hilbert int using the <a href="https://github.com/flatgeobuf/flatgeobuf/blob/master/src/cpp/packedrtree.cpp#L81-L128">reference algorithm</a>
+    <ul>
+      <li>(Aside: I’ve wondered if there is a name for this algorithm. The book <a href="https://learning.oreilly.com/library/view/hackers-delight-second/9780133084993/">Hacker’s Delight</a> describes a similar algorithm as a “non-recursive algorithm for generating the Hilbert Curve”, so maybe that’s a start)</li>
+    </ul>
+  </li>
+  <li>Sort features according to those numbers</li>
+  <li>Write these sorted, size-prefixed flatbuffers into the “Data” section of the final FGB File.</li>
+  <li><strong>Important:</strong> <em>As the features are written, each one’s Bounding Box and Byte Offset within the Data section must be recorded.</em> These Bounding Box + Byte Offset pairs are used to build the bottom layer of the RTree which makes up an FGB index, which we’ll look at next. This is why in most implementations Feature writing comes first, even though they actually come after the Index in the final output file.</li>
+</ul>
+
+<p>❓ <strong>Note on Unindexed FGBs:</strong> As mentioned in the “File Layout” section, the Index in FGB is optional. The spec isn’t entirely clear on whether the Hilbert-ordering is expected in an unindexed file. Technically it shouldn’t matter (the purpose of the Hilbert-ordering is to optimize the index) but this may end up being application-specific.</p>
+
+<h2 id="indexing">Indexing</h2>
+
+<p>So now we’ve written a byte buffer of back-to-back size-prefixed flatbuffer <code class="language-plaintext highlighter-rouge">Feature</code> records which are ordered by a centroid Hilbert encoding, and recorded the byte offsets and bounding boxes for each of those features.</p>
+
+<p>The index starts with these BBox + Offset “Index Nodes” forming the bottom layer of a Packed R-Tree. Because the tree is built in bulk from a static dataset, and it is “packed” meaning no empty internal spaces are left, the structure of the tree is fully determined by number of features and the node size or branching factor (this is the <code class="language-plaintext highlighter-rouge">index_node_size</code> field from the <code class="language-plaintext highlighter-rouge">Header</code>)</p>
+
+<p>Basically, you lay out a bottom layer of all the Feature-representing index nodes pulled from writing that section:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Bytes 0, 502, and 1029 would be the starting point of these respective Features
+// in the previously written Data section. They allow consumers of the file
+// to skip to the appropriate read position after consulting the index to
+// find a Feature matching a given Bounding Box query
+|Byte: 0, BBox:x1y1x2y2|Byte:502: BBox:x1y1x2y2|Byte: 1029, x1y1x2y2|
+</code></pre></div></div>
+
+<p>Then stack as many layers of “interior” nodes on top of these as required to build the tree up to a single root node.</p>
+
+<p>For the Interior Nodes, the structure is the same (BBox + Byte Offset). However for these nodes, the Byte Offset points to the location of that node’s first child within the tree. This location can be known in advance because the size of each node is fixed and the structure is derived from the number of features + the index node size.</p>
+
+<p><img src="/public/images/FGBTreeDiagram.png" alt="FGB Tree Diagram" /></p>
+
+<p>Finally, all of this gets written to a flattened byte buffer layer by layer, starting from the Root.</p>
+
+<p>Note that my descriptions of stacking tree layers on top of one another are more about the conceptual structure of the tree, since it’s actual encoding is “flat”…it’s modeled in memory via skipping around in a single byte buffer rather than storing a graph of pointers.</p>
+
+<h3 id="index-node-binary-encoding">Index Node Binary Encoding</h3>
+
+<p>Similar to properties, the tree index nodes use a custom binary encoding, but it’s fairly simple:</p>
+
+<ul>
+  <li>4 little-endian Doubles for the bounding box (minX, minY, maxX, maxY)</li>
+  <li>Byte Offset: 64-bit unsigned int</li>
+</ul>
+
+<p>For a total of 40 bytes per node.</p>
+
+<p>So, to give a worked example, consider a FGB file with:</p>
+
+<ul>
+  <li>179 features</li>
+  <li>Index Node Size (branching factor) 16</li>
+</ul>
+
+<p>You would end up with:</p>
+
+<ul>
+  <li>3-level tree, with 1 node in the first (root), 12 nodes in the second, and 179 nodes in the last level (representing the actual features)</li>
+  <li>192 total nodes</li>
+  <li>7680 total bytes for the index</li>
+</ul>
+
+<p>As mentioned, the node size is configurable, and can be used to make wider or narrower index trees. I’m not aware of any published analysis on this, but presumably it can have a big impact on how the index performs on different datasets.</p>
+
+<h2 id="full-file-layout-diagram">Full File Layout Diagram</h2>
+
+<p>So, with all these pieces in mind, here’s a diagram of what a complete FGB file looks like (obviously not to scale).</p>
+
+<p><img src="/public/images/FGBFileLayout.png" alt="FGB Full File Encoding Diagram" /></p>
+
+<ul>
+  <li>Signature (static)</li>
+  <li>Header (standalone flatbuffer)</li>
+  <li>Index – back-to-back index nodes containing bounding boxes and either offsets to other nodes in the tree or to Features in the subsequent data section, depending on whether they are an interior or leaf node</li>
+  <li>Features – Back-to-back flatbuffers containing the actual feature data</li>
+</ul>
+
+<h2 id="passes-and-buffer-ordering">“Passes” and Buffer Ordering</h2>
+
+<p>If you’ve made it this far, you may have noticed that some of the data dependencies between the different sections can pose a few challenges for generating an FGB file.</p>
+
+<ul>
+  <li>Depending on how you derive your column schema, feature count, and envelope for the Header, this likely requires a pass through the feature data to infer.</li>
+  <li>To write the Index, you need to first sort, then write, the Features so that you have bounding boxes and known byte offsets for them to include in the Index Nodes</li>
+</ul>
+
+<p>There are a few ways to handle this:</p>
+
+<ol>
+  <li>In memory — If the data you’re writing fits in memory, it’s fairly easy. Buffer it all, do the schema checking and sorting, write additional byte buffers for the Features, then the Header and Index, and finally write it all to a file in the right order</li>
+  <li>Partially in memory, with tempfiles — Read features into memory, sort them, write to a tempfile, then build the header and index, then copy all 3 into the final output file. This requires having enough memory to buffer all features in memory and do the sort.</li>
+  <li>Partitioned memory with tempfiles — Read sequential feature buffers of a fixed max size, sort each one, record schema and bounding box, then write to a tempfile. Repeat for all features giving N locally-sorted feature tempfiles. Then merge-sort these into a single feature tempfile (will become the “data” section of your final file), recording byte offsets and bounding boxes. Write the Header and Index into the output file then concatenate the Feature section from its tempfile onto the end. I haven’t seen any implementations doing this yet but have been working on it for geoq. This approach should only require enough memory to store the index, which is fairly small. (An FGB index for 1 billion features with node-size of 64 would take 40GB…who knows if this would ever be practical or not)</li>
+</ol>
+
+<p>Most of the implementations I have seen so far use either 1 or 2.</p>
+
+</article>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>
