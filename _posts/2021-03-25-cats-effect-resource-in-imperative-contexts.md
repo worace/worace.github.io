@@ -76,7 +76,7 @@ Luckily, Resource does provide an escape hatch for these situations: [Resource.a
 val appResource: Resource[IO, MyApp] = ???
 // this IO[Unit] is your deferred finalizer
 val appLauncher: IO[(MyApp, IO[Unit])] = appResource.allocated
-val (app, shutdownHook): (MyApp, IO[Unit]) = impLauncher.unsafeRunSync()
+val (app, shutdownHook): (MyApp, IO[Unit]) = appLauncher.unsafeRunSync()
 
 // Patch the provided finalizer into the application's shutdown lifecycle
 myLifeCycle.addStopHook(() => shutdownHook.unsafeToFuture())
